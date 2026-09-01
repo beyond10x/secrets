@@ -9,12 +9,27 @@ jobs:
   check:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@bc540ba06a4ccee415bb241490e0b25ee8e7d315 # 1.85.0 action revision
         with:
           toolchain: 1.97.0
           components: rustfmt, clippy
-      - uses: arduino/setup-task@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+      - uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2
+      - name: Restore pinned gate tools
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cargo/bin/aep
+            ~/.cargo/bin/protocol
+          key: ${{ runner.os }}-${{ runner.arch }}-gate-tools-aep-0.40.3-v1
+      - name: Install pinned AEP planning CLI
+        run: |
+          if [ "$(aep --version 2>/dev/null || true)" != "protocol 0.40.3" ] || \
+             [ "$(protocol --version 2>/dev/null || true)" != "protocol 0.40.3" ]; then
+            cargo install --force --git https://github.com/beyond10x/aep --tag 0.40.3 --locked protocol-cli
+          fi
       - run: sudo apt-get update && sudo apt-get install -y jq
       - run: task check
-
