@@ -38,7 +38,7 @@ pub struct IdentityAuthority {
 
 impl IdentityAuthority {
     pub fn new(origin: &str, audience: &str) -> Result<Self, AuthError> {
-        let endpoint = format!("{}/v1/access/verify", origin.trim_end_matches('/'));
+        let endpoint = format!("{}/v1/access-authority", origin.trim_end_matches('/'));
         Ok(Self {
             client: Client::builder()
                 .build()
@@ -49,18 +49,12 @@ impl IdentityAuthority {
     }
 }
 
-#[derive(Serialize)]
-struct VerifyRequest<'a> {
-    token: &'a str,
-    audience: &'a str,
-}
 #[derive(Deserialize)]
 struct VerifyResponse {
-    active: bool,
-    subject: String,
-    tenant: String,
-    #[serde(default)]
-    scopes: BTreeSet<String>,
+    sub: String,
+    aud: String,
+    tenant_id: String,
+    scope: String,
 }
 
 #[async_trait]
@@ -68,11 +62,9 @@ impl Authority for IdentityAuthority {
     async fn verify(&self, token: &str) -> Result<Principal, AuthError> {
         let response = self
             .client
-            .post(&self.endpoint)
-            .json(&VerifyRequest {
-                token,
-                audience: &self.audience,
-            })
+            .get(&self.endpoint)
+            .bearer_auth(token)
+            .header("x-b10x-audience", &self.audience)
             .send()
             .await
             .map_err(|_| AuthError::Unavailable)?;
@@ -83,13 +75,18 @@ impl Authority for IdentityAuthority {
             return Err(AuthError::Unavailable);
         }
         let verified: VerifyResponse = response.json().await.map_err(|_| AuthError::Unavailable)?;
-        if !verified.active || verified.subject.is_empty() || verified.tenant.is_empty() {
+        if verified.aud != self.audience || verified.sub.is_empty() || verified.tenant_id.is_empty()
+        {
             return Err(AuthError::Unauthorized);
         }
         Ok(Principal {
-            subject: verified.subject,
-            tenant: verified.tenant,
-            actions: verified.scopes,
+            subject: verified.sub,
+            tenant: verified.tenant_id,
+            actions: verified
+                .scope
+                .split_ascii_whitespace()
+                .map(str::to_owned)
+                .collect(),
         })
     }
 }
