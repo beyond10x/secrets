@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3 - 2026-09-01
+
+- Use valid Axum transaction action segments and construct those routes in a regression test before
+  an image can be released.
+
 ## 0.1.2 - 2026-09-01
 
 - Verify user tokens through Identity's generic access-authority endpoint with the exact configured

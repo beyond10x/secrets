@@ -1,6 +1,6 @@
 {
   "openapi":"3.1.0",
-  "info":{"title":"Secrets API","version":"0.1.2","description":"Encrypted, tenant-scoped secret custody. Values are accepted or returned only in bounded JSON bodies."},
+  "info":{"title":"Secrets API","version":"0.1.3","description":"Encrypted, tenant-scoped secret custody. Values are accepted or returned only in bounded JSON bodies."},
   "servers":[{"url":"/"}],
   "security":[{"bearerAuth":[]}],
   "paths":{
@@ -15,8 +15,8 @@
     "/v1/workload/secrets:list":{"post":{"summary":"List metadata in one tenant and namespace without reading values","responses":{"200":{"description":"metadata list"}}}},
     "/v1/workload/secrets:delete":{"post":{"summary":"Delete a binding and all encrypted versions","responses":{"204":{"description":"deleted"}}}},
     "/v1/workload/tenants/{tenant}/transactions/{transaction}":{"put":{"summary":"Prepare an atomic mutation batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"prepared"}}}},
-    "/v1/workload/tenants/{tenant}/transactions/{transaction}:commit":{"post":{"summary":"Commit a prepared batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"committed"}}}},
-    "/v1/workload/tenants/{tenant}/transactions/{transaction}:abort":{"post":{"summary":"Abort a prepared batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"aborted"}}}}
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}/commit":{"post":{"summary":"Commit a prepared batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"committed"}}}},
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}/abort":{"post":{"summary":"Abort a prepared batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"aborted"}}}}
   },
   "components":{
     "securitySchemes":{"bearerAuth":{"type":"http","scheme":"bearer"}},

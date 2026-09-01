@@ -16,6 +16,11 @@ use tower_http::{
 };
 use uuid::Uuid;
 
+const COMMIT_TRANSACTION_ROUTE: &str =
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}/commit";
+const ABORT_TRANSACTION_ROUTE: &str =
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}/abort";
+
 #[derive(Clone)]
 pub struct AppState {
     pub store: Arc<dyn SecretStore>,
@@ -24,6 +29,10 @@ pub struct AppState {
 }
 
 pub fn router(state: AppState) -> Router {
+    routes().with_state(state)
+}
+
+fn routes() -> Router<AppState> {
     Router::new()
         .route("/health/live", get(live))
         .route("/health/ready", get(ready))
@@ -43,18 +52,11 @@ pub fn router(state: AppState) -> Router {
             "/v1/workload/tenants/{tenant}/transactions/{transaction}",
             put(workload_prepare),
         )
-        .route(
-            "/v1/workload/tenants/{tenant}/transactions/{transaction}:commit",
-            post(workload_commit),
-        )
-        .route(
-            "/v1/workload/tenants/{tenant}/transactions/{transaction}:abort",
-            post(workload_abort),
-        )
+        .route(COMMIT_TRANSACTION_ROUTE, post(workload_commit))
+        .route(ABORT_TRANSACTION_ROUTE, post(workload_abort))
         .layer(RequestBodyLimitLayer::new(1024 * 1024))
         .layer(PropagateRequestIdLayer::x_request_id())
         .layer(SetRequestIdLayer::x_request_id(MakeRequestUuid))
-        .with_state(state)
 }
 
 async fn live() -> StatusCode {
@@ -388,5 +390,15 @@ impl IntoResponse for ApiError {
             ),
         )
             .into_response()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::routes;
+
+    #[test]
+    fn production_routes_are_valid_axum_paths() {
+        let _ = routes();
     }
 }

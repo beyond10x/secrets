@@ -119,13 +119,13 @@ impl Client {
     }
     pub async fn commit(&self, tenant: &str, transaction: Uuid) -> Result<(), Error> {
         self.empty(self.http.post(self.url(&format!(
-            "v1/workload/tenants/{tenant}/transactions/{transaction}:commit"
+            "v1/workload/tenants/{tenant}/transactions/{transaction}/commit"
         ))?))
         .await
     }
     pub async fn abort(&self, tenant: &str, transaction: Uuid) -> Result<(), Error> {
         self.empty(self.http.post(self.url(&format!(
-            "v1/workload/tenants/{tenant}/transactions/{transaction}:abort"
+            "v1/workload/tenants/{tenant}/transactions/{transaction}/abort"
         ))?))
         .await
     }
