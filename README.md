@@ -50,3 +50,8 @@ The project uses AEP artifacts under `.engineering/planning`; architecture spann
 
 Apache-2.0.
 
+<!-- b10x-docs:start -->
+## Documentation
+
+[Secrets documentation](https://beyond10x.github.io/docs/secrets/) · [Start](https://beyond10x.github.io/) · [Ecosystem](https://beyond10x.github.io/ecosystem/) · [Impact](https://beyond10x.github.io/changes/) · [Releases](https://beyond10x.github.io/releases/)
+<!-- b10x-docs:end -->

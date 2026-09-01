@@ -58,7 +58,7 @@ surfaces:
     navigation:
       group: Services
       label: Secrets
-      order: 70
+      order: 60
       sidebar: flat
     root: .
     specifications:
