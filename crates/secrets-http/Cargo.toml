@@ -1,0 +1,21 @@
+[package]
+name = "secrets-http"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+axum.workspace = true
+http.workspace = true
+secrets-auth = { path = "../secrets-auth" }
+secrets-core = { path = "../secrets-core" }
+serde.workspace = true
+serde_json.workspace = true
+tower-http.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true
+

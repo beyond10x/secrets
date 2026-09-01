@@ -1,0 +1,20 @@
+version: '3'
+
+tasks:
+  fmt:
+    cmds: [cargo fmt --all -- --check]
+  test:
+    cmds: [cargo test --workspace --all-targets]
+  clippy:
+    cmds: [cargo clippy --workspace --all-targets -- -D warnings]
+  docs:
+    cmds:
+      - cargo doc --workspace --no-deps
+      - jq -e '.openapi == "3.1.0" and .info.version == "0.1.0"' docs/openapi.json >/dev/null
+  plan:
+    cmds: [aep artifact validate]
+  provenance:
+    cmds:
+      - test "$(git grep -I -E '/home/[^/]+/|gitlab\\.' -- ':!Cargo.lock' || true)" = ""
+  check:
+    deps: [fmt, test, clippy, docs, plan, provenance]

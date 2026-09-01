@@ -1,0 +1,30 @@
+{
+  "openapi":"3.1.0",
+  "info":{"title":"Secrets API","version":"0.1.0","description":"Encrypted, tenant-scoped secret custody. Values are accepted or returned only in bounded JSON bodies."},
+  "servers":[{"url":"/"}],
+  "security":[{"bearerAuth":[]}],
+  "paths":{
+    "/health/live":{"get":{"security":[],"responses":{"204":{"description":"live"}}}},
+    "/health/ready":{"get":{"security":[],"responses":{"204":{"description":"ready"}}}},
+    "/v1/user/secrets":{"get":{"summary":"List owned secret metadata","responses":{"200":{"description":"metadata list","content":{"application/json":{"schema":{"type":"object","properties":{"secrets":{"type":"array","items":{"$ref":"#/components/schemas/Metadata"}}}}}}}}},"delete":{"summary":"Cryptographically delete an owned secret","requestBody":{"$ref":"#/components/requestBodies/Reference"},"responses":{"204":{"description":"deleted"}}}},
+    "/v1/user/secrets:detail":{"post":{"summary":"Read owned secret metadata","requestBody":{"$ref":"#/components/requestBodies/Reference"},"responses":{"200":{"description":"metadata","content":{"application/json":{"schema":{"$ref":"#/components/schemas/Metadata"}}}}}}},
+    "/v1/user/secrets:revoke":{"post":{"summary":"Revoke an owned secret","requestBody":{"$ref":"#/components/requestBodies/Reference"},"responses":{"200":{"description":"revoked metadata"}}}},
+    "/v1/workload/secrets":{"put":{"summary":"Create or replace a secret","requestBody":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/PutSecret"}}}},"responses":{"200":{"description":"metadata"}}}},
+    "/v1/workload/secrets:get":{"post":{"summary":"Read a value for an authorized workload","requestBody":{"$ref":"#/components/requestBodies/Reference"},"responses":{"200":{"description":"metadata and base64 value"}}}},
+    "/v1/workload/secrets:exists":{"post":{"summary":"Check active binding","requestBody":{"$ref":"#/components/requestBodies/Reference"},"responses":{"200":{"description":"existence"}}}},
+    "/v1/workload/secrets:delete":{"post":{"summary":"Delete a binding and all encrypted versions","responses":{"204":{"description":"deleted"}}}},
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}":{"put":{"summary":"Prepare an atomic mutation batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"prepared"}}}},
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}:commit":{"post":{"summary":"Commit a prepared batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"committed"}}}},
+    "/v1/workload/tenants/{tenant}/transactions/{transaction}:abort":{"post":{"summary":"Abort a prepared batch","parameters":[{"$ref":"#/components/parameters/Tenant"},{"$ref":"#/components/parameters/Transaction"}],"responses":{"204":{"description":"aborted"}}}}
+  },
+  "components":{
+    "securitySchemes":{"bearerAuth":{"type":"http","scheme":"bearer"}},
+    "parameters":{"Tenant":{"name":"tenant","in":"path","required":true,"schema":{"type":"string"}},"Transaction":{"name":"transaction","in":"path","required":true,"schema":{"type":"string","format":"uuid"}}},
+    "requestBodies":{"Reference":{"required":true,"content":{"application/json":{"schema":{"$ref":"#/components/schemas/Reference"}}}}},
+    "schemas":{
+      "Reference":{"type":"object","required":["tenant","namespace","key"],"properties":{"tenant":{"type":"string"},"namespace":{"type":"string"},"key":{"type":"string"}}},
+      "PutSecret":{"type":"object","required":["reference","owner_subject","value"],"properties":{"reference":{"$ref":"#/components/schemas/Reference"},"owner_subject":{"type":"string"},"value":{"type":"string","contentEncoding":"base64","writeOnly":true},"disclosure":{"enum":["workload_only","user_revealable"],"default":"workload_only"},"labels":{"type":"object","additionalProperties":{"type":"string"}}}},
+      "Metadata":{"type":"object","required":["id","reference","owner_subject","disclosure","state","version"],"properties":{"id":{"type":"string","format":"uuid"},"reference":{"$ref":"#/components/schemas/Reference"},"owner_subject":{"type":"string"},"disclosure":{"enum":["workload_only","user_revealable"]},"state":{"enum":["active","revoked"]},"version":{"type":"integer"},"labels":{"type":"object","additionalProperties":{"type":"string"}}}}
+    }
+  }
+}
