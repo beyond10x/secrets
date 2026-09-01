@@ -161,7 +161,13 @@ struct TokenReviewUser {
 impl Authority for KubernetesAuthority {
     async fn verify(&self, token: &str) -> Result<Principal, AuthError> {
         let reviewer = fs::read_to_string("/var/run/secrets/kubernetes.io/serviceaccount/token")
-            .map_err(|_| AuthError::Unavailable)?;
+            .map_err(|_| {
+                tracing::warn!(
+                    stage = "reviewer_token_read",
+                    "workload authorization unavailable"
+                );
+                AuthError::Unavailable
+            })?;
         let request = TokenReview {
             api_version: "authentication.k8s.io/v1",
             kind: "TokenReview",
@@ -177,24 +183,68 @@ impl Authority for KubernetesAuthority {
             .json(&request)
             .send()
             .await
-            .map_err(|_| AuthError::Unavailable)?;
+            .map_err(|_| {
+                tracing::warn!(
+                    stage = "token_review_request",
+                    "workload authorization unavailable"
+                );
+                AuthError::Unavailable
+            })?;
         if !response.status().is_success() {
+            tracing::warn!(
+                stage = "token_review_status",
+                status = response.status().as_u16(),
+                "workload authorization unavailable"
+            );
             return Err(AuthError::Unavailable);
         }
-        let result: TokenReviewResult =
-            response.json().await.map_err(|_| AuthError::Unavailable)?;
-        let status = result.status.ok_or(AuthError::Unauthorized)?;
-        if status.authenticated != Some(true)
-            || !status.audiences.iter().any(|a| a == &self.audience)
-        {
+        let result: TokenReviewResult = response.json().await.map_err(|_| {
+            tracing::warn!(
+                stage = "token_review_decode",
+                "workload authorization unavailable"
+            );
+            AuthError::Unavailable
+        })?;
+        let status = result.status.ok_or_else(|| {
+            tracing::warn!(
+                stage = "token_review_missing_status",
+                "workload authorization refused"
+            );
+            AuthError::Unauthorized
+        })?;
+        let authenticated = status.authenticated == Some(true);
+        let audience_matched = status.audiences.iter().any(|a| a == &self.audience);
+        if !authenticated || !audience_matched {
+            tracing::warn!(
+                stage = "token_review_refused",
+                authenticated,
+                audience_matched,
+                "workload authorization refused"
+            );
             return Err(AuthError::Unauthorized);
         }
-        let subject = status.user.ok_or(AuthError::Unauthorized)?.username;
+        let subject = status
+            .user
+            .map(|user| user.username)
+            .filter(|subject| !subject.is_empty())
+            .ok_or_else(|| {
+                tracing::warn!(
+                    stage = "token_review_missing_subject",
+                    "workload authorization refused"
+                );
+                AuthError::Unauthorized
+            })?;
         let grant = self
             .grants
             .iter()
             .find(|grant| grant.subject == subject)
-            .ok_or(AuthError::Unauthorized)?;
+            .ok_or_else(|| {
+                tracing::warn!(
+                    stage = "workload_grant_missing",
+                    "workload authorization refused"
+                );
+                AuthError::Unauthorized
+            })?;
         Ok(Principal {
             subject,
             tenant: grant.tenant.clone(),

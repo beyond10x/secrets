@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4 - 2026-09-01
+
+- Emit value-free workload authorization stages so operators can distinguish Kubernetes authority
+  failures from audience and grant refusals without exposing tokens or subjects.
+
 ## 0.1.3 - 2026-09-01
 
 - Use valid Axum transaction action segments and construct those routes in a regression test before
