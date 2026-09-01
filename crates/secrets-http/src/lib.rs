@@ -37,6 +37,7 @@ pub fn router(state: AppState) -> Router {
         .route("/v1/workload/secrets", put(workload_put))
         .route("/v1/workload/secrets:get", post(workload_get))
         .route("/v1/workload/secrets:exists", post(workload_exists))
+        .route("/v1/workload/secrets:list", post(workload_list))
         .route("/v1/workload/secrets:delete", post(workload_delete))
         .route(
             "/v1/workload/tenants/{tenant}/transactions/{transaction}",
@@ -87,6 +88,11 @@ struct ListResponse {
 #[derive(Serialize)]
 struct ExistsResponse {
     exists: bool,
+}
+#[derive(Deserialize)]
+struct ScopeRequest {
+    tenant: String,
+    namespace: String,
 }
 #[derive(Deserialize)]
 struct DeleteRequest {
@@ -220,6 +226,22 @@ async fn workload_exists(
     Ok(Json(ExistsResponse {
         exists: state.store.exists(&reference).await?,
     }))
+}
+async fn workload_list(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(scope): Json<ScopeRequest>,
+) -> Result<Json<ListResponse>, ApiError> {
+    let principal = authorize(&headers, &*state.workload_authority, "secret:list").await?;
+    tenant_match(&principal, &scope.tenant)?;
+    let secrets = state
+        .store
+        .list(&scope.tenant, None)
+        .await?
+        .into_iter()
+        .filter(|metadata| metadata.reference.namespace == scope.namespace)
+        .collect();
+    Ok(Json(ListResponse { secrets }))
 }
 async fn workload_delete(
     State(state): State<AppState>,

@@ -38,6 +38,15 @@ struct PrepareRequest<'a> {
 struct ExistsResponse {
     exists: bool,
 }
+#[derive(Serialize)]
+struct ScopeRequest<'a> {
+    tenant: &'a str,
+    namespace: &'a str,
+}
+#[derive(Deserialize)]
+struct ListResponse {
+    secrets: Vec<SecretMetadata>,
+}
 
 impl Client {
     pub fn new(origin: &str, token: impl Into<String>) -> Result<Self, Error> {
@@ -69,6 +78,20 @@ impl Client {
             )
             .await?
             .exists)
+    }
+    pub async fn references(
+        &self,
+        tenant: &str,
+        namespace: &str,
+    ) -> Result<Vec<SecretMetadata>, Error> {
+        Ok(self
+            .json::<ListResponse>(
+                self.http
+                    .post(self.url("v1/workload/secrets:list")?)
+                    .json(&ScopeRequest { tenant, namespace }),
+            )
+            .await?
+            .secrets)
     }
     pub async fn delete(&self, reference: &SecretRef, actor: &str) -> Result<(), Error> {
         self.empty(
