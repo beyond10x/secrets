@@ -12,7 +12,7 @@ tasks:
       - cargo doc --workspace --no-deps
       - jq -e '.openapi == "3.1.0" and .info.version == "0.1.4"' docs/openapi.json >/dev/null
   plan:
-    cmds: [aep artifact validate]
+    cmds: [aep plan artifact validate]
   provenance:
     cmds:
       - test "$(git grep -I -E '[/]home/[^/]+/|[g]itlab\\.' -- ':!Cargo.lock' || true)" = ""
