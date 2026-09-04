@@ -27,9 +27,9 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-gate-tools-aep-0.40.3-v1
       - name: Install pinned AEP planning CLI
         run: |
-          if [ "$(aep --version 2>/dev/null || true)" != "protocol 0.40.3" ] || \
-             [ "$(protocol --version 2>/dev/null || true)" != "protocol 0.40.3" ]; then
-            cargo install --force --git https://github.com/beyond10x/aep --tag 0.40.3 --locked protocol-cli
+          if [ "$(aep --version 2>/dev/null || true)" != "protocol 0.52.0" ] || \
+             [ "$(protocol --version 2>/dev/null || true)" != "protocol 0.52.0" ]; then
+            cargo install --force --git https://github.com/beyond10x/aep --tag 0.52.0 --locked aep-cli
           fi
       - run: sudo apt-get update && sudo apt-get install -y jq
       - run: task check
