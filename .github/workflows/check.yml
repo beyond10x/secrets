@@ -8,6 +8,20 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:17.6-alpine3.22@sha256:ef257d85f76e48da1c64832459b59fcaba1a4dac97bf5d7450c77753542eee94
+        env:
+          POSTGRES_DB: secrets_check
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d secrets_check"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -33,3 +47,5 @@ jobs:
           fi
       - run: sudo apt-get update && sudo apt-get install -y jq
       - run: task check
+        env:
+          SECRETS_TEST_DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/secrets_check

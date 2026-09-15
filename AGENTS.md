@@ -18,6 +18,8 @@
 
 Run `task check` before publishing. Do not weaken tenant, audience, or associated-data checks to simplify an integration.
 
+The default `check` workflow runs `task check` against a disposable PostgreSQL service and exports `SECRETS_TEST_DATABASE_URL` to it, so `crates/secrets-postgres/tests/lifecycle.rs` exercises real persistence on every pull request instead of returning early.
+
 <!-- b10x-docs-operations:start -->
 ## Public documentation operations
 
