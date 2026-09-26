@@ -1,0 +1,35 @@
+---
+format: aep.planning-md/1
+id: review-result:nfs-acceptance-round-2
+kind: review-result
+status: active
+title: Named federated storage, acceptance critic, round 2
+relations:
+- reviews: epic:named-federated-storage
+- reviews: story:ess-custody-retrofit
+- reviews: story:rewrap-all-versions
+- reviews: story:verified-audit-actor
+- reviews: story:storage-port
+- reviews: story:local-authorizer
+- reviews: story:mount-federation
+- reviews: story:keychain-backend
+- reviews: story:onepassword-backend
+- reviews: story:remote-backend
+- reviews: story:local-cli
+revision: 1
+---
+approve
+
+Wait — one finding surfaced below, so:
+
+needs-revision
+
+story:local-authorizer — the acceptance joins two independently-failable claims with "and" ("allows every action for tenant `default` and user `default` in any namespace" and "denies every other tenant or user by name before a backend is reached"): a bug that lets a non-default tenant through would fail only the second claim while the first still holds, and a bug that wrongly denies some default-tenant action would fail only the first while the second still holds — .engineering/planning/story/local-authorizer.md:25
+
+What I read: `epic:named-federated-storage`, `review-result:nfs-acceptance-round-1` (all 8 prior findings and their outcomes), `aep plan artifact graph --format json` to confirm the 10 `decomposes` edges, and the full body of all 10 stories that decompose the epic via `aep plan artifact show story:<id>` — ess-custody-retrofit, keychain-backend, local-authorizer, local-cli, mount-federation, onepassword-backend, remote-backend, rewrap-all-versions, storage-port, verified-audit-actor (10 of 10). Also checked `aep plan artifact kinds` and `aep plan artifact lifecycle story`, and diffed the 8 revised stories' new Acceptance/Scenarios text against the round-1 findings they were meant to fix.
+
+What I could not establish: the 8 revised stories all now read as a single "named scenario set passes" clause, with the previously-joined sub-claims moved to a `## Scenarios` list — I did not verify that every bullet under `## Scenarios` is actually authored as part of the *same* named scenario set the Acceptance sentence points at (e.g., `contracts/storage/scenarios/keychain`) rather than a separate suite, since that would require reading the scenario files themselves, which are outside the plan store. `story:remote-backend`'s "with each address mapped to custody's reference as the coordinator decided" reads to me as a description of test setup rather than a second independently-failable claim, but it is close enough to the pattern round 1 flagged elsewhere that another reading is defensible. The epic's own Acceptance ("the `secrets.storage` conformance suite passes … and the `secrets.custody` suite passes") has the same two-independently-failable-claims shape as the story defect above, but the epic was not part of what this round's revision touched and I treated it as out of this round's scope rather than a finding, consistent with round 1's treatment.
+
+```findings
+[{"file": ".engineering/planning/story/local-authorizer.md", "line": 25, "category": "acceptance", "severity": "blocker", "verdict": "needs-revision", "origin": "pre-existing", "message": "the acceptance joins two independently-failable claims with \"and\" (\"allows every action for tenant `default` and user `default` in any namespace\" and \"denies every other tenant or user by name before a backend is reached\"); a bug in either half can hold while the other fails"}]
+```
