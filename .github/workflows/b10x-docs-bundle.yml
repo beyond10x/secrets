@@ -10,7 +10,15 @@ on:
       - 'b10x.docs.yaml'
       - 'changes/**/*.yaml'
       - 'docs/architecture.md'
+      - 'docs/authentication.md'
+      - 'docs/getting-started.md'
+      - 'docs/http-api.md'
+      - 'docs/limitations.md'
       - 'docs/openapi.json'
+      - 'docs/operations.md'
+      - 'docs/roadmap.md'
+      - 'docs/rust-client.md'
+      - 'docs/security-model.md'
   workflow_dispatch:
 
 permissions:
