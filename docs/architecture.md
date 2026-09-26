@@ -1,3 +1,9 @@
+---
+title: Architecture
+description: Ownership boundaries, the request path, key operations and the deployment boundary.
+sidebar_position: 8
+---
+
 # Architecture
 
 ## Ownership
@@ -22,9 +28,9 @@ The keyring JSON has this shape:
 {"active":"v2","keys":{"v1":"base64-32-byte-key","v2":"base64-32-byte-key"}}
 ```
 
-It is configuration, not database state. Keep the old key while `secrets rewrap` decrypts and re-encrypts active versions to the new key. Back up PostgreSQL and key material through separate protected mechanisms; neither is sufficient alone.
+It is configuration, not database state. `secrets rewrap` decrypts and re-encrypts the current version of each secret under the active key; older versions keep the key they were written with, so keep every old key in the keyring (see [Known limitations](limitations.md#rewrap-covers-only-current-versions) and [Operations](operations.md#rotate-the-key-encryption-key)). Back up PostgreSQL and key material through separate protected mechanisms; neither is sufficient alone.
 
 ## Deployment boundary
 
-This repository publishes source, binaries, and an OCI image. It deliberately has no standalone Helm chart. A composition chart—initially Devcenter—owns PostgreSQL selection, keyring Secret references, service-account token projection, RBAC for TokenReview, NetworkPolicy, and application wiring.
+This repository publishes source and an OCI image. It deliberately has no standalone Helm chart. A composition chart—initially Devcenter—owns PostgreSQL selection, keyring Secret references, service-account token projection, RBAC for TokenReview, NetworkPolicy, and application wiring.
 
