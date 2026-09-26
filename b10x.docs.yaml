@@ -54,7 +54,15 @@ surfaces:
     documents:
       include:
       - README.md
+      - docs/getting-started.md
+      - docs/security-model.md
+      - docs/authentication.md
+      - docs/http-api.md
+      - docs/rust-client.md
+      - docs/operations.md
       - docs/architecture.md
+      - docs/limitations.md
+      - docs/roadmap.md
     navigation:
       group: Services
       label: Secrets

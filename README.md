@@ -1,31 +1,57 @@
 # Secrets
 
-Secrets is a public, provider-neutral custody service for user and workload credentials. It encrypts every value in the application before PostgreSQL sees it and gives people safe metadata, revocation, and deletion without making connector-created values revealable.
+Secrets is an encrypted, tenant-scoped custody service for credentials that belong to people and
+to the workloads acting for them. A workload hands Secrets a value; Secrets encrypts it in the
+application, stores only ciphertext in PostgreSQL, and gives it back only to a workload that is
+authorized for that exact tenant and action. The person who owns the value can see its metadata,
+revoke it or delete it, but in this release no one can read a stored value back through a user
+endpoint.
 
-The first integration is a remote secret-store backend for Connectors. The contract is intentionally general enough for later user-created secrets, without moving OAuth refresh or provider revocation into this service.
+Status: development, version 0.1.4. The HTTP contract is [OpenAPI 3.1](docs/openapi.json).
 
-## Security model
+## Why it exists
 
-- A random AES-256-GCM data-encryption key protects each version. A versioned key-encryption key wraps that key.
-- Authenticated data binds tenant, namespace, key, version, disclosure, and format. Moving ciphertext to another record fails authentication.
-- PostgreSQL stores ciphertext, nonces, wrapped keys, key IDs, metadata, and audit records—never plaintext or KEK bytes.
-- A keyring is mounted read-only from a pre-created Kubernetes Secret. Rotation adds a key, changes `active`, runs `secrets rewrap`, verifies, then removes the old key in a later operation.
-- Workloads authenticate with projected Kubernetes service-account tokens for an exact audience. A local grant file maps exact service-account subjects to one tenant and explicit actions.
-- People authenticate through a configured Identity authority and can list, inspect, revoke, or delete only their owned resources. There is no user reveal endpoint in v0.1.
+Services that call external providers on a user's behalf end up holding that user's tokens and
+keys. Keeping those bytes in each service's own database spreads plaintext, key material and
+ad-hoc access rules across the platform. Secrets gives them one place with one set of rules:
 
-See [architecture](docs/architecture.md), the embedded [API page](docs/index.html), and [OpenAPI](docs/openapi.json).
+- **Encrypted before storage.** Every version of every value gets its own data key, wrapped by a
+  versioned key-encryption key that PostgreSQL never sees.
+- **Tenant-bound.** Every reference names a tenant, a namespace and a key, and the caller's
+  verified tenant must match before storage is touched.
+- **Least privilege.** Workloads are Kubernetes service accounts granted explicit actions; people
+  are verified by an Identity authority and can act only on what they own.
+- **Custody, not provider logic.** OAuth exchange, refresh and upstream revocation stay in the
+  integrating service. Secrets holds bytes, versions, bindings and audit records.
 
-## Run locally
+The first consumer is the remote secret-store backend of Connectors.
 
-Requirements: Rust 1.97, PostgreSQL 16+, and `task`.
+## Guide
+
+| Page | What it covers |
+|---|---|
+| [Getting started](docs/getting-started.md) | Build, create a keyring, migrate a local database |
+| [Security model](docs/security-model.md) | Envelope encryption, associated data, disclosure, revoke and delete, audit |
+| [Authentication](docs/authentication.md) | Workload tokens and grants, user tokens, the action list |
+| [HTTP API](docs/http-api.md) | Every route, its action, body and status codes |
+| [Rust client](docs/rust-client.md) | The `secrets-client` crate for workloads |
+| [Operations](docs/operations.md) | Configuration, probes, logs, key rotation, backups, image |
+| [Architecture](docs/architecture.md) | Ownership, request path, deployment boundary |
+| [Known limitations](docs/limitations.md) | What the current release does not do, or does differently from what you might expect |
+| [Roadmap](docs/roadmap.md) | Planned: named, scoped secrets across several storage backends |
+
+## Quick start
+
+Requirements: Rust 1.97, PostgreSQL 16 or later, and `task`.
 
 ```sh
 export SECRETS_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/secrets
-cargo run -p secretsctl -- generate-keyring > /tmp/secrets-keyring.json
-cargo run -p secrets-app -- migrate --keyring-file /tmp/secrets-keyring.json
+cargo run -p secretsctl -- generate-keyring > keyring.json
+cargo run -p secrets-app -- migrate --keyring-file keyring.json
 ```
 
-Serving also requires a user authority origin and an in-cluster Kubernetes TokenReview environment. Production configuration is listed by `secrets serve --help`. The service hosts documentation at `/docs`, OpenAPI at `/openapi.json`, liveness at `/health/live`, readiness at `/health/ready`, and Prometheus text metrics at `/metrics`.
+`keyring.json` holds a raw encryption key: keep it out of version control. Serving needs a
+Kubernetes cluster; see [Getting started](docs/getting-started.md).
 
 ## Workspace
 
@@ -35,7 +61,7 @@ Serving also requires a user authority origin and an in-cluster Kubernetes Token
 - `secrets-auth`: Identity and Kubernetes authority adapters
 - `secrets-http`: HTTP API and embedded docs
 - `secrets-client`: official Rust workload client
-- `secrets-app`: service and migration binary
+- `secrets-app`: the `secrets` service, migration and rewrap binary
 - `secretsctl`: operator helpers
 
 ## Development
@@ -44,7 +70,9 @@ Serving also requires a user authority origin and an in-cluster Kubernetes Token
 task check
 ```
 
-The project uses AEP artifacts under `.engineering/planning`; architecture spanning repositories belongs in the central Atlas, not this product-local plan.
+`task check` runs formatting, tests, clippy, the documentation build, plan validation and a
+provenance check. The PostgreSQL lifecycle test runs only when `SECRETS_TEST_DATABASE_URL` points
+at a disposable database.
 
 ## License
 
