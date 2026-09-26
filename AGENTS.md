@@ -14,6 +14,14 @@
 - Values never belong in URLs, logs, metrics, errors, labels, or planning artifacts.
 - The deployment chart belongs to the composing product; this repository does not own a Helm chart.
 
+## Specification and plan
+
+ESS drives this repository. `spec/` holds the system: `secrets.custody` is retrofitted from the
+shipped service and cites its sources; `secrets.storage` is the named, scoped, federated storage
+model. A new noun gets its ESS declaration before an AEP story is written around it, and each
+story's acceptance is a set of named conformance scenarios. The planning store under
+`.engineering/planning` is the plan; `aep` is its only writer.
+
 ## Gate
 
 Run `task check` before publishing. Do not weaken tenant, audience, or associated-data checks to simplify an integration.
