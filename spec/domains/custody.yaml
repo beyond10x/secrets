@@ -1,5 +1,5 @@
 # Retrofitted from the shipped service at origin/main b63dcdf. Describes what the code does today.
-# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.3.0); crates/secrets-core/src/lib.rs;
+# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.3.1); crates/secrets-core/src/lib.rs;
 # crates/secrets-postgres/{migrations/0001_initial.sql,src/lib.rs}; crates/secrets-http/src/lib.rs;
 # crates/secrets-auth/src/lib.rs; crates/secrets-app/src/main.rs.
 #
@@ -253,7 +253,9 @@ commands:
         type: secrets.custody.Reference
       - name: owner_subject
         # UNMAPPED: an empty owner_subject is replaced by the principal's subject
-        # (crates/secrets-http/src/lib.rs:192-196); a conditional source is not expressible.
+        # (crates/secrets-http/src/lib.rs:192-196); a conditional source is not expressible. The ess/14
+        # fallback `{input: <field>, else: {generated: true}}` needs an Optional input and a minted
+        # value, and this is a required String falling back to the caller's subject, so it does not apply.
         type: String
       - name: value
         type: Bytes
@@ -261,6 +263,27 @@ commands:
         type: Optional<secrets.custody.Disclosure>
       - name: labels
         type: Optional<Map<String, String>>
+    # 200 Json<SecretMetadata> (crates/secrets-http/src/lib.rs:176-201 at cb10810; docs/http-api.md:73),
+    # the metadata of the row after the write; never a value.
+    response: &metadata_response
+      - name: id
+        type: Uuid
+      - name: reference
+        type: secrets.custody.Reference
+      - name: owner_subject
+        type: String
+      - name: disclosure
+        type: secrets.custody.Disclosure
+      - name: state
+        type: secrets.custody.Secret.State
+      - name: version
+        type: Integer
+      - name: labels
+        type: Map<String, String>
+      - name: created_at
+        type: String
+      - name: updated_at
+        type: String
     outcomes:
       # No row at the reference: INSERT, version 1, state active (crates/secrets-postgres/src/lib.rs:95, 104-112)
       - name: created
@@ -273,8 +296,13 @@ commands:
           # INSERT binds disclosure and labels (crates/secrets-postgres/src/lib.rs:101-106)
           disclosure: input.disclosure
           labels: input.labels
-          # version 1 on first put (crates/secrets-postgres/src/lib.rs:95)
-          version: '1'
+          # version 1 on first put (crates/secrets-postgres/src/lib.rs:139 at cb10810)
+          version: 1
+          # Uuid::now_v7 on first put (crates/secrets-postgres/src/lib.rs:139 at cb10810)
+          id: {generated: true}
+          # column defaults now() (migrations/0001_initial.sql:11-12)
+          created_at: {generated: true}
+          updated_at: {generated: true}
 
         emits:
           - secrets.custody.SecretPut
@@ -296,10 +324,11 @@ commands:
           # (crates/secrets-postgres/src/lib.rs:104)
           disclosure: input.disclosure
           labels: input.labels
-          # UNMAPPED: the version becomes current_version + 1 (crates/secrets-postgres/src/lib.rs:88-94),
-          # and `sets:` has no increment. With no entry here, the synthesized replace scenarios expect
-          # the version left at 1, which the shipped code does not do. Settled by an increment effect
-          # in the language.
+          # current_version + 1 (crates/secrets-postgres/src/lib.rs:133-138 at cb10810)
+          version: {increment: 1}
+          # ON CONFLICT DO UPDATE ... updated_at=now(); id and created_at are kept
+          # (crates/secrets-postgres/src/lib.rs:149 at cb10810)
+          updated_at: {generated: true}
         emits:
           - secrets.custody.SecretPut
         payload:
@@ -309,8 +338,10 @@ commands:
         summary: The secret holds a new current version and is Active again, including after a revoke.
 
       # validate_ref: any part empty, over 255 bytes, or containing NUL
-      # (crates/secrets-postgres/src/lib.rs:84, 362-369). UNMAPPED: length and NUL rules are not
-      # expressible as `when`; declared external.
+      # (crates/secrets-postgres/src/lib.rs:129, 437-444 at cb10810). UNMAPPED: the length rule counts
+      # bytes (`str::len`) and `.count` counts Unicode scalar values, and a NUL test is not expressible,
+      # so the refusal is declared external. The empty-part rule alone is expressible
+      # (`reference.tenant.count == 0`, ...); splitting it into a guarded outcome is for the owner.
       - name: invalid-reference
         external: a reference part is empty, longer than 255 bytes, or contains NUL
         error: secrets.custody.InvalidInput
@@ -334,11 +365,17 @@ commands:
     input:
       - name: reference
         type: secrets.custody.Reference
+    # 200 Json<SecretMetadata> with state revoked (crates/secrets-http/src/lib.rs:143-159 at cb10810;
+    # docs/http-api.md:64).
+    response: *metadata_response
     outcomes:
       # Revoke from Revoked succeeds again and appends another audit row (crates/secrets-postgres/src/lib.rs:201-204)
       - name: revoked
         moves: secrets.custody.Secret.revoke
         instance: reference
+        sets:
+          # UPDATE secrets SET state='revoked',updated_at=now() (crates/secrets-postgres/src/lib.rs:246 at cb10810)
+          updated_at: {generated: true}
         emits:
           - secrets.custody.SecretRevoked
         payload:

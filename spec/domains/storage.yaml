@@ -213,8 +213,9 @@ entities:
     fields:
       # Decided by the coordinator 2026-09-27: ListMetadata returns name, scope and version only.
       # Decided by the coordinator 2026-09-27: an opaque, backend-assigned string; its first value is
-      # opaque and every successful Write changes it. Backend-assigned, so no outcome sets it; "every
-      # Write changes it" compares two versions of one record, which no invariant can state.
+      # opaque and every successful Write changes it. Backend-assigned, so Write sets it
+      # `{generated: true}` (ess/14); "every Write changes it" compares two versions of one record,
+      # which neither an invariant nor a value expression can state.
       - name: version
         type: Optional<String>
     # "every secret belongs to exactly one scope": the scope is part of the identity.
@@ -469,7 +470,7 @@ commands:
         error: secrets.storage.InvalidName
       # Decided by the coordinator 2026-09-27: at most 1 MiB (1048576 bytes).
       # UNMAPPED: external because `value.count` over Bytes is refused (`cannot select count from
-      # Bytes`, ess 0.35.0), so the bound cannot be a guard.
+      # Bytes`, ess 0.35.0 and 0.36.0), so the bound cannot be a guard.
       - name: too-large
         external: the value is longer than 1048576 bytes
         error: secrets.storage.TooLarge
@@ -486,6 +487,8 @@ commands:
         external: no secret is stored at the address
         creates: secrets.storage.Secret
         instance: address
+        sets:
+          version: {generated: true}
         emits: [secrets.storage.SecretWritten]
         payload:
           secrets.storage.SecretWritten:
@@ -494,6 +497,8 @@ commands:
       - name: replaced
         updates: secrets.storage.Secret
         instance: address
+        sets:
+          version: {generated: true}
         emits: [secrets.storage.SecretWritten]
         payload:
           secrets.storage.SecretWritten:
