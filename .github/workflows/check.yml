@@ -38,12 +38,18 @@ jobs:
           path: |
             ~/.cargo/bin/aep
             ~/.cargo/bin/protocol
-          key: ${{ runner.os }}-${{ runner.arch }}-gate-tools-aep-0.60.0-v1
+            ~/.cargo/bin/ess
+          key: ${{ runner.os }}-${{ runner.arch }}-gate-tools-aep-0.60.0-ess-0.35.0-v1
       - name: Install pinned AEP planning CLI
         run: |
           if [ "$(aep --version 2>/dev/null || true)" != "aep 0.60.0" ] || \
              [ "$(protocol --version 2>/dev/null || true)" != "aep 0.60.0" ]; then
             cargo install --force --git https://github.com/beyond10x/aep --tag 0.60.0 --locked aep-cli
+          fi
+      - name: Install pinned ESS specification CLI
+        run: |
+          if [ "$(ess --version 2>/dev/null || true)" != "ess 0.35.0" ]; then
+            cargo install --force --git https://github.com/beyond10x/ess --tag 0.35.0 --locked ess-cli --bin ess
           fi
       - run: sudo apt-get update && sudo apt-get install -y jq
       - run: task check
