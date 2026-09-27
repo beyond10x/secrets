@@ -157,6 +157,11 @@ entities:
     # jsonb column (migrations/0001_initial.sql:32), with no foreign key, so deleting a secret leaves
     # a prepared batch in place (a `references` reading) — but there is no single field a `via`
     # could name. Settled by a relation form over a list of union payloads, or by the owner.
+    # UNMAPPED: no route reads a prepared transaction (crates/secrets-http/src/lib.rs:36-56), so no
+    # view is declared and `tenant`, `actor` and `mutations` are observable only through what commit
+    # applies. The specification-level mutation audit (2026-09-27) found that dropping any of the
+    # three `sets` entries on PrepareTransaction.prepared changes no synthesized scenario. Settled by
+    # the owner deciding whether a read of a prepared batch belongs to the contract.
     lifecycle:
       # Structural, not read from the code: the table has no status, so one state that is both
       # initial and terminal.
@@ -216,6 +221,14 @@ errors:
   - name: secrets.custody.Unavailable
     summary: 503. Storage, crypto or authority unavailable (crates/secrets-http/src/lib.rs:370, 382-384).
 
+  - name: secrets.custody.PayloadTooLarge
+    summary: 413. The request body exceeds 1 MiB (RequestBodyLimitLayer, crates/secrets-http/src/lib.rs:57); refused by the layer before the handler authenticates, so the body is not the ApiError shape.
+
+# UNMAPPED: a JSON body that does not deserialize (syntax, missing field, content type) is refused by
+# axum's `Json` extractor before any handler runs (crates/secrets-http/src/lib.rs:125, 146, 163, 179,
+# 205, 219, 235, 251, 273), with its own status and body, not an ApiError. Which of those statuses
+# the contract promises is for the owner; no outcome is declared.
+
 commands:
   # PUT /v1/workload/secrets (crates/secrets-http/src/lib.rs:46, 176-201;
   # docs/openapi.json #/paths/~1v1~1workload~1secrets/put). Workload action `secret:write`.
@@ -242,6 +255,9 @@ commands:
         sets:
           owner_subject: input.owner_subject
           value: input.value
+          # INSERT binds disclosure and labels (crates/secrets-postgres/src/lib.rs:101-106)
+          disclosure: input.disclosure
+          labels: input.labels
           # version 1 on first put (crates/secrets-postgres/src/lib.rs:95)
           version: '1'
 
@@ -261,6 +277,14 @@ commands:
         sets:
           owner_subject: input.owner_subject
           value: input.value
+          # ON CONFLICT DO UPDATE SET disclosure=EXCLUDED.disclosure, labels=EXCLUDED.labels
+          # (crates/secrets-postgres/src/lib.rs:104)
+          disclosure: input.disclosure
+          labels: input.labels
+          # UNMAPPED: the version becomes current_version + 1 (crates/secrets-postgres/src/lib.rs:88-94),
+          # and `sets:` has no increment. With no entry here, the synthesized replace scenarios expect
+          # the version left at 1, which the shipped code does not do. Settled by an increment effect
+          # in the language.
         emits:
           - secrets.custody.SecretPut
         payload:
@@ -606,6 +630,34 @@ events:
     fields:
       - name: actor
         type: String
+
+outcome_groups:
+  # RequestBodyLimitLayer::new(1024 * 1024) wraps every route (crates/secrets-http/src/lib.rs:57);
+  # these are the commands that take a JSON body. Commit, abort and rewrap take none.
+  - name: body-limit
+    commands:
+      - secrets.custody.PutSecret
+      - secrets.custody.RevokeOwnedSecret
+      - secrets.custody.DeleteOwnedSecret
+      - secrets.custody.DeleteSecret
+      - secrets.custody.PrepareTransaction
+    outcomes:
+      - name: too-large
+        external: the request body is longer than 1048576 bytes
+        error: secrets.custody.PayloadTooLarge
+
+# The disclosure and labels inputs are optional; serde fills an absent one with `workload_only` and an
+# empty map (crates/secrets-core/src/lib.rs:52-60) before the store writes it.
+conversions:
+  - from: Optional<secrets.custody.Disclosure>
+    to: secrets.custody.Disclosure
+    because: >-
+      An absent disclosure is `workload_only` (#[serde(default = "workload_only")],
+      crates/secrets-core/src/lib.rs:52-53).
+  - from: Optional<Map<String, String>>
+    to: Map<String, String>
+    because: >-
+      Absent labels are the empty map (#[serde(default)], crates/secrets-core/src/lib.rs:54-55).
 
 views:
   # GET /v1/user/secrets (crates/secrets-http/src/lib.rs:42, 111-121; docs/openapi.json

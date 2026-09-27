@@ -179,7 +179,8 @@ entities:
               - exists: {in: capabilities, as: c, that: c == list}
     # UNMAPPED: how a backend instance is configured (registered under a kind and label) is
     # deferred by the coordinator 2026-09-27 to story:local-cli (local config file); no command
-    # creates one.
+    # creates one. Until one does, no synthesized scenario checks the two invariants above: the
+    # mutation audit (2026-09-27) weakened the first and no scenario changed.
     lifecycle:
       initial: Present
       states: [Present]
@@ -196,6 +197,10 @@ entities:
       # keychain and remote need no locator. The shape is not expressible as a type; it is stated here.
       - name: locator
         type: String
+    # UNMAPPED: no view holds a Binding, so the locator Bind sets is observable only through a
+    # later Read; dropping `locator` from Bind.bound's `sets` changes no synthesized scenario
+    # (mutation audit, 2026-09-27). No story names a binding listing; whether the CLI or the port
+    # exposes one is for the owner.
     lifecycle:
       initial: Present
       states: [Present]
@@ -226,7 +231,14 @@ entities:
 
 actors:
   # Local authorizer: the local user may do everything in tenant `default` for user `default`;
-  # any other tenant or user is denied (the `denied` outcomes below).
+  # any other tenant or user is denied. A second tenant (`denied`) and a second user in tenant
+  # `default` (`denied-user`) are separate outcomes with disjoint guards because story
+  # local-authorizer names them as separate behaviours; one guard over both let the synthesized
+  # suite witness only the input where both hold (mutation audit, 2026-09-27).
+  # UNMAPPED: the epic's tenant- and user-isolation scenarios, and stories keychain-backend and
+  # remote-backend ("two tenants ... and two users holding the same name stay separate"), need a
+  # second tenant and user that can write; LocalUser is denied both, and no other actor or
+  # authorizer is declared. Settled by the owner naming the actor those scenarios run as.
   - name: secrets.storage.LocalUser
     may:
       - secrets.storage.AddNamespace
@@ -264,6 +276,15 @@ errors:
     naming: {wire: conflict}
     summary: The command collides with an existing record.
 
+# UNMAPPED: precedence between the authorizer and name validation. `denied`/`denied-user` and
+# `name-too-long` (Bind, Write, Read, Delete, Rename) both match a long name in a denied scope, and
+# RemoveNamespace's `denied` and `is-default` both match namespace `default` in another tenant
+# (guard analysis, 2026-09-27). "decided by an authorizer before any backend call" orders the
+# authorizer before the backend, not before name checks. The synthesized `name-too-long` and
+# `is-default` scenarios use a non-default scope, so they hold only if name checks come first.
+# Settled by the owner choosing the order; the losing guard then conjoins the other's negation.
+# UNMAPPED: story local-cli lists a `describe` command; no command or view here describes one secret.
+# Settled by the owner naming what describe returns (ListMetadata's fields for one address, or more).
 commands:
   - name: secrets.storage.AddNamespace
     input:
@@ -364,7 +385,10 @@ commands:
         example: op://Work/OpenAI/credential
     outcomes:
       - name: denied
-        when: {any: [address.scope.tenant != default, address.scope.user != default]}
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
         error: secrets.storage.Denied
       - name: name-too-long
         when: address.name.count > 128
@@ -397,7 +421,10 @@ commands:
         type: secrets.storage.Address
     outcomes:
       - name: denied
-        when: {any: [address.scope.tenant != default, address.scope.user != default]}
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
         error: secrets.storage.Denied
       - name: not-found
         external: the address has no binding
@@ -415,6 +442,10 @@ commands:
   # backend is called.
   # UNMAPPED (#27): "no backend involved" is not expressible; it is stated in the outcome text only.
   # The rule reads other entities, which a `when` cannot.
+  # UNMAPPED: "the namespace has no mount" in the `unresolved` outcomes. An absent Namespace.mount
+  # means the default keychain mount (coordinator, 2026-09-27; Namespace.mount above), so an existing
+  # namespace always has one; the case reads as "the namespace does not exist". Settled by the owner
+  # confirming that reading, or naming a namespace state with no mount.
   - name: secrets.storage.Write
     input:
       - name: address
@@ -423,7 +454,11 @@ commands:
         type: Bytes
     outcomes:
       - name: denied
-        when: {any: [address.scope.tenant != default, address.scope.user != default]}
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
         error: secrets.storage.Denied
         summary: Decided by the authorizer before any backend call.
       - name: name-too-long
@@ -433,6 +468,8 @@ commands:
         external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
         error: secrets.storage.InvalidName
       # Decided by the coordinator 2026-09-27: at most 1 MiB (1048576 bytes).
+      # UNMAPPED: external because `value.count` over Bytes is refused (`cannot select count from
+      # Bytes`, ess 0.35.0), so the bound cannot be a guard.
       - name: too-large
         external: the value is longer than 1048576 bytes
         error: secrets.storage.TooLarge
@@ -473,9 +510,17 @@ commands:
     response:
       - name: value
         type: Bytes
+      # story onepassword-backend, Scenarios: "a bound `op://` locator reads its value and version".
+      # Optional as Secret.version is.
+      - name: version
+        type: Optional<String>
     outcomes:
       - name: denied
-        when: {any: [address.scope.tenant != default, address.scope.user != default]}
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
         error: secrets.storage.Denied
         summary: Decided by the authorizer before any backend call.
       - name: name-too-long
@@ -504,7 +549,11 @@ commands:
         type: secrets.storage.Address
     outcomes:
       - name: denied
-        when: {any: [address.scope.tenant != default, address.scope.user != default]}
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
         error: secrets.storage.Denied
         summary: Decided by the authorizer before any backend call.
       - name: name-too-long
@@ -543,11 +592,19 @@ commands:
         example: openai-work
     outcomes:
       - name: denied
-        when: {any: [address.scope.tenant != default, address.scope.user != default]}
+        when: address.scope.tenant != default
         error: secrets.storage.Denied
         summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      # Two outcomes rather than one `any`, so each name's bound is witnessed on its own.
       - name: name-too-long
-        when: {any: [address.name.count > 128, new_name.count > 128]}
+        when: address.name.count > 128
+        error: secrets.storage.InvalidName
+      - name: new-name-too-long
+        when: {all: [address.name.count <= 128, new_name.count > 128]}
         error: secrets.storage.InvalidName
       - name: invalid-name
         external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
@@ -584,7 +641,11 @@ commands:
         type: secrets.storage.Scope
     outcomes:
       - name: denied
-        when: {any: [scope.tenant != default, scope.user != default]}
+        when: scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [scope.tenant == default, scope.user != default]}
         error: secrets.storage.Denied
         summary: Decided by the authorizer before any backend call.
       - name: unresolved
