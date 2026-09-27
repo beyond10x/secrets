@@ -2,11 +2,11 @@
 format: aep.planning-md/2
 id: story:resolve-spec-markers
 kind: story
-status: active
+status: implemented
 title: Every open spec marker has a recorded outcome
 relations:
 - decomposes: epic:encrypted-custody
-revision: 3
+revision: 4
 ---
 ## Acceptance
 

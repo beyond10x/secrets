@@ -2,11 +2,11 @@
 format: aep.planning-md/2
 id: story:refusal-codes
 kind: story
-status: active
+status: implemented
 title: Every refusal carries a distinct machine-readable code
 relations:
 - decomposes: epic:encrypted-custody
-revision: 3
+revision: 4
 ---
 ## Acceptance
 
