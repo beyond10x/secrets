@@ -1,0 +1,19 @@
+# validate_ref refuses an empty part (crates/secrets-postgres/src/lib.rs:437-444); the guard
+# `reference.key.count == 0` of `malformed-reference` in spec/domains/custody.yaml. The synthesized scenario reaches the
+# branch only through NUL, so dropping `value.is_empty()` survives it.
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-put-with-an-empty-key-is-an-invalid-reference
+summary: A put whose key is empty is refused as an invalid reference and stores nothing.
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PutSecret
+  actor: secrets.custody.Workload
+  input:
+    reference: {tenant: tenant-a, namespace: connectors, key: ''}
+    owner_subject: user-a
+    value: ZW1wdHk=
+  outcome: malformed-reference
+  error:
+    name: secrets.custody.InvalidInput
+  no_events: [secrets.custody.SecretPut]

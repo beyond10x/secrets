@@ -207,6 +207,9 @@ actors:
       - secrets.custody.PrepareTransaction
       - secrets.custody.CommitTransaction
       - secrets.custody.AbortTransaction
+      - secrets.custody.ReadSecretValue
+      - secrets.custody.CheckSecretExists
+      - secrets.custody.ListNamespaceSecrets
 
   # `secrets rewrap` runs with database and keyring access and no authority check
   # (crates/secrets-app/src/main.rs:31-37, 68-73).
@@ -239,10 +242,10 @@ errors:
   - name: secrets.custody.PayloadTooLarge
     summary: 413. The request body exceeds 1 MiB (RequestBodyLimitLayer, crates/secrets-http/src/lib.rs:57); refused by the layer before the handler authenticates, so the body is not the ApiError shape.
 
-# UNMAPPED: a JSON body that does not deserialize (syntax, missing field, content type) is refused by
-# axum's `Json` extractor before any handler runs (crates/secrets-http/src/lib.rs:125, 146, 163, 179,
-# 205, 219, 235, 251, 273), with its own status and body, not an ApiError. Which of those statuses
-# the contract promises is for the owner; no outcome is declared.
+# A JSON body that does not parse into the handler's request type (syntax, missing field, wrong
+# type, content type) is refused by `JsonBody` before the handler authenticates, as ApiError::Invalid:
+# 400 with {"error": "Bad Request"} and no part of the input (crates/secrets-http/src/lib.rs:396-415).
+# Declared as the `unparsable-body` group below.
 
 commands:
   # PUT /v1/workload/secrets (crates/secrets-http/src/lib.rs:46, 176-201;
@@ -337,13 +340,32 @@ commands:
             owner_subject: input.owner_subject
         summary: The secret holds a new current version and is Active again, including after a revoke.
 
-      # validate_ref: any part empty, over 255 bytes, or containing NUL
-      # (crates/secrets-postgres/src/lib.rs:129, 437-444 at cb10810). UNMAPPED: the length rule counts
-      # bytes (`str::len`) and `.count` counts Unicode scalar values, and a NUL test is not expressible,
-      # so the refusal is declared external. The empty-part rule alone is expressible
-      # (`reference.tenant.count == 0`, ...); splitting it into a guarded outcome is for the owner.
+      # validate_ref refuses a part that is empty, longer than 255 bytes, or contains NUL, with one
+      # 400 for all three (crates/secrets-postgres/src/lib.rs:129, 437-444). Empty and NUL are guards.
+      - name: malformed-reference
+        when:
+          any:
+            - reference.tenant.count == 0
+            - reference.namespace.count == 0
+            - reference.key.count == 0
+            - reference.tenant: {contains: "\0"}
+            - reference.namespace: {contains: "\0"}
+            - reference.key: {contains: "\0"}
+        error: secrets.custody.InvalidInput
+
+      # The length rule counts bytes, `value.len() > 255` (crates/secrets-postgres/src/lib.rs:439),
+      # and `.count` counts Unicode scalar values, so the rule is external. A part over 255 bytes has
+      # more than 63 characters (UTF-8 encodes one in at most 4 bytes): that is the eligibility. Its
+      # first term implies the others and is listed first only so synthesis witnesses the refusal
+      # with a 256-character ASCII key; it adds nothing to the condition.
       - name: invalid-reference
-        external: a reference part is empty, longer than 255 bytes, or contains NUL
+        external: a reference part is longer than 255 bytes
+        when:
+          any:
+            - reference.key.count >= 256
+            - reference.tenant.count > 63
+            - reference.namespace.count > 63
+            - reference.key.count > 63
         error: secrets.custody.InvalidInput
 
       - name: unauthorized
@@ -351,7 +373,13 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the grant lacks secret:write, or its tenant is not reference.tenant
+        external: the grant's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:write, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       - name: unavailable
@@ -394,7 +422,13 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the scope lacks secret:revoke, or the caller's tenant is not reference.tenant
+        external: the caller's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the scope lacks secret:revoke, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       - name: unavailable
@@ -429,7 +463,13 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the scope lacks secret:delete, or the caller's tenant is not reference.tenant
+        external: the caller's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the scope lacks secret:delete, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       - name: unavailable
@@ -465,7 +505,13 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the grant lacks secret:delete, or its tenant is not reference.tenant
+        external: the grant's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:delete, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       - name: unavailable
@@ -473,12 +519,19 @@ commands:
         error: secrets.custody.Unavailable
 
   # PUT /v1/workload/tenants/{tenant}/transactions/{transaction} (crates/secrets-http/src/lib.rs:51-54, 269-282;
-  # crates/secrets-postgres/src/lib.rs:220-258). Workload action `secret:prepare`.
+  # crates/secrets-postgres/src/lib.rs:265-312). Workload action `secret:prepare`.
   # Body PrepareRequest {actor, mutations} (crates/secrets-http/src/lib.rs:105-109).
+  #
+  # The path tenant is not an input. The handler refuses a path tenant that is not the verified
+  # principal's (tenant_match, crates/secrets-http/src/lib.rs:276, 347-353), so every batch that
+  # reaches the store is prepared in the caller's tenant, and the store's tenant rule compares each
+  # mutation with that tenant (crates/secrets-postgres/src/lib.rs:275-283). The caller is outside
+  # the input, so that rule is `cross-tenant-batch`, external. Modelled this way because ESS 0.36
+  # cannot witness the input form: a guard comparing a mutation's tenant with a `tenant` input is
+  # accepted by `ess specify validate`, but synthesis finds no candidate for the equality and refuses
+  # `prepared`, `duplicate` and `unavailable` (ESS-SYNTH-003).
   - name: secrets.custody.PrepareTransaction
     input:
-      - name: tenant
-        type: String
       - name: transaction
         type: Uuid
       - name: actor
@@ -487,30 +540,39 @@ commands:
         type: List<secrets.custody.Mutation>
     outcomes:
       # Stored only; no secret changes until commit. References are not validated here
-      # (crates/secrets-postgres/src/lib.rs:230-238 checks tenant only).
+      # (crates/secrets-postgres/src/lib.rs:272-283 checks emptiness and tenant only).
       - name: prepared
         creates: secrets.custody.PreparedTransaction
         instance: transaction
         sets:
-          tenant: input.tenant
+          # the caller's tenant (see above)
+          tenant: {generated: true}
           actor: input.actor
           mutations: input.mutations
         emits:
           - secrets.custody.TransactionPrepared
         payload:
           secrets.custody.TransactionPrepared:
-            tenant: input.tenant
+            tenant: {generated: true}
             transaction: input.transaction
-        summary: The batch is held for later commit or abort, only as an AES-256-GCM envelope from the service keyring bound to the tenant, the transaction id and the actor, and for at most 600 seconds; expired batches of the tenant are removed.
+        summary: The batch is held in the caller's tenant for later commit or abort, only as an AES-256-GCM envelope from the service keyring bound to the tenant, the transaction id and the actor, and for at most 600 seconds; expired batches of the tenant are removed.
 
-      # UNMAPPED: list emptiness and per-item tenant are not expressible as `when`
-      # (crates/secrets-postgres/src/lib.rs:227-238); declared external.
-      - name: invalid-batch
-        external: the batch is empty, or a mutation names another tenant
+      # StoreError::Invalid("empty batch") (crates/secrets-postgres/src/lib.rs:272-274).
+      - name: empty-batch
+        when: mutations.count == 0
         error: secrets.custody.InvalidInput
 
+      # StoreError::Invalid("cross-tenant batch") (crates/secrets-postgres/src/lib.rs:275-283).
+      - name: cross-tenant-batch
+        external: a mutation names a tenant other than the caller's
+        when: mutations.count > 0
+        error: secrets.custody.InvalidInput
+
+      # The unique key and the database are reached only after the emptiness and tenant checks
+      # (crates/secrets-postgres/src/lib.rs:272-311), so both are eligible only for a non-empty batch.
       - name: duplicate
         external: a transaction with this id is already prepared in the tenant
+        when: mutations.count > 0
         error: secrets.custody.Conflict
 
       - name: unauthorized
@@ -518,11 +580,18 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the grant lacks secret:prepare, or its tenant is not the path tenant
+        external: the path names a tenant other than the grant's
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:prepare, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       - name: unavailable
         external: storage or TokenReview is unavailable
+        when: mutations.count > 0
         error: secrets.custody.Unavailable
 
   # POST .../transactions/{transaction}/commit (crates/secrets-http/src/lib.rs:19-20, 55, 283-292;
@@ -568,7 +637,13 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the grant lacks secret:commit, or its tenant is not the path tenant
+        external: the grant's tenant is not the path tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:commit, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       # Nothing is applied when the batch envelope does not open.
@@ -604,7 +679,13 @@ commands:
         error: secrets.custody.Unauthorized
 
       - name: forbidden
-        external: the grant lacks secret:abort, or its tenant is not the path tenant
+        external: the grant's tenant is not the path tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:abort, for a principal of the addressed tenant
         error: secrets.custody.Forbidden
 
       - name: unavailable
@@ -624,7 +705,11 @@ commands:
         type: String
     outcomes:
       # UNMAPPED: changes many Secrets at once without moving them; an outcome has one subject.
+      # One `rewrap` audit row per re-encrypted current version (crates/secrets-postgres/src/lib.rs:93),
+      # so the event exists only when some current version was under another key; which versions
+      # are is stored state, not input.
       - name: rewrapped
+        external: at least one current version is wrapped by a key other than the operator's active key
         emits:
           - secrets.custody.SecretsRewrapped
         payload:
@@ -632,8 +717,133 @@ commands:
             actor: input.actor
         summary: Every current version and every held prepared batch is wrapped by the active key.
 
+      # The SELECT finds no row (crates/secrets-postgres/src/lib.rs:55-57), so no version is rewritten
+      # and no audit row is written; held batches are still resealed (crates/secrets-postgres/src/lib.rs:96).
+      # The only record is the command's own output, `rewrapped 0 secret(s)` (crates/secrets-app/src/main.rs:70-73).
+      - name: nothing-to-rewrap
+        emits:
+          - secrets.custody.NothingRewrapped
+        payload:
+          secrets.custody.NothingRewrapped:
+            actor: input.actor
+        summary: Every current version was already wrapped by the active key; nothing is re-encrypted and nothing is recorded.
+
       - name: failed
         external: storage is unavailable, or a current version or a held batch does not decrypt with the keyring
+        error: secrets.custody.Unavailable
+
+  # POST /v1/workload/secrets:get (crates/secrets-http/src/lib.rs:47, 202-215;
+  # crates/secrets-postgres/src/lib.rs:207-228) as a command, so its refusals are declared: a
+  # principal of another tenant, or one lacking `secret:read_value`, is refused before the store is
+  # read and the refusal carries only its reason (crates/secrets-http/src/lib.rs:321-353, 374-393).
+  # The value it returns is the SecretValue view.
+  - name: secrets.custody.ReadSecretValue
+    input:
+      - name: reference
+        type: secrets.custody.Reference
+    outcomes:
+      - name: read
+        emits:
+          - secrets.custody.SecretValueRead
+        payload:
+          secrets.custody.SecretValueRead:
+            reference: input.reference
+        summary: The caller receives the current version's value and metadata.
+
+      # get filters on state='active' (crates/secrets-postgres/src/lib.rs:208), so a revoked secret is
+      # not found either.
+      - name: not-found
+        external: no Active secret is stored at the reference
+        error: secrets.custody.NotFound
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:read_value, for a principal of the addressed tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage, decryption or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # POST /v1/workload/secrets:exists (crates/secrets-http/src/lib.rs:48, 216-231;
+  # crates/secrets-postgres/src/lib.rs:228-232) as a command, for its refusals. The answer is the
+  # ActiveSecrets view.
+  - name: secrets.custody.CheckSecretExists
+    input:
+      - name: reference
+        type: secrets.custody.Reference
+    outcomes:
+      - name: checked
+        emits:
+          - secrets.custody.SecretExistenceChecked
+        payload:
+          secrets.custody.SecretExistenceChecked:
+            reference: input.reference
+        summary: The caller learns whether an Active secret is stored at the reference.
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:read_metadata, for a principal of the addressed tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # POST /v1/workload/secrets:list (crates/secrets-http/src/lib.rs:49, 232-247) as a command, for
+  # its refusals. Body ScopeRequest {tenant, namespace} (crates/secrets-http/src/lib.rs:94-98); the
+  # listing is the NamespaceSecrets view.
+  - name: secrets.custody.ListNamespaceSecrets
+    input:
+      - name: tenant
+        type: String
+      - name: namespace
+        type: String
+    outcomes:
+      - name: listed
+        emits:
+          - secrets.custody.NamespaceSecretsListed
+        payload:
+          secrets.custody.NamespaceSecretsListed:
+            tenant: input.tenant
+            namespace: input.namespace
+        summary: The caller receives the metadata of every secret in the namespace, in both states.
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      # tenant_match against the body tenant (crates/secrets-http/src/lib.rs:238).
+      - name: forbidden
+        external: the grant's tenant is not the requested tenant
+        error: secrets.custody.Forbidden
+
+      # Principal::permits (crates/secrets-auth/src/lib.rs:14-16), checked for every route before
+      # its tenant (crates/secrets-http/src/lib.rs:342-344).
+      - name: missing-action
+        external: the grant lacks secret:list, for a principal of the addressed tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or TokenReview is unavailable
         error: secrets.custody.Unavailable
 
 events:
@@ -682,10 +892,37 @@ events:
       - name: transaction
         type: Uuid
 
-  # audit action `rewrap`, one per re-encrypted secret (crates/secrets-postgres/src/lib.rs:72). Not published.
+  # audit action `rewrap`, one per re-encrypted secret (crates/secrets-postgres/src/lib.rs:93). Not published.
   - name: secrets.custody.SecretsRewrapped
     fields:
       - name: actor
+        type: String
+
+  # `rewrapped 0 secret(s)` on the command's output (crates/secrets-app/src/main.rs:70-73); no audit
+  # row is written. Not published.
+  - name: secrets.custody.NothingRewrapped
+    fields:
+      - name: actor
+        type: String
+
+  # No audit row is written for a read (crates/secrets-http/src/lib.rs:202-247). Not published.
+  - name: secrets.custody.SecretValueRead
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+
+  # No audit row is written for a read. Not published.
+  - name: secrets.custody.SecretExistenceChecked
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+
+  # No audit row is written for a read. Not published.
+  - name: secrets.custody.NamespaceSecretsListed
+    fields:
+      - name: tenant
+        type: String
+      - name: namespace
         type: String
 
 outcome_groups:
@@ -698,10 +935,30 @@ outcome_groups:
       - secrets.custody.DeleteOwnedSecret
       - secrets.custody.DeleteSecret
       - secrets.custody.PrepareTransaction
+      - secrets.custody.ReadSecretValue
+      - secrets.custody.CheckSecretExists
+      - secrets.custody.ListNamespaceSecrets
     outcomes:
       - name: too-large
         external: the request body is longer than 1048576 bytes
         error: secrets.custody.PayloadTooLarge
+
+  # JsonBody (crates/secrets-http/src/lib.rs:396-415) on every route that takes a JSON body.
+  # The typed input cannot carry a body that does not parse, so the condition is external.
+  - name: unparsable-body
+    commands:
+      - secrets.custody.PutSecret
+      - secrets.custody.RevokeOwnedSecret
+      - secrets.custody.DeleteOwnedSecret
+      - secrets.custody.DeleteSecret
+      - secrets.custody.PrepareTransaction
+      - secrets.custody.ReadSecretValue
+      - secrets.custody.CheckSecretExists
+      - secrets.custody.ListNamespaceSecrets
+    outcomes:
+      - name: malformed-body
+        external: the request body is not JSON of the command's request shape
+        error: secrets.custody.InvalidInput
 
 # The disclosure and labels inputs are optional; serde fills an absent one with `workload_only` and an
 # empty map (crates/secrets-core/src/lib.rs:52-60) before the store writes it.
@@ -808,5 +1065,8 @@ components:
         - secrets.custody.CommitTransaction
         - secrets.custody.AbortTransaction
         - secrets.custody.RewrapSecrets
+        - secrets.custody.ReadSecretValue
+        - secrets.custody.CheckSecretExists
+        - secrets.custody.ListNamespaceSecrets
     # publishes: nothing; the service publishes no events (see the file header).
     reached_by: network

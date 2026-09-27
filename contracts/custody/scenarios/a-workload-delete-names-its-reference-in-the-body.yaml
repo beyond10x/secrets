@@ -1,0 +1,39 @@
+# POST /v1/workload/secrets:delete reads DeleteRequest {reference, actor}
+# (crates/secrets-http/src/lib.rs:99-104, 248-268); docs/openapi.json declares no request body for it.
+# NamespaceSecrets is read through POST /v1/workload/secrets:list, whose ScopeRequest body
+# (crates/secrets-http/src/lib.rs:94-98, 232-247) it also omits.
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-workload-delete-names-its-reference-in-the-body
+summary: A workload delete names its reference in a body the OpenAPI document omits, and the secret leaves its namespace.
+arrange:
+- instance: secret
+  entity: secrets.custody.Secret
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PutSecret
+  actor: secrets.custody.Workload
+  input:
+    reference: {tenant: tenant-a, namespace: connectors, key: api-token}
+    owner_subject: user-a
+    value: c2VjcmV0
+  outcome: created
+  capture: {instance: secret, event: secrets.custody.SecretPut, field: reference}
+- at: '2026-09-27T12:00:01Z'
+  command: secrets.custody.DeleteSecret
+  actor: secrets.custody.Workload
+  input:
+    reference: {$instance: secret}
+    actor: workload-a
+  outcome: deleted
+  events:
+  - event: secrets.custody.SecretDeleted
+    payload:
+      reference: {tenant: tenant-a, namespace: connectors, key: api-token}
+assert:
+- view: secrets.custody.NamespaceSecrets
+  excludes:
+    reference: {$instance: secret}
+- view: secrets.custody.ActiveSecrets
+  excludes:
+    reference: {$instance: secret}

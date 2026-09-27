@@ -8,6 +8,7 @@ members = [
   "crates/secrets-http",
   "crates/secrets-postgres",
   "crates/secretsctl",
+  "checks/conformance",
 ]
 resolver = "2"
 

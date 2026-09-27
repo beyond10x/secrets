@@ -1,0 +1,33 @@
+# The unique (tenant, id) key refuses the second insert (crates/secrets-postgres/src/lib.rs:293-311,
+# migrations/0001_initial.sql:34) and ApiError::Conflict answers 409 {"error": "Conflict"}
+# (crates/secrets-http/src/lib.rs:355-394); docs/openapi.json declares only 204 for the route.
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-second-prepare-of-one-transaction-is-a-conflict
+summary: A transaction id prepared twice in one tenant is refused as a conflict, a response the OpenAPI document omits.
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PrepareTransaction
+  actor: secrets.custody.Workload
+  input:
+    transaction: 0191f5a0-0000-7000-8000-000000000002
+    actor: workload-a
+    mutations:
+    - op: delete
+      value:
+        reference: {tenant: tenant-a, namespace: connectors, key: stale-token}
+  outcome: prepared
+- at: '2026-09-27T12:00:01Z'
+  command: secrets.custody.PrepareTransaction
+  actor: secrets.custody.Workload
+  input:
+    transaction: 0191f5a0-0000-7000-8000-000000000002
+    actor: workload-a
+    mutations:
+    - op: delete
+      value:
+        reference: {tenant: tenant-a, namespace: connectors, key: stale-token}
+  outcome: duplicate
+  error:
+    name: secrets.custody.Conflict
+  no_events: [secrets.custody.TransactionPrepared]

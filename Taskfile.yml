@@ -18,5 +18,7 @@ tasks:
   provenance:
     cmds:
       - test "$(git grep -I -E '[/]home/[^/]+/|[g]itlab\\.' -- ':!Cargo.lock' || true)" = ""
+  conformance:
+    cmds: [cargo run --locked -p secrets-conformance -- check]
   check:
-    deps: [fmt, test, clippy, docs, plan, spec, provenance]
+    deps: [fmt, test, clippy, docs, plan, spec, provenance, conformance]

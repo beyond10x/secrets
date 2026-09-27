@@ -1,0 +1,11 @@
+format: ess-inputs/1
+specification: []
+scenarios:
+- custody/scenarios/a-prepared-batch-body-is-what-commit-applies.yaml
+- custody/scenarios/a-second-prepare-of-one-transaction-is-a-conflict.yaml
+- custody/scenarios/a-workload-delete-names-its-reference-in-the-body.yaml
+- custody/scenarios/secret-metadata-carries-its-timestamps.yaml
+- adversary-w2/scenarios/a-put-with-a-255-byte-key-is-created.yaml
+- adversary-w2/scenarios/a-put-with-a-256-byte-key-is-an-invalid-reference.yaml
+- adversary-w2/scenarios/a-put-with-a-key-of-200-two-byte-characters-follows-the-spec.yaml
+- adversary-w2/scenarios/a-put-with-an-empty-key-is-an-invalid-reference.yaml
