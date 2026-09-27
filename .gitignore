@@ -2,3 +2,5 @@
 *.env
 keyring.json
 
+.engineering/.aep-planning-writer*.lock
+.engineering/migrations/

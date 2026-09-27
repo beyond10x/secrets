@@ -1,8 +1,1 @@
-version: aep.project/1
-
-# Written by `protocol plan reverse init`. It points; it does not duplicate — a rule restated
-# here would be a second copy with no way to say which one is in force. Principles and
-# profiles of this project's own go under `principles/` and `profiles/` beside this file.
-protocol: adp/1
-profile: development.standard
-protocols: git+https://github.com/beyond10x/aep.git#99ad0b51b748629ddf3708c366f18d69fe86cf5e
+{"planning_identity":"01a0e03d-f05f-74e9-95bf-8b3e10cf8891","planning_scope":"secrets","planning_tenant":"planning","profile":"development.standard","protocol":"adp/1","protocols":"git+https://github.com/beyond10x/aep.git#99ad0b51b748629ddf3708c366f18d69fe86cf5e","store":{"eventlog":{"path":"state","projection":"planning"}},"version":"aep.project/3"}

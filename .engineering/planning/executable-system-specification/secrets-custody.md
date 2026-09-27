@@ -1,5 +1,5 @@
 ---
-format: aep.planning-md/1
+format: aep.planning-md/2
 id: executable-system-specification:secrets-custody
 kind: executable-system-specification
 status: validated
