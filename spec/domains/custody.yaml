@@ -133,9 +133,19 @@ entities:
           from: [Active, Revoked]
           to: Active
 
-  # Read from migrations/0001_initial.sql:28-35 table `prepared_transactions` and
-  # crates/secrets-postgres/src/lib.rs:220-302. No status column: a row exists only while prepared;
-  # commit and abort delete it (crates/secrets-postgres/src/lib.rs:263, 290).
+  # Read from table `prepared_transactions` (migrations/0001_initial.sql, reshaped by
+  # migrations/0002_prepared_batch_envelope.sql) and crates/secrets-postgres/src/lib.rs `prepare`,
+  # `commit`, `abort`. No status column: a row exists only while prepared; commit and abort delete
+  # it, prepare and commit delete every expired row of the tenant, and rewrap deletes every expired row.
+  # The batch is held only as an AES-256-GCM envelope from the service keyring, as a secret version
+  # is: a fresh data key wrapped by the active key, with associated data distinct from a secret
+  # version's that binds the tenant, the transaction id and the actor. A row whose tenant, id or
+  # actor differs from what it was sealed under fails to open. A batch expires 600 seconds after it
+  # is prepared. The expiry is sealed inside the envelope with the mutations and copied to the
+  # `expires_at` column; a batch past either is expired, so rewriting the column revives nothing.
+  # An expired batch cannot be committed. Abort opens nothing: it decides on the `expires_at` column
+  # alone, not the sealed expiry, and answers not-found once the column has passed or when the
+  # batch is sealed under a key the keyring does not hold.
   - name: secrets.custody.PreparedTransaction
     identity:
       # UNMAPPED: the primary key is (tenant, id) (migrations/0001_initial.sql:34), so one
@@ -150,11 +160,16 @@ entities:
         # caller-supplied body field, not the verified principal (crates/secrets-http/src/lib.rs:106-109, 279)
         type: String
       - name: mutations
+        # held only as the batch envelope (columns ciphertext, value_nonce, wrapped_key, wrap_nonce,
+        # key_id); never stored in plaintext
         type: List<secrets.custody.Mutation>
       - name: created_at
         type: String
-    # UNMAPPED: relation to Secret. Mutations name secrets by reference inside the `mutations`
-    # jsonb column (migrations/0001_initial.sql:32), with no foreign key, so deleting a secret leaves
+      - name: expires_at
+        # the unix second the service sealed into the envelope: its clock at prepare + 600 seconds
+        type: String
+    # UNMAPPED: relation to Secret. Mutations name secrets by reference inside the sealed batch,
+    # with no foreign key, so deleting a secret leaves
     # a prepared batch in place (a `references` reading) — but there is no single field a `via`
     # could name. Settled by a relation form over a list of union payloads, or by the owner.
     # UNMAPPED: no route reads a prepared transaction (crates/secrets-http/src/lib.rs:36-56), so no
@@ -449,7 +464,7 @@ commands:
           secrets.custody.TransactionPrepared:
             tenant: input.tenant
             transaction: input.transaction
-        summary: The batch is stored for later commit or abort.
+        summary: The batch is held for later commit or abort, only as an AES-256-GCM envelope from the service keyring bound to the tenant, the transaction id and the actor, and for at most 600 seconds; expired batches of the tenant are removed.
 
       # UNMAPPED: list emptiness and per-item tenant are not expressible as `when`
       # (crates/secrets-postgres/src/lib.rs:227-238); declared external.
@@ -495,8 +510,9 @@ commands:
             transaction: input.transaction
         summary: Every mutation in the batch is applied atomically and the batch is gone.
 
+      # Expired batches of the tenant are removed before the lookup, so an expired batch is gone.
       - name: not-found
-        external: no transaction with this id is prepared in the tenant
+        external: no unexpired transaction with this id is prepared in the tenant; a batch expires 600 seconds after it is prepared, by its `expires_at` or by the expiry sealed in its envelope
         error: secrets.custody.NotFound
 
       # A Delete of a reference with no secret returns NotFound and rolls the whole commit back,
@@ -518,8 +534,9 @@ commands:
         external: the grant lacks secret:commit, or its tenant is not the path tenant
         error: secrets.custody.Forbidden
 
+      # Nothing is applied when the batch envelope does not open.
       - name: unavailable
-        external: storage, encryption or TokenReview is unavailable
+        external: storage, encryption or TokenReview is unavailable, or the batch envelope does not open under its tenant, id and actor
         error: secrets.custody.Unavailable
 
   # POST .../transactions/{transaction}/abort (crates/secrets-http/src/lib.rs:21-22, 56, 293-302;
@@ -542,7 +559,7 @@ commands:
         summary: The batch is discarded without applying any mutation.
 
       - name: not-found
-        external: no transaction with this id is prepared in the tenant
+        external: no transaction with this id is prepared in the tenant, its `expires_at` column has passed, or its key is not in the keyring
         error: secrets.custody.NotFound
 
       - name: unauthorized
@@ -560,6 +577,9 @@ commands:
   # `secrets rewrap --actor <name>` (crates/secrets-app/src/main.rs:20, 31-37, 68-73;
   # crates/secrets-postgres/src/lib.rs:32-76). Re-encrypts the current version of every secret whose
   # key_id differs from the active key, in every tenant and every state; older versions are untouched.
+  # After that transaction commits, a second one deletes expired prepared batches in every tenant
+  # and re-seals every unexpired batch sealed under another key under the active key, keeping its
+  # expiry. No transaction locks secrets and then batches.
   - name: secrets.custody.RewrapSecrets
     input:
       - name: actor
@@ -573,10 +593,10 @@ commands:
         payload:
           secrets.custody.SecretsRewrapped:
             actor: input.actor
-        summary: Every current version is wrapped by the active key.
+        summary: Every current version and every held prepared batch is wrapped by the active key.
 
       - name: failed
-        external: storage is unavailable, or a current version does not decrypt with the keyring
+        external: storage is unavailable, or a current version or a held batch does not decrypt with the keyring
         error: secrets.custody.Unavailable
 
 events:

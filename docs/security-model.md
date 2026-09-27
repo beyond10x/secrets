@@ -60,7 +60,10 @@ with, so a key must stay in the keyring while any version still names it.
 Rotation adds a key, makes it active, and then runs `secrets rewrap`, which decrypts and
 re-encrypts under the active key. In this release rewrap covers only the **current** version of
 each secret; older versions remain under their original key. Keep old keys until that is fixed
-(see [Known limitations](limitations.md#rewrap-covers-only-current-versions)). The procedure is in
+(see [Known limitations](limitations.md#rewrap-covers-only-current-versions)). Rewrap also re-seals
+every held prepared batch under the active key. A prepared batch is held encrypted the same way,
+with associated data that binds its tenant, transaction ID and actor, and it expires 600 seconds
+after it is prepared. The procedure is in
 [Operations](operations.md#rotate-the-key-encryption-key).
 
 ## Disclosure

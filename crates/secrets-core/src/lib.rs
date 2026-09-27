@@ -4,14 +4,25 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use thiserror::Error;
 use uuid::Uuid;
-use zeroize::{Zeroize, ZeroizeOnDrop};
+use zeroize::{Zeroize, ZeroizeOnDrop, Zeroizing};
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct SecretBytes(#[serde(with = "base64_bytes")] pub Vec<u8>);
 
+impl std::fmt::Debug for SecretBytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "SecretBytes(<redacted {} bytes>)", self.0.len())
+    }
+}
+
 impl Zeroize for SecretBytes {
     fn zeroize(&mut self) {
+        self.0.zeroize();
+    }
+}
+impl Drop for SecretBytes {
+    fn drop(&mut self) {
         self.0.zeroize();
     }
 }
@@ -20,13 +31,15 @@ impl ZeroizeOnDrop for SecretBytes {}
 mod base64_bytes {
     use super::*;
     pub fn serialize<S: serde::Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&STANDARD.encode(bytes))
+        serializer.serialize_str(&Zeroizing::new(STANDARD.encode(bytes)))
     }
     pub fn deserialize<'de, D: serde::Deserializer<'de>>(
         deserializer: D,
     ) -> Result<Vec<u8>, D::Error> {
-        let value = String::deserialize(deserializer)?;
-        STANDARD.decode(value).map_err(serde::de::Error::custom)
+        let value = Zeroizing::new(String::deserialize(deserializer)?);
+        STANDARD
+            .decode(value.as_bytes())
+            .map_err(serde::de::Error::custom)
     }
 }
 
@@ -132,4 +145,18 @@ pub trait SecretStore: Send + Sync {
     ) -> Result<(), StoreError>;
     async fn commit(&self, tenant: &str, transaction: Uuid) -> Result<(), StoreError>;
     async fn abort(&self, tenant: &str, transaction: Uuid) -> Result<(), StoreError>;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn debug_output_never_contains_the_value() {
+        let secret = SecretBytes(b"debug-leak-marker".to_vec());
+        let rendered = format!("{secret:?} {secret:#?}");
+        assert!(!rendered.contains("debug-leak-marker"), "{rendered}");
+        assert!(!rendered.contains("100, 101, 98"), "{rendered}");
+        assert_eq!(format!("{secret:?}"), "SecretBytes(<redacted 17 bytes>)");
+    }
 }

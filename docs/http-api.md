@@ -118,8 +118,8 @@ A workload can stage several puts and deletes in one tenant and apply them atomi
 Prepare refuses an empty batch or a mutation in another tenant (`400`) and a transaction ID
 already prepared in the tenant (`409`). Nothing is visible until commit, which applies every
 mutation in one PostgreSQL transaction: if any mutation fails, none is applied and the batch stays
-prepared. Commit or abort of an unknown ID is `404`. Prepared batches do not expire: commit or abort
-every batch you prepare.
+prepared. Commit or abort of an unknown ID is `404`. A batch expires 600 seconds after it is
+prepared, and committing or aborting it afterwards is `404`.
 
 ## Service routes
 

@@ -7,7 +7,7 @@ use secrets_core::{Disclosure, SecretBytes, SecretRef};
 use serde::Deserialize;
 use std::{collections::BTreeMap, fs, path::Path};
 use thiserror::Error;
-use zeroize::{Zeroize, Zeroizing};
+pub use zeroize::Zeroizing;
 
 #[derive(Clone, Debug)]
 pub struct Envelope {
@@ -77,6 +77,62 @@ impl Keyring {
         disclosure: Disclosure,
         value: &SecretBytes,
     ) -> Result<Envelope, CryptoError> {
+        self.seal(&associated_data(reference, version, disclosure), &value.0)
+    }
+
+    pub fn decrypt(
+        &self,
+        reference: &SecretRef,
+        version: i64,
+        disclosure: Disclosure,
+        envelope: &Envelope,
+    ) -> Result<SecretBytes, CryptoError> {
+        let aad = associated_data(reference, version, disclosure);
+        let mut plaintext = self.open(&aad, envelope)?;
+        Ok(SecretBytes(std::mem::take(&mut *plaintext)))
+    }
+
+    pub fn seal_batch(
+        &self,
+        tenant: &str,
+        transaction: &[u8; 16],
+        actor: &str,
+        batch: &[u8],
+    ) -> Result<Envelope, CryptoError> {
+        self.seal(&batch_associated_data(tenant, transaction, actor), batch)
+    }
+
+    pub fn open_batch(
+        &self,
+        tenant: &str,
+        transaction: &[u8; 16],
+        actor: &str,
+        envelope: &Envelope,
+    ) -> Result<Zeroizing<Vec<u8>>, CryptoError> {
+        self.open(&batch_associated_data(tenant, transaction, actor), envelope)
+    }
+
+    pub fn reseal_batch(
+        &self,
+        tenant: &str,
+        transaction: &[u8; 16],
+        actor: &str,
+        envelope: &Envelope,
+    ) -> Result<Envelope, CryptoError> {
+        let aad = batch_associated_data(tenant, transaction, actor);
+        let batch = self.open(&aad, envelope)?;
+        self.seal(&aad, &batch)
+    }
+
+    pub fn active_key_id(&self) -> &str {
+        &self.active
+    }
+
+    pub fn key_ids(&self) -> Vec<String> {
+        self.keys.keys().cloned().collect()
+    }
+
+    fn seal(&self, aad: &[u8], plaintext: &[u8]) -> Result<Envelope, CryptoError> {
         let key = self
             .keys
             .get(&self.active)
@@ -87,14 +143,13 @@ impl Keyring {
         let mut wrap_nonce = [0_u8; 12];
         getrandom::fill(&mut value_nonce).map_err(|_| CryptoError::Failed)?;
         getrandom::fill(&mut wrap_nonce).map_err(|_| CryptoError::Failed)?;
-        let aad = associated_data(reference, version, disclosure);
         let ciphertext = Aes256Gcm::new_from_slice(dek.as_ref())
             .map_err(|_| CryptoError::Failed)?
             .encrypt(
                 Nonce::from_slice(&value_nonce),
                 Payload {
-                    msg: &value.0,
-                    aad: &aad,
+                    msg: plaintext,
+                    aad,
                 },
             )
             .map_err(|_| CryptoError::Failed)?;
@@ -104,7 +159,7 @@ impl Keyring {
                 Nonce::from_slice(&wrap_nonce),
                 Payload {
                     msg: dek.as_ref(),
-                    aad: &aad,
+                    aad,
                 },
             )
             .map_err(|_| CryptoError::Failed)?;
@@ -117,44 +172,34 @@ impl Keyring {
         })
     }
 
-    pub fn decrypt(
-        &self,
-        reference: &SecretRef,
-        version: i64,
-        disclosure: Disclosure,
-        envelope: &Envelope,
-    ) -> Result<SecretBytes, CryptoError> {
+    fn open(&self, aad: &[u8], envelope: &Envelope) -> Result<Zeroizing<Vec<u8>>, CryptoError> {
         let key = self
             .keys
             .get(&envelope.key_id)
             .ok_or(CryptoError::KeyNotFound)?;
-        let aad = associated_data(reference, version, disclosure);
-        let mut dek = Aes256Gcm::new_from_slice(key)
-            .map_err(|_| CryptoError::Failed)?
-            .decrypt(
-                Nonce::from_slice(&envelope.wrap_nonce),
-                Payload {
-                    msg: &envelope.wrapped_key,
-                    aad: &aad,
-                },
-            )
-            .map_err(|_| CryptoError::Failed)?;
+        let dek = Zeroizing::new(
+            Aes256Gcm::new_from_slice(key)
+                .map_err(|_| CryptoError::Failed)?
+                .decrypt(
+                    Nonce::from_slice(&envelope.wrap_nonce),
+                    Payload {
+                        msg: &envelope.wrapped_key,
+                        aad,
+                    },
+                )
+                .map_err(|_| CryptoError::Failed)?,
+        );
         let plaintext = Aes256Gcm::new_from_slice(&dek)
             .map_err(|_| CryptoError::Failed)?
             .decrypt(
                 Nonce::from_slice(&envelope.value_nonce),
                 Payload {
                     msg: &envelope.ciphertext,
-                    aad: &aad,
+                    aad,
                 },
             )
             .map_err(|_| CryptoError::Failed)?;
-        dek.zeroize();
-        Ok(SecretBytes(plaintext))
-    }
-
-    pub fn active_key_id(&self) -> &str {
-        &self.active
+        Ok(Zeroizing::new(plaintext))
     }
 }
 
@@ -164,6 +209,16 @@ fn associated_data(reference: &SecretRef, version: i64, disclosure: Disclosure) 
         reference.tenant, reference.namespace, reference.key, version, disclosure
     )
     .into_bytes()
+}
+
+fn batch_associated_data(tenant: &str, transaction: &[u8; 16], actor: &str) -> Vec<u8> {
+    let mut aad = b"secrets/prepared-batch/v1\0".to_vec();
+    aad.extend_from_slice(&(tenant.len() as u64).to_be_bytes());
+    aad.extend_from_slice(tenant.as_bytes());
+    aad.extend_from_slice(transaction);
+    aad.extend_from_slice(&(actor.len() as u64).to_be_bytes());
+    aad.extend_from_slice(actor.as_bytes());
+    aad
 }
 
 #[cfg(test)]
@@ -213,6 +268,90 @@ mod tests {
         assert!(
             ring()
                 .decrypt(&wrong, 1, Disclosure::WorkloadOnly, &encrypted)
+                .is_err()
+        );
+    }
+
+    const ID: [u8; 16] = [3; 16];
+
+    #[test]
+    fn sealed_batch_opens_only_under_its_tenant_transaction_and_actor() {
+        let sealed = ring().seal_batch("t", &ID, "workload:a", b"batch").unwrap();
+        assert_eq!(sealed.key_id, "v1");
+        assert!(!sealed.ciphertext.windows(5).any(|w| w == b"batch"));
+        assert_eq!(
+            ring()
+                .open_batch("t", &ID, "workload:a", &sealed)
+                .unwrap()
+                .as_slice(),
+            b"batch"
+        );
+        assert!(ring().open_batch("u", &ID, "workload:a", &sealed).is_err());
+        assert!(
+            ring()
+                .open_batch("t", &[4; 16], "workload:a", &sealed)
+                .is_err()
+        );
+        assert!(ring().open_batch("t", &ID, "workload:b", &sealed).is_err());
+        let mut tampered = sealed.clone();
+        tampered.ciphertext[0] ^= 1;
+        assert!(
+            ring()
+                .open_batch("t", &ID, "workload:a", &tampered)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn batch_associated_data_is_separated_from_secret_versions() {
+        let version = associated_data(&reference(), 1, Disclosure::WorkloadOnly);
+        let batch = batch_associated_data("t", &ID, "workload:a");
+        assert!(version.starts_with(b"secrets/v1\0"));
+        assert!(!batch.starts_with(b"secrets/v1\0"));
+        let encrypted = ring()
+            .encrypt(
+                &reference(),
+                1,
+                Disclosure::WorkloadOnly,
+                &SecretBytes(b"token".to_vec()),
+            )
+            .unwrap();
+        assert!(
+            ring()
+                .open_batch("t", &ID, "workload:a", &encrypted)
+                .is_err()
+        );
+        assert_ne!(
+            batch_associated_data("a", &ID, "bc"),
+            batch_associated_data("ab", &ID, "c")
+        );
+    }
+
+    #[test]
+    fn resealed_batch_is_held_under_the_active_key() {
+        let sealed = ring().seal_batch("t", &ID, "workload:a", b"batch").unwrap();
+        let rotated = Keyring {
+            active: "v2".into(),
+            keys: BTreeMap::from([("v1".into(), [7; 32]), ("v2".into(), [8; 32])]),
+        };
+        let resealed = rotated
+            .reseal_batch("t", &ID, "workload:a", &sealed)
+            .unwrap();
+        assert_eq!(resealed.key_id, "v2");
+        let only_new = Keyring {
+            active: "v2".into(),
+            keys: BTreeMap::from([("v2".into(), [8; 32])]),
+        };
+        assert_eq!(
+            only_new
+                .open_batch("t", &ID, "workload:a", &resealed)
+                .unwrap()
+                .as_slice(),
+            b"batch"
+        );
+        assert!(
+            rotated
+                .reseal_batch("t", &ID, "workload:b", &sealed)
                 .is_err()
         );
     }
