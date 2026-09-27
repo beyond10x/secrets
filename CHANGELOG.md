@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.3.2 - 2026-09-27
 
 - A JSON body that does not parse into a route's request type is refused with `400` and
   `{"error": "Bad Request"}`, instead of axum's `422`/`415` text that quoted the offending input.
+- `task check` runs the `secrets.custody` specification against the shipped service: 96
+  scenarios through the HTTP router over PostgreSQL, three identical runs.
 
 ## 0.3.1 - 2026-09-27
 
