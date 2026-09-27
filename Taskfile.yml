@@ -13,8 +13,10 @@ tasks:
       - jq -e '.openapi == "3.1.0" and .info.version == "0.1.4"' docs/openapi.json >/dev/null
   plan:
     cmds: [aep plan artifact validate]
+  spec:
+    cmds: [ess specify validate --path spec]
   provenance:
     cmds:
       - test "$(git grep -I -E '[/]home/[^/]+/|[g]itlab\\.' -- ':!Cargo.lock' || true)" = ""
   check:
-    deps: [fmt, test, clippy, docs, plan, provenance]
+    deps: [fmt, test, clippy, docs, plan, spec, provenance]
