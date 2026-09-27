@@ -2,7 +2,7 @@
 format: aep.planning-md/2
 id: story:ess-custody-retrofit
 kind: story
-status: draft
+status: active
 title: The shipped custody service passes its retrofitted conformance suite
 relations:
 - decomposes: epic:named-federated-storage
@@ -24,7 +24,7 @@ scope:
   path: contracts/schema
 - confidence: inferred
   path: contracts/suite.json
-revision: 7
+revision: 9
 ---
 ## Context
 
