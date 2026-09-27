@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Prepared batches are held encrypted and expire after 600 seconds.
+
 ## 0.2.0 - 2026-09-27
 
 - The system is specified in ESS (`spec/`, format `ess/13`): `secrets.custody` retrofits the

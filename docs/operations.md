@@ -70,7 +70,9 @@ termination settings.
 3. Update the keyring Secret and restart the service. New versions are now wrapped by `v2`.
 4. Run `secrets rewrap`. It re-encrypts, in one transaction, every current version still wrapped by
    another key, records a `rewrap` audit event for each, and prints
-   `rewrapped <n> active secret(s)`.
+   `rewrapped <n> active secret(s)`. After that transaction commits, a second one deletes expired
+   prepared batches and re-seals every held batch under the active key; the count does not include
+   batches, and a held batch expires within 600 seconds whatever key seals it.
 5. Verify: a second `secrets rewrap` prints `rewrapped 0 active secret(s)`.
 6. Keep `v1` in the keyring. Rewrap does not re-encrypt versions older than the current one, which
    still name `v1` ([Known limitations](limitations.md#rewrap-covers-only-current-versions)).
