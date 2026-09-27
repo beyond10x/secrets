@@ -1,0 +1,7 @@
+format: ess/13
+system: secrets
+version: v1
+
+domains:
+  - secrets.custody
+  - secrets.storage

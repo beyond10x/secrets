@@ -1,12 +1,12 @@
 ---
 title: Known limitations
-description: What Secrets 0.1.4 does not do, or does differently from what its model implies.
+description: What Secrets 0.2.0 does not do, or does differently from what its model implies.
 sidebar_position: 9
 ---
 
 # Known limitations
 
-These apply to version 0.1.4. Each describes the code as it is; the first two are tracked for a
+These apply to version 0.2.0. Each describes the code as it is; the first two are tracked for a
 fix.
 
 ## Rewrap covers only current versions

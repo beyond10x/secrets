@@ -7,7 +7,7 @@ authorized for that exact tenant and action. The person who owns the value can s
 revoke it or delete it, but in this release no one can read a stored value back through a user
 endpoint.
 
-Status: development, version 0.1.4. The HTTP contract is [OpenAPI 3.1](docs/openapi.json).
+Status: development, version 0.2.0. The HTTP contract is [OpenAPI 3.1](docs/openapi.json).
 
 ## Why it exists
 

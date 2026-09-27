@@ -1,0 +1,769 @@
+# Drafted from nothing: no code implements this domain yet. Every declaration below is read from the
+# operator-approved storage model (2026-09-26/27) or from the coordinator's decisions (2026-09-27),
+# and nothing else. What neither decides is an UNMAPPED marker, not a value. Markers carry the number
+# they had in the first draft's report, (#N); a marker without a number is new in this revision.
+#
+# Secret bytes: no entity field, view field, event field or error field in this domain is a secret
+# value. The value exists only as `Write.value` (input) and `Read.value` (response). That is the
+# structural form of "secret bytes appear in no view, event or error".
+domain: secrets.storage
+
+summary: Named, scoped secrets stored through exactly one backend per namespace, with every command decided by an authorizer before any backend call.
+
+types:
+  # `openai`, `openai-work`, `team/openai`: `/`-separated segments, each [a-z0-9][a-z0-9._-]*.
+  # The alphabet is the union of the segment characters and `/`.
+  # Decided by the coordinator 2026-09-27: at most 128 bytes in total, each segment at most 64. The
+  # alphabet is ASCII, so bytes and `.count` (Unicode scalar values) agree; the total is the
+  # `name-too-long` guard on every command that takes a name.
+  # UNMAPPED (#1): segment structure (no empty segment, first character of a segment in [a-z0-9])
+  # and the 64-byte segment bound are not expressible by `alphabet:` or `.count`; an input violating
+  # them is the external `invalid-name` outcome.
+  - name: secrets.storage.SecretName
+    kind: newtype
+    of: String
+    alphabet: "abcdefghijklmnopqrstuvwxyz0123456789._-/"
+
+  # Decided by the coordinator 2026-09-27: tenant, namespace and user names are single segments with
+  # the SecretName segment rule. Same language limit as (#1) for the first character and the
+  # segment bound.
+  - name: secrets.storage.ScopeName
+    kind: newtype
+    of: String
+    alphabet: "abcdefghijklmnopqrstuvwxyz0123456789._-"
+
+  # Every secret belongs to exactly one scope. Local CLI mode: tenant `default`, user `default`,
+  # namespace `default` unless another is named.
+  - name: secrets.storage.Scope
+    kind: struct
+    fields:
+      - name: tenant
+        type: secrets.storage.ScopeName
+      - name: namespace
+        type: secrets.storage.ScopeName
+      - name: user
+        type: secrets.storage.ScopeName
+
+  # Decided by the coordinator 2026-09-27: a Namespace is unique per Tenant.
+  - name: secrets.storage.NamespaceKey
+    kind: struct
+    fields:
+      - name: tenant
+        type: secrets.storage.ScopeName
+      - name: namespace
+        type: secrets.storage.ScopeName
+
+  # Decided by the coordinator 2026-09-27: a Secret is unique per scope plus name, and a Binding is
+  # keyed by the full scope plus name (tenant, namespace, user, name).
+  - name: secrets.storage.Address
+    kind: struct
+    fields:
+      - name: scope
+        type: secrets.storage.Scope
+      - name: name
+        type: secrets.storage.SecretName
+
+  # Decided by the coordinator 2026-09-27, capabilities per kind:
+  #   keychain     read, write, delete, list
+  #   onepassword  read only (read-only, no list)
+  #   remote       read, write, delete, list
+  # remote is the existing custody service. Decided by the coordinator 2026-09-27: a remote backend
+  # maps a secret to secrets.custody.Reference {tenant, namespace, key = name} with the scope's user
+  # as the custody owner_subject. No relation is declared: an Address is not a custody Reference, and
+  # a `via` would need a field of this domain typed as that Reference, which nothing here sets.
+  - name: secrets.storage.BackendKind
+    kind: enum
+    variants: [keychain, onepassword, remote]
+
+  # Decided by the coordinator 2026-09-27: a Mount names a Backend by kind plus an instance label.
+  - name: secrets.storage.BackendRef
+    kind: struct
+    fields:
+      - name: kind
+        type: secrets.storage.BackendKind
+      # Decided by the coordinator 2026-09-27: a label is a single segment (the ScopeName rule).
+      - name: label
+        type: secrets.storage.ScopeName
+
+  # An operation a backend lacks is refused as `unsupported`.
+  - name: secrets.storage.Capability
+    kind: enum
+    variants: [read, write, delete, list]
+
+  # What the Authorizer decides for every command, before any backend call. Per command, decided by
+  # the operator and the coordinator 2026-09-27: Write write; Read read; Delete delete; Rename write
+  # and delete; ListMetadata list; AddNamespace, RemoveNamespace, SetMount, Bind and Unbind
+  # manage-namespace. Under the local authorizer every action gets the same answer, so no outcome
+  # below depends on which one is asked.
+  # UNMAPPED (#4): a later external authorizer (a separate authority service deciding
+  # check(context, action, resource)) is deferred and not modelled here.
+  - name: secrets.storage.Action
+    kind: enum
+    variants: [read, write, delete, list, manage-namespace]
+
+entities:
+  # Structural lifecycle (one state) on every entity below: the model names no states.
+  - name: secrets.storage.Tenant
+    identity:
+      name: tenant
+      type: secrets.storage.ScopeName
+    fields: []
+    # "Namespace belongs to a Tenant"; many, because namespaces are authored inside the one local
+    # tenant `default`.
+    # UNMAPPED: the `owns` entry is not writable. Its `via` must be a Namespace field typed as the
+    # tenant, and the tenant is part of the Namespace's composite identity; `sets:` cannot fill a
+    # field from part of an input (`input.namespace.tenant` is refused as undeclared input).
+    # UNMAPPED (#5): how a tenant comes to exist outside local mode (local mode has only `default`);
+    # no command creates one.
+    lifecycle:
+      initial: Present
+      states: [Present]
+      terminal: [Present]
+
+  # Decided by the coordinator 2026-09-27: in local mode the `default` namespace exists from the
+  # start, mounted to keychain; it is not created by a command.
+  - name: secrets.storage.Namespace
+    identity:
+      name: namespace
+      type: secrets.storage.NamespaceKey
+    fields:
+      # The Mount. Decided by the coordinator 2026-09-27: a Mount belongs to exactly one Namespace,
+      # is set with SetMount, and names a Backend by kind plus an instance label. It is a value of the
+      # namespace here, not an entity: `owns` from Namespace needs a Mount field typed as the
+      # namespace, and a one-per-namespace Mount has no identity other than the namespace, which a
+      # `via` cannot name. Absent means the default mount, decided by the coordinator 2026-09-27:
+      # kind keychain, label `default`.
+      # Accepted by the coordinator 2026-09-27: Mount as this field rather than an entity, and the
+      # two `owns` entries (Tenant -> Namespace, Namespace -> Binding) left unwritten for the ESS
+      # limit given at Tenant.
+      # UNMAPPED (#10): Mount contents other than the backend reference are not decided.
+      - name: mount
+        type: Optional<secrets.storage.BackendRef>
+    relations:
+      # "a Mount references exactly one Backend". No fallback between backends: nothing here names a
+      # second backend.
+      - name: mount
+        kind: references
+        target: secrets.storage.Backend
+        cardinality: one
+        via: mount
+    # Decided by the coordinator 2026-09-27: a Namespace owns its Bindings.
+    # UNMAPPED: the `owns` entry is not writable, for the reason given at Tenant: the namespace is
+    # part of the Binding's composite identity.
+    lifecycle:
+      initial: Present
+      states: [Present]
+      terminal: [Present]
+
+  - name: secrets.storage.Backend
+    identity:
+      name: backend
+      type: secrets.storage.BackendRef
+    fields:
+      - name: capabilities
+        type: List<secrets.storage.Capability>
+    # The capability table at BackendKind, decided by the coordinator 2026-09-27.
+    invariants:
+      - any:
+          - backend.kind != onepassword
+          - all:
+              - exists: {in: capabilities, as: c, that: c == read}
+              - not:
+                  exists: {in: capabilities, as: c, that: {any: [c == write, c == delete, c == list]}}
+      - any:
+          - backend.kind == onepassword
+          - all:
+              - exists: {in: capabilities, as: c, that: c == read}
+              - exists: {in: capabilities, as: c, that: c == write}
+              - exists: {in: capabilities, as: c, that: c == delete}
+              - exists: {in: capabilities, as: c, that: c == list}
+    # UNMAPPED: how a backend instance is configured (registered under a kind and label) is
+    # deferred by the coordinator 2026-09-27 to story:local-cli (local config file); no command
+    # creates one. Until one does, no synthesized scenario checks the two invariants above: the
+    # mutation audit (2026-09-27) weakened the first and no scenario changed.
+    lifecycle:
+      initial: Present
+      states: [Present]
+      terminal: [Present]
+
+  # Optional per-name mapping from a SecretName to a backend locator. Required for read-only
+  # backends.
+  - name: secrets.storage.Binding
+    identity:
+      name: address
+      type: secrets.storage.Address
+    fields:
+      # Decided by the coordinator 2026-09-27: an onepassword locator is `op://<vault>/<item>/<field>`;
+      # keychain and remote need no locator. The shape is not expressible as a type; it is stated here.
+      - name: locator
+        type: String
+    # UNMAPPED: no view holds a Binding, so the locator Bind sets is observable only through a
+    # later Read; dropping `locator` from Bind.bound's `sets` changes no synthesized scenario
+    # (mutation audit, 2026-09-27). No story names a binding listing; whether the CLI or the port
+    # exposes one is for the owner.
+    lifecycle:
+      initial: Present
+      states: [Present]
+      terminal: [Present]
+
+  - name: secrets.storage.Secret
+    identity:
+      name: address
+      type: secrets.storage.Address
+    fields:
+      # Decided by the coordinator 2026-09-27: ListMetadata returns name, scope and version only.
+      # Decided by the coordinator 2026-09-27: an opaque, backend-assigned string; its first value is
+      # opaque and every successful Write changes it. Backend-assigned, so no outcome sets it; "every
+      # Write changes it" compares two versions of one record, which no invariant can state.
+      - name: version
+        type: Optional<String>
+    # "every secret belongs to exactly one scope": the scope is part of the identity.
+    # Decided by the coordinator 2026-09-27: a Secret references its Namespace (not ownership:
+    # RemoveNamespace is refused while secrets remain).
+    # UNMAPPED (#17): the `references` entry is not writable; its `via` would be a Secret field typed
+    # as the NamespaceKey, which is part of the address and which `sets:` cannot fill from part of
+    # an input (the ESS limit given at Tenant).
+    # UNMAPPED (#19): namespace-shared secrets (no owning user) are deferred.
+    lifecycle:
+      initial: Stored
+      states: [Stored]
+      terminal: [Stored]
+
+actors:
+  # Local authorizer: the local user may do everything in tenant `default` for user `default`;
+  # any other tenant or user is denied. A second tenant (`denied`) and a second user in tenant
+  # `default` (`denied-user`) are separate outcomes with disjoint guards because story
+  # local-authorizer names them as separate behaviours; one guard over both let the synthesized
+  # suite witness only the input where both hold (mutation audit, 2026-09-27).
+  # UNMAPPED: the epic's tenant- and user-isolation scenarios, and stories keychain-backend and
+  # remote-backend ("two tenants ... and two users holding the same name stay separate"), need a
+  # second tenant and user that can write; LocalUser is denied both, and no other actor or
+  # authorizer is declared. Settled by the owner naming the actor those scenarios run as.
+  - name: secrets.storage.LocalUser
+    may:
+      - secrets.storage.AddNamespace
+      - secrets.storage.RemoveNamespace
+      - secrets.storage.SetMount
+      - secrets.storage.Bind
+      - secrets.storage.Unbind
+      - secrets.storage.Write
+      - secrets.storage.Read
+      - secrets.storage.Delete
+      - secrets.storage.Rename
+      - secrets.storage.ListMetadata
+
+# Closed codes with no free text: no error declares a field.
+errors:
+  - name: secrets.storage.NotFound
+    naming: {wire: not-found}
+    summary: Nothing is addressed by the name, or the name resolves to no mount or binding.
+  - name: secrets.storage.Denied
+    naming: {wire: denied}
+    summary: The authorizer refused the action on the resource.
+  - name: secrets.storage.Unsupported
+    naming: {wire: unsupported}
+    summary: The resolved backend lacks the capability the command needs.
+  - name: secrets.storage.Unavailable
+    naming: {wire: unavailable}
+    summary: The resolved backend, or the namespace configuration store, could not be reached.
+  - name: secrets.storage.InvalidName
+    naming: {wire: invalid-name}
+    summary: A name is not a valid SecretName or ScopeName.
+  - name: secrets.storage.TooLarge
+    naming: {wire: too-large}
+    summary: The secret value exceeds 1 MiB.
+  - name: secrets.storage.Conflict
+    naming: {wire: conflict}
+    summary: The command collides with an existing record.
+
+# UNMAPPED: precedence between the authorizer and name validation. `denied`/`denied-user` and
+# `name-too-long` (Bind, Write, Read, Delete, Rename) both match a long name in a denied scope, and
+# RemoveNamespace's `denied` and `is-default` both match namespace `default` in another tenant
+# (guard analysis, 2026-09-27). "decided by an authorizer before any backend call" orders the
+# authorizer before the backend, not before name checks. The synthesized `name-too-long` and
+# `is-default` scenarios use a non-default scope, so they hold only if name checks come first.
+# Settled by the owner choosing the order; the losing guard then conjoins the other's negation.
+# UNMAPPED: story local-cli lists a `describe` command; no command or view here describes one secret.
+# Settled by the owner naming what describe returns (ListMetadata's fields for one address, or more).
+commands:
+  - name: secrets.storage.AddNamespace
+    input:
+      - name: namespace
+        type: secrets.storage.NamespaceKey
+      # Decided by the coordinator 2026-09-27: optional; absent means the default keychain mount.
+      - name: mount
+        type: Optional<secrets.storage.BackendRef>
+    outcomes:
+      - name: denied
+        when: namespace.tenant != default
+        error: secrets.storage.Denied
+      - name: invalid-name
+        external: the namespace name has a first character outside [a-z0-9] or exceeds 64 bytes
+        error: secrets.storage.InvalidName
+      - name: exists
+        external: a namespace of this name already exists in the tenant
+        error: secrets.storage.Conflict
+      - name: no-backend
+        external: the mount names a backend that is not configured
+        error: secrets.storage.NotFound
+      - name: added
+        creates: secrets.storage.Namespace
+        instance: namespace
+        sets:
+          mount: input.mount
+        emits: [secrets.storage.NamespaceAdded]
+        payload:
+          secrets.storage.NamespaceAdded:
+            namespace: input.namespace
+        summary: The namespace exists in the tenant, with the given mount or the default keychain one.
+
+  # UNMAPPED (#23): ESS has no removal effect, so `removed` cannot say the namespace stops existing.
+  - name: secrets.storage.RemoveNamespace
+    input:
+      - name: namespace
+        type: secrets.storage.NamespaceKey
+    outcomes:
+      - name: denied
+        when: namespace.tenant != default
+        error: secrets.storage.Denied
+      # Decided by the coordinator 2026-09-27: `default` can never be removed.
+      - name: is-default
+        when: namespace.namespace == default
+        error: secrets.storage.Conflict
+      - name: not-found
+        external: no namespace of this name exists in the tenant
+        error: secrets.storage.NotFound
+      # Decided by the coordinator 2026-09-27: conflict while secrets or bindings remain.
+      - name: in-use
+        external: secrets or bindings remain in the namespace
+        error: secrets.storage.Conflict
+      - name: removed
+        emits: [secrets.storage.NamespaceRemoved]
+        payload:
+          secrets.storage.NamespaceRemoved:
+            namespace: input.namespace
+        summary: The namespace no longer exists.
+
+  - name: secrets.storage.SetMount
+    input:
+      - name: namespace
+        type: secrets.storage.NamespaceKey
+      - name: mount
+        type: secrets.storage.BackendRef
+    outcomes:
+      - name: denied
+        when: namespace.tenant != default
+        error: secrets.storage.Denied
+      - name: no-namespace
+        external: no namespace of this name exists in the tenant
+        error: secrets.storage.NotFound
+      - name: no-backend
+        external: the mount names a backend that is not configured
+        error: secrets.storage.NotFound
+      # Decided by the coordinator 2026-09-27: conflict while secrets exist under the current mount.
+      - name: in-use
+        external: secrets exist in the namespace under its current mount
+        error: secrets.storage.Conflict
+      - name: set
+        updates: secrets.storage.Namespace
+        instance: namespace
+        sets:
+          mount: input.mount
+        emits: [secrets.storage.MountSet]
+        payload:
+          secrets.storage.MountSet:
+            namespace: input.namespace
+            mount: input.mount
+        summary: The namespace is mounted on the backend, and on no other.
+
+  - name: secrets.storage.Bind
+    input:
+      - name: address
+        type: secrets.storage.Address
+      - name: locator
+        type: String
+        example: op://Work/OpenAI/credential
+    outcomes:
+      - name: denied
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+      - name: name-too-long
+        when: address.name.count > 128
+        error: secrets.storage.InvalidName
+      - name: invalid-name
+        external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
+        error: secrets.storage.InvalidName
+      - name: no-namespace
+        external: no namespace of this name exists in the tenant
+        error: secrets.storage.NotFound
+      # Decided by the coordinator 2026-09-27: a bound name gives conflict; Unbind first.
+      - name: already-bound
+        external: the address already has a binding
+        error: secrets.storage.Conflict
+      - name: bound
+        creates: secrets.storage.Binding
+        instance: address
+        sets:
+          locator: input.locator
+        emits: [secrets.storage.NameBound]
+        payload:
+          secrets.storage.NameBound:
+            address: input.address
+        summary: The address resolves to the locator in the namespace's backend.
+
+  # UNMAPPED (#26): ESS has no removal effect, so `unbound` cannot say the binding stops existing.
+  - name: secrets.storage.Unbind
+    input:
+      - name: address
+        type: secrets.storage.Address
+    outcomes:
+      - name: denied
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+      - name: not-found
+        external: the address has no binding
+        error: secrets.storage.NotFound
+      - name: unbound
+        emits: [secrets.storage.NameUnbound]
+        payload:
+          secrets.storage.NameUnbound:
+            address: input.address
+        summary: The address has no binding; on a read-only backend it now resolves not-found.
+
+  # Resolution, shared by every secret command below: the scope's namespace names exactly one
+  # mount, the mount exactly one backend, and a Binding (where one exists) the locator. A name with
+  # no mount, or with no binding on a backend that requires one, is `unresolved` (NotFound) and no
+  # backend is called.
+  # UNMAPPED (#27): "no backend involved" is not expressible; it is stated in the outcome text only.
+  # The rule reads other entities, which a `when` cannot.
+  # UNMAPPED: "the namespace has no mount" in the `unresolved` outcomes. An absent Namespace.mount
+  # means the default keychain mount (coordinator, 2026-09-27; Namespace.mount above), so an existing
+  # namespace always has one; the case reads as "the namespace does not exist". Settled by the owner
+  # confirming that reading, or naming a namespace state with no mount.
+  - name: secrets.storage.Write
+    input:
+      - name: address
+        type: secrets.storage.Address
+      - name: value
+        type: Bytes
+    outcomes:
+      - name: denied
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: name-too-long
+        when: address.name.count > 128
+        error: secrets.storage.InvalidName
+      - name: invalid-name
+        external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
+        error: secrets.storage.InvalidName
+      # Decided by the coordinator 2026-09-27: at most 1 MiB (1048576 bytes).
+      # UNMAPPED: external because `value.count` over Bytes is refused (`cannot select count from
+      # Bytes`, ess 0.35.0), so the bound cannot be a guard.
+      - name: too-large
+        external: the value is longer than 1048576 bytes
+        error: secrets.storage.TooLarge
+      - name: unresolved
+        external: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called
+        error: secrets.storage.NotFound
+      # A write to a read-only mount (onepassword) is refused here.
+      # UNMAPPED (#29): the rule reads the mount's backend, another entity, which no guard can read;
+      # declared external.
+      - name: unsupported
+        external: the resolved backend lacks the write capability (onepassword)
+        error: secrets.storage.Unsupported
+      - name: created
+        external: no secret is stored at the address
+        creates: secrets.storage.Secret
+        instance: address
+        emits: [secrets.storage.SecretWritten]
+        payload:
+          secrets.storage.SecretWritten:
+            address: input.address
+        summary: The backend holds the value at the address; the value is in no view or event.
+      - name: replaced
+        updates: secrets.storage.Secret
+        instance: address
+        emits: [secrets.storage.SecretWritten]
+        payload:
+          secrets.storage.SecretWritten:
+            address: input.address
+        summary: The backend holds the new value at the address.
+
+  # The value is returned only to the in-process caller, through the response. Every backend kind
+  # can read, so Read has no `unsupported` outcome.
+  # UNMAPPED (#30): "in-process caller only" is not expressible; a response is a projected surface.
+  - name: secrets.storage.Read
+    input:
+      - name: address
+        type: secrets.storage.Address
+    response:
+      - name: value
+        type: Bytes
+      # story onepassword-backend, Scenarios: "a bound `op://` locator reads its value and version".
+      # Optional as Secret.version is.
+      - name: version
+        type: Optional<String>
+    outcomes:
+      - name: denied
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: name-too-long
+        when: address.name.count > 128
+        error: secrets.storage.InvalidName
+      - name: invalid-name
+        external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
+        error: secrets.storage.InvalidName
+      - name: unresolved
+        external: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called
+        error: secrets.storage.NotFound
+      - name: not-found
+        external: the backend holds no secret at the address
+        error: secrets.storage.NotFound
+      - name: read
+        preserves: secrets.storage.Secret
+        instance: address
+        summary: The caller holds the value; nothing changed.
+
+  # Decided by the coordinator 2026-09-27: Delete never removes a Binding, and is unsupported on a
+  # read-only mount.
+  # UNMAPPED (#31): ESS has no removal effect, so `deleted` cannot say the secret stops existing.
+  - name: secrets.storage.Delete
+    input:
+      - name: address
+        type: secrets.storage.Address
+    outcomes:
+      - name: denied
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: name-too-long
+        when: address.name.count > 128
+        error: secrets.storage.InvalidName
+      - name: invalid-name
+        external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
+        error: secrets.storage.InvalidName
+      - name: unresolved
+        external: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called
+        error: secrets.storage.NotFound
+      - name: unsupported
+        external: the resolved backend lacks the delete capability (onepassword)
+        error: secrets.storage.Unsupported
+      - name: not-found
+        external: the backend holds no secret at the address
+        error: secrets.storage.NotFound
+      - name: deleted
+        emits: [secrets.storage.SecretDeleted]
+        payload:
+          secrets.storage.SecretDeleted:
+            address: input.address
+        summary: The backend no longer holds a secret at the address; any binding stays.
+
+  # Within one scope. Decided by the coordinator 2026-09-27: needs write and delete, and is
+  # unsupported on a read-only mount.
+  # Decided by the coordinator 2026-09-27: Bindings never move; renaming a bound name is conflict.
+  # UNMAPPED (#35): ESS identity cannot change, so `renamed` cannot say the secret now answers to
+  # new_name.
+  - name: secrets.storage.Rename
+    input:
+      - name: address
+        type: secrets.storage.Address
+      - name: new_name
+        type: secrets.storage.SecretName
+        example: openai-work
+    outcomes:
+      - name: denied
+        when: address.scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [address.scope.tenant == default, address.scope.user != default]}
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      # Two outcomes rather than one `any`, so each name's bound is witnessed on its own.
+      - name: name-too-long
+        when: address.name.count > 128
+        error: secrets.storage.InvalidName
+      - name: new-name-too-long
+        when: {all: [address.name.count <= 128, new_name.count > 128]}
+        error: secrets.storage.InvalidName
+      - name: invalid-name
+        external: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes
+        error: secrets.storage.InvalidName
+      - name: unresolved
+        external: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called
+        error: secrets.storage.NotFound
+      - name: unsupported
+        external: the resolved backend lacks the write or the delete capability (onepassword)
+        error: secrets.storage.Unsupported
+      - name: not-found
+        external: the backend holds no secret at the address
+        error: secrets.storage.NotFound
+      - name: taken
+        external: a secret is already stored under new_name in the scope
+        error: secrets.storage.Conflict
+      - name: bound
+        external: the address has a binding
+        error: secrets.storage.Conflict
+      - name: renamed
+        emits: [secrets.storage.SecretRenamed]
+        payload:
+          secrets.storage.SecretRenamed:
+            address: input.address
+            new_name: input.new_name
+        summary: The value is held under new_name and no longer under the address's name.
+
+  # Metadata only, never a value: name, scope and version (the SecretMetadata view).
+  # UNMAPPED (#36): restricting the rows to the requested scope is a filter over input, which is not
+  # expressible.
+  - name: secrets.storage.ListMetadata
+    input:
+      - name: scope
+        type: secrets.storage.Scope
+    outcomes:
+      - name: denied
+        when: scope.tenant != default
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: denied-user
+        when: {all: [scope.tenant == default, scope.user != default]}
+        error: secrets.storage.Denied
+        summary: Decided by the authorizer before any backend call.
+      - name: unresolved
+        external: the namespace has no mount; no backend is called
+        error: secrets.storage.NotFound
+      - name: unsupported
+        external: the resolved backend lacks the list capability (onepassword)
+        error: secrets.storage.Unsupported
+      # UNMAPPED (#37): a listing changes nothing, but a success outcome must emit an event;
+      # declared only for that reason.
+      - name: listed
+        emits: [secrets.storage.MetadataListed]
+        payload:
+          secrets.storage.MetadataListed:
+            scope: input.scope
+        summary: The caller holds the metadata of every secret in the scope.
+
+# Decided by the coordinator 2026-09-27: no event is published, only declared (as in
+# secrets.custody). Each is declared because a success outcome must emit one. None carries a
+# secret value.
+events:
+  - name: secrets.storage.NamespaceAdded
+    fields:
+      - {name: namespace, type: secrets.storage.NamespaceKey}
+  - name: secrets.storage.NamespaceRemoved
+    fields:
+      - {name: namespace, type: secrets.storage.NamespaceKey}
+  - name: secrets.storage.MountSet
+    fields:
+      - {name: namespace, type: secrets.storage.NamespaceKey}
+      - {name: mount, type: secrets.storage.BackendRef}
+  - name: secrets.storage.NameBound
+    fields:
+      - {name: address, type: secrets.storage.Address}
+  - name: secrets.storage.NameUnbound
+    fields:
+      - {name: address, type: secrets.storage.Address}
+  - name: secrets.storage.SecretWritten
+    fields:
+      - {name: address, type: secrets.storage.Address}
+  - name: secrets.storage.SecretDeleted
+    fields:
+      - {name: address, type: secrets.storage.Address}
+  - name: secrets.storage.SecretRenamed
+    fields:
+      - {name: address, type: secrets.storage.Address}
+      - {name: new_name, type: secrets.storage.SecretName}
+  - name: secrets.storage.MetadataListed
+    fields:
+      - {name: scope, type: secrets.storage.Scope}
+
+outcome_groups:
+  # Every secret command reaches a backend after authorization and resolution.
+  - name: backend-unavailable
+    commands:
+      - secrets.storage.Write
+      - secrets.storage.Read
+      - secrets.storage.Delete
+      - secrets.storage.Rename
+      - secrets.storage.ListMetadata
+    outcomes:
+      - name: unavailable
+        external: the resolved backend could not be reached or did not answer
+        error: secrets.storage.Unavailable
+  # Decided by the coordinator 2026-09-27: namespace commands may be unavailable.
+  - name: config-unavailable
+    commands:
+      - secrets.storage.AddNamespace
+      - secrets.storage.RemoveNamespace
+      - secrets.storage.SetMount
+      - secrets.storage.Bind
+      - secrets.storage.Unbind
+    outcomes:
+      - name: unavailable
+        external: the namespace configuration store could not be reached
+        error: secrets.storage.Unavailable
+
+# No view field is a secret value.
+views:
+  # ListMetadata's rows: name and scope (the address) and version. `state` is here only so the view
+  # covers every Secret field for Read's unchanged-subject check.
+  # UNMAPPED (#40): restricting the listing to one scope is a filter over request input, which is
+  # not expressible; the view holds every stored secret.
+  - name: secrets.storage.SecretMetadata
+    source: secrets.storage.Secret
+    consistency: read_your_writes
+    fields:
+      - {name: address, type: secrets.storage.Address}
+      - {name: version, type: Optional<String>}
+      - {name: state, type: secrets.storage.Secret.State}
+
+  # "namespaces can be authored (add/list/remove)": the list.
+  - name: secrets.storage.Namespaces
+    source: secrets.storage.Namespace
+    consistency: read_your_writes
+    fields:
+      - {name: namespace, type: secrets.storage.NamespaceKey}
+      - {name: mount, type: Optional<secrets.storage.BackendRef>}
+      - {name: state, type: secrets.storage.Namespace.State}
+
+components:
+  # Decided by the coordinator 2026-09-27: the in-process library owns secrets.storage.
+  - component: secrets-library
+    summary: Named, scoped secret storage over keychain, 1Password and the custody service, in the caller's process.
+    owns:
+      domains:
+        - secrets.storage
+    accepts:
+      commands:
+        - secrets.storage.AddNamespace
+        - secrets.storage.RemoveNamespace
+        - secrets.storage.SetMount
+        - secrets.storage.Bind
+        - secrets.storage.Unbind
+        - secrets.storage.Write
+        - secrets.storage.Read
+        - secrets.storage.Delete
+        - secrets.storage.Rename
+        - secrets.storage.ListMetadata
+    # publishes: nothing (see the events comment).
+    reached_by: in_process

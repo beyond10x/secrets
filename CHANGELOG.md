@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.0 - 2026-09-27
+
+- The system is specified in ESS (`spec/`, format `ess/13`): `secrets.custody` retrofits the
+  shipped service from its code and OpenAPI document, and `secrets.storage` specifies the next
+  milestone, named secrets scoped by tenant, namespace and user behind several storage backends.
+  `task check` validates the specification.
+- The planning store moves to `aep.project/3` on a tree Git merges, planned with AEP 0.60.0; CI
+  installs AEP 0.60.0.
+- Public documentation: getting started, security model, authentication, HTTP API, Rust client,
+  operations, known limitations and a roadmap, and a rewritten README.
+- The OpenAPI document and all crates are version 0.2.0. No runtime behaviour changes.
+
 ## 0.1.4 - 2026-09-01
 
 - Emit value-free workload authorization stages so operators can distinguish Kubernetes authority

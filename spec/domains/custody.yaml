@@ -1,0 +1,755 @@
+# Retrofitted from the shipped service at origin/main b63dcdf. Describes what the code does today.
+# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.2.0); crates/secrets-core/src/lib.rs;
+# crates/secrets-postgres/{migrations/0001_initial.sql,src/lib.rs}; crates/secrets-http/src/lib.rs;
+# crates/secrets-auth/src/lib.rs; crates/secrets-app/src/main.rs.
+#
+# The service publishes no events: no publisher, outbox or broker exists in crates/ (searched for
+# publish|outbox|nats|kafka|webhook|notify, no match). Every event below is declared only because a
+# success outcome must emit one; none is in the component's `publishes:` list. The durable record
+# the code does write for each is an `audit_events` row (migrations/0001_initial.sql:37-44),
+# named beside each event.
+domain: secrets.custody
+
+summary: Encrypted, tenant-scoped custody of secret values, their revocation and deletion, and atomic prepared mutation batches.
+
+types:
+  # crates/secrets-core/src/lib.rs:40-45 SecretRef; docs/openapi.json #/components/schemas/Reference
+  - name: secrets.custody.Reference
+    kind: struct
+    fields:
+      - name: tenant
+        type: String
+      - name: namespace
+        type: String
+      - name: key
+        type: String
+
+  # crates/secrets-core/src/lib.rs:33-38 Disclosure, serde snake_case;
+  # migrations/0001_initial.sql:7 CHECK (disclosure IN ('workload_only','user_revealable'));
+  # docs/openapi.json #/components/schemas/PutSecret/properties/disclosure
+  - name: secrets.custody.Disclosure
+    kind: enum
+    variants: [workload_only, user_revealable]
+
+  # crates/secrets-core/src/lib.rs:47-56 PutSecret; docs/openapi.json #/components/schemas/PutSecret.
+  # Named PutSecret in Rust; renamed because the command holds that name. Carried inside a
+  # Mutation::Put; the HTTP PUT takes the same fields as command input.
+  - name: secrets.custody.SecretWrite
+    kind: struct
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+      - name: owner_subject
+        type: String
+      - name: value
+        # SecretBytes, base64 on the wire (crates/secrets-core/src/lib.rs:9-31)
+        type: Bytes
+      - name: disclosure
+        # #[serde(default = "workload_only")] (crates/secrets-core/src/lib.rs:52-53)
+        type: Optional<secrets.custody.Disclosure>
+      - name: labels
+        # #[serde(default)] (crates/secrets-core/src/lib.rs:54-55)
+        type: Optional<Map<String, String>>
+
+  # Mutation::Put payload (crates/secrets-core/src/lib.rs:91)
+  - name: secrets.custody.PutMutation
+    kind: struct
+    fields:
+      - name: secret
+        type: secrets.custody.SecretWrite
+
+  # Mutation::Delete payload (crates/secrets-core/src/lib.rs:92)
+  - name: secrets.custody.DeleteMutation
+    kind: struct
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+
+  # crates/secrets-core/src/lib.rs:88-93 Mutation, #[serde(tag = "op", rename_all = "snake_case")]
+  - name: secrets.custody.Mutation
+    kind: union
+    tag: op
+    variants:
+      put: secrets.custody.PutMutation
+      delete: secrets.custody.DeleteMutation
+
+entities:
+  # Read from crates/secrets-core/src/lib.rs:62-73 SecretMetadata and :82-86 StoredSecret;
+  # migrations/0001_initial.sql:1-14 table `secrets`; docs/openapi.json #/components/schemas/Metadata.
+  # Identity: every operation addresses a secret by its reference, unique per
+  # (tenant, namespace, secret_key) (migrations/0001_initial.sql:13); the row's primary key `id`
+  # (migrations/0001_initial.sql:2) is kept across puts (crates/secrets-postgres/src/lib.rs:88-96)
+  # and is output only.
+  - name: secrets.custody.Secret
+    identity:
+      name: reference
+      type: secrets.custody.Reference
+    fields:
+      - name: id
+        # Uuid::now_v7 on first put (crates/secrets-postgres/src/lib.rs:95)
+        type: Uuid
+      - name: owner_subject
+        type: String
+      - name: disclosure
+        type: secrets.custody.Disclosure
+      - name: version
+        # column current_version (migrations/0001_initial.sql:9); +1 per put
+        # (crates/secrets-postgres/src/lib.rs:91-95)
+        type: Integer
+      - name: labels
+        type: Map<String, String>
+      - name: value
+        # StoredSecret.value (crates/secrets-core/src/lib.rs:85); held only as AES-256-GCM
+        # ciphertext of the current version in `secret_versions`
+        # (crates/secrets-postgres/src/lib.rs:108-111, 163-179)
+        type: Bytes
+      - name: created_at
+        # Postgres `created_at::text`, not RFC 3339 (crates/secrets-postgres/src/lib.rs:121)
+        type: String
+      - name: updated_at
+        type: String
+    invariants:
+      # CHECK (current_version > 0) (migrations/0001_initial.sql:9)
+      - version > 0
+    # UNMAPPED: relation to the stored versions. `secret_versions` rows are owned
+    # (FOREIGN KEY ... ON DELETE CASCADE, migrations/0001_initial.sql:17), so the relation is
+    # `owns`, but a version's identity is the composite (secret_id, version)
+    # (migrations/0001_initial.sql:25) and no operation reads or addresses a version. Settled by
+    # the owner deciding whether a version is an entity of this domain and naming its identity.
+    lifecycle:
+      # wire values `active` / `revoked`: crates/secrets-core/src/lib.rs:75-80 SecretState;
+      # migrations/0001_initial.sql:8; docs/openapi.json #/components/schemas/Metadata/properties/state
+      initial: Active
+      states: [Active, Revoked]
+      terminal: []
+      transitions:
+        # UPDATE ... SET state='revoked' with no state filter (crates/secrets-postgres/src/lib.rs:201)
+        - name: revoke
+          from: [Active, Revoked]
+          to: Revoked
+        # upsert sets state='active' and a new version whatever the prior state
+        # (crates/secrets-postgres/src/lib.rs:104)
+        - name: replace
+          from: [Active, Revoked]
+          to: Active
+
+  # Read from migrations/0001_initial.sql:28-35 table `prepared_transactions` and
+  # crates/secrets-postgres/src/lib.rs:220-302. No status column: a row exists only while prepared;
+  # commit and abort delete it (crates/secrets-postgres/src/lib.rs:263, 290).
+  - name: secrets.custody.PreparedTransaction
+    identity:
+      # UNMAPPED: the primary key is (tenant, id) (migrations/0001_initial.sql:34), so one
+      # transaction id may be prepared once per tenant. ESS identity is one field; declared here as
+      # the caller-chosen id. Settled by a composite identity in the language or an owner decision.
+      name: transaction
+      type: Uuid
+    fields:
+      - name: tenant
+        type: String
+      - name: actor
+        # caller-supplied body field, not the verified principal (crates/secrets-http/src/lib.rs:106-109, 279)
+        type: String
+      - name: mutations
+        type: List<secrets.custody.Mutation>
+      - name: created_at
+        type: String
+    # UNMAPPED: relation to Secret. Mutations name secrets by reference inside the `mutations`
+    # jsonb column (migrations/0001_initial.sql:32), with no foreign key, so deleting a secret leaves
+    # a prepared batch in place (a `references` reading) — but there is no single field a `via`
+    # could name. Settled by a relation form over a list of union payloads, or by the owner.
+    # UNMAPPED: no route reads a prepared transaction (crates/secrets-http/src/lib.rs:36-56), so no
+    # view is declared and `tenant`, `actor` and `mutations` are observable only through what commit
+    # applies. The specification-level mutation audit (2026-09-27) found that dropping any of the
+    # three `sets` entries on PrepareTransaction.prepared changes no synthesized scenario. Settled by
+    # the owner deciding whether a read of a prepared batch belongs to the contract.
+    lifecycle:
+      # Structural, not read from the code: the table has no status, so one state that is both
+      # initial and terminal.
+      initial: Prepared
+      states: [Prepared]
+      terminal: [Prepared]
+
+# UNMAPPED: audit_events (migrations/0001_initial.sql:37-44; written by
+# crates/secrets-postgres/src/lib.rs:305-321 with actions put, revoke, delete, commit_batch, rewrap).
+# No operation reads it and secret_id has no foreign key, so rows outlive the secret. Whether it is
+# an entity of this domain is for the owner; it is not declared.
+
+actors:
+  # Identity authority: GET <origin>/v1/access-authority, exact audience, scope split into actions
+  # (crates/secrets-auth/src/lib.rs:32-92). Action per command: crates/secrets-http/src/lib.rs:115-173.
+  - name: secrets.custody.User
+    may:
+      - secrets.custody.RevokeOwnedSecret
+      - secrets.custody.DeleteOwnedSecret
+
+  # Kubernetes authority: TokenReview for an exact audience, then the first grant whose subject
+  # equals the service-account username supplies tenant and actions
+  # (crates/secrets-auth/src/lib.rs:94-254). Actions: crates/secrets-http/src/lib.rs:176-302.
+  - name: secrets.custody.Workload
+    may:
+      - secrets.custody.PutSecret
+      - secrets.custody.DeleteSecret
+      - secrets.custody.PrepareTransaction
+      - secrets.custody.CommitTransaction
+      - secrets.custody.AbortTransaction
+
+  # `secrets rewrap` runs with database and keyring access and no authority check
+  # (crates/secrets-app/src/main.rs:31-37, 68-73).
+  - name: secrets.custody.Operator
+    may:
+      - secrets.custody.RewrapSecrets
+
+# ApiError and its status mapping: crates/secrets-http/src/lib.rs:355-394. Body is
+# {"error": <canonical reason>} for every error (crates/secrets-http/src/lib.rs:386-391).
+# None of these responses is declared in docs/openapi.json.
+errors:
+  - name: secrets.custody.Unauthorized
+    summary: 401. No bearer token, or the authority refused it (crates/secrets-http/src/lib.rs:336-341, 377).
+
+  - name: secrets.custody.Forbidden
+    summary: 403. The principal lacks the action, or its tenant differs from the addressed tenant (crates/secrets-http/src/lib.rs:342-353, 378).
+
+  - name: secrets.custody.NotFound
+    summary: 404. No record at the address, or (user routes) not owned by the caller (crates/secrets-http/src/lib.rs:304-320, 367, 379).
+
+  - name: secrets.custody.Conflict
+    summary: 409. A prepared transaction already exists for this tenant and id (crates/secrets-postgres/src/lib.rs:250-256).
+
+  - name: secrets.custody.InvalidInput
+    summary: 400. StoreError::Invalid (crates/secrets-http/src/lib.rs:369, 381).
+
+  - name: secrets.custody.Unavailable
+    summary: 503. Storage, crypto or authority unavailable (crates/secrets-http/src/lib.rs:370, 382-384).
+
+  - name: secrets.custody.PayloadTooLarge
+    summary: 413. The request body exceeds 1 MiB (RequestBodyLimitLayer, crates/secrets-http/src/lib.rs:57); refused by the layer before the handler authenticates, so the body is not the ApiError shape.
+
+# UNMAPPED: a JSON body that does not deserialize (syntax, missing field, content type) is refused by
+# axum's `Json` extractor before any handler runs (crates/secrets-http/src/lib.rs:125, 146, 163, 179,
+# 205, 219, 235, 251, 273), with its own status and body, not an ApiError. Which of those statuses
+# the contract promises is for the owner; no outcome is declared.
+
+commands:
+  # PUT /v1/workload/secrets (crates/secrets-http/src/lib.rs:46, 176-201;
+  # docs/openapi.json #/paths/~1v1~1workload~1secrets/put). Workload action `secret:write`.
+  - name: secrets.custody.PutSecret
+    input:
+      - name: reference
+        type: secrets.custody.Reference
+      - name: owner_subject
+        # UNMAPPED: an empty owner_subject is replaced by the principal's subject
+        # (crates/secrets-http/src/lib.rs:192-196); a conditional source is not expressible.
+        type: String
+      - name: value
+        type: Bytes
+      - name: disclosure
+        type: Optional<secrets.custody.Disclosure>
+      - name: labels
+        type: Optional<Map<String, String>>
+    outcomes:
+      # No row at the reference: INSERT, version 1, state active (crates/secrets-postgres/src/lib.rs:95, 104-112)
+      - name: created
+        external: no secret is stored at the reference
+        creates: secrets.custody.Secret
+        instance: reference
+        sets:
+          owner_subject: input.owner_subject
+          value: input.value
+          # INSERT binds disclosure and labels (crates/secrets-postgres/src/lib.rs:101-106)
+          disclosure: input.disclosure
+          labels: input.labels
+          # version 1 on first put (crates/secrets-postgres/src/lib.rs:95)
+          version: '1'
+
+        emits:
+          - secrets.custody.SecretPut
+        payload:
+          secrets.custody.SecretPut:
+            reference: input.reference
+            owner_subject: input.owner_subject
+        summary: A secret exists at the reference, Active, version 1.
+
+      # Row exists: ON CONFLICT DO UPDATE, version + 1, state reset to active, new version row
+      # appended; older version rows are kept (crates/secrets-postgres/src/lib.rs:85-111)
+      - name: replaced
+        moves: secrets.custody.Secret.replace
+        instance: reference
+        sets:
+          owner_subject: input.owner_subject
+          value: input.value
+          # ON CONFLICT DO UPDATE SET disclosure=EXCLUDED.disclosure, labels=EXCLUDED.labels
+          # (crates/secrets-postgres/src/lib.rs:104)
+          disclosure: input.disclosure
+          labels: input.labels
+          # UNMAPPED: the version becomes current_version + 1 (crates/secrets-postgres/src/lib.rs:88-94),
+          # and `sets:` has no increment. With no entry here, the synthesized replace scenarios expect
+          # the version left at 1, which the shipped code does not do. Settled by an increment effect
+          # in the language.
+        emits:
+          - secrets.custody.SecretPut
+        payload:
+          secrets.custody.SecretPut:
+            reference: input.reference
+            owner_subject: input.owner_subject
+        summary: The secret holds a new current version and is Active again, including after a revoke.
+
+      # validate_ref: any part empty, over 255 bytes, or containing NUL
+      # (crates/secrets-postgres/src/lib.rs:84, 362-369). UNMAPPED: length and NUL rules are not
+      # expressible as `when`; declared external.
+      - name: invalid-reference
+        external: a reference part is empty, longer than 255 bytes, or contains NUL
+        error: secrets.custody.InvalidInput
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant lacks secret:write, or its tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage, encryption or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # POST /v1/user/secrets:revoke (crates/secrets-http/src/lib.rs:44, 143-159;
+  # docs/openapi.json #/paths/~1v1~1user~1secrets:revoke/post). User action `secret:revoke`,
+  # plus assert_owner: owner_subject must equal the caller (crates/secrets-http/src/lib.rs:155, 304-320).
+  - name: secrets.custody.RevokeOwnedSecret
+    input:
+      - name: reference
+        type: secrets.custody.Reference
+    outcomes:
+      # Revoke from Revoked succeeds again and appends another audit row (crates/secrets-postgres/src/lib.rs:201-204)
+      - name: revoked
+        moves: secrets.custody.Secret.revoke
+        instance: reference
+        emits:
+          - secrets.custody.SecretRevoked
+        payload:
+          secrets.custody.SecretRevoked:
+            reference: input.reference
+        summary: The secret is Revoked; workload get and exists no longer see it, list and detail still do.
+
+      # UNMAPPED: the ownership rule reads stored owner_subject against the caller, a stored-field
+      # guard `when` cannot hold (crates/secrets-http/src/lib.rs:309-319); declared external.
+      - name: not-owned
+        external: no secret at the reference is owned by the calling subject
+        error: secrets.custody.NotFound
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Identity authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the scope lacks secret:revoke, or the caller's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or the Identity authority is unavailable
+        error: secrets.custody.Unavailable
+
+  # DELETE /v1/user/secrets (crates/secrets-http/src/lib.rs:45, 160-175;
+  # docs/openapi.json #/paths/~1v1~1user~1secrets/delete). User action `secret:delete` plus assert_owner.
+  - name: secrets.custody.DeleteOwnedSecret
+    input:
+      - name: reference
+        type: secrets.custody.Reference
+    outcomes:
+      # DELETE FROM secrets, cascading every version row (crates/secrets-postgres/src/lib.rs:133-144;
+      # migrations/0001_initial.sql:17). Allowed from Active and Revoked.
+      # UNMAPPED: ESS has no delete verb, so this outcome names no subject and cannot say the
+      # secret stops existing. Settled by a removal effect in the language.
+      - name: deleted
+        emits:
+          - secrets.custody.SecretDeleted
+        payload:
+          secrets.custody.SecretDeleted:
+            reference: input.reference
+        summary: The secret and all its encrypted versions are gone.
+
+      - name: not-owned
+        external: no secret at the reference is owned by the calling subject
+        error: secrets.custody.NotFound
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Identity authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the scope lacks secret:delete, or the caller's tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or the Identity authority is unavailable
+        error: secrets.custody.Unavailable
+
+  # POST /v1/workload/secrets:delete (crates/secrets-http/src/lib.rs:50, 248-268;
+  # docs/openapi.json #/paths/~1v1~1workload~1secrets:delete/post). Workload action `secret:delete`;
+  # no ownership check. Body DeleteRequest (crates/secrets-http/src/lib.rs:99-104).
+  - name: secrets.custody.DeleteSecret
+    input:
+      - name: reference
+        type: secrets.custody.Reference
+      - name: actor
+        # recorded as the audit actor instead of the principal when present (crates/secrets-http/src/lib.rs:264)
+        type: Optional<String>
+    outcomes:
+      # UNMAPPED: no delete verb in ESS; see DeleteOwnedSecret.deleted.
+      - name: deleted
+        emits:
+          - secrets.custody.SecretDeleted
+        payload:
+          secrets.custody.SecretDeleted:
+            reference: input.reference
+        summary: The secret and all its encrypted versions are gone.
+
+      - name: not-found
+        external: no secret is stored at the reference
+        error: secrets.custody.NotFound
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant lacks secret:delete, or its tenant is not reference.tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # PUT /v1/workload/tenants/{tenant}/transactions/{transaction} (crates/secrets-http/src/lib.rs:51-54, 269-282;
+  # crates/secrets-postgres/src/lib.rs:220-258). Workload action `secret:prepare`.
+  # Body PrepareRequest {actor, mutations} (crates/secrets-http/src/lib.rs:105-109).
+  - name: secrets.custody.PrepareTransaction
+    input:
+      - name: tenant
+        type: String
+      - name: transaction
+        type: Uuid
+      - name: actor
+        type: String
+      - name: mutations
+        type: List<secrets.custody.Mutation>
+    outcomes:
+      # Stored only; no secret changes until commit. References are not validated here
+      # (crates/secrets-postgres/src/lib.rs:230-238 checks tenant only).
+      - name: prepared
+        creates: secrets.custody.PreparedTransaction
+        instance: transaction
+        sets:
+          tenant: input.tenant
+          actor: input.actor
+          mutations: input.mutations
+        emits:
+          - secrets.custody.TransactionPrepared
+        payload:
+          secrets.custody.TransactionPrepared:
+            tenant: input.tenant
+            transaction: input.transaction
+        summary: The batch is stored for later commit or abort.
+
+      # UNMAPPED: list emptiness and per-item tenant are not expressible as `when`
+      # (crates/secrets-postgres/src/lib.rs:227-238); declared external.
+      - name: invalid-batch
+        external: the batch is empty, or a mutation names another tenant
+        error: secrets.custody.InvalidInput
+
+      - name: duplicate
+        external: a transaction with this id is already prepared in the tenant
+        error: secrets.custody.Conflict
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant lacks secret:prepare, or its tenant is not the path tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # POST .../transactions/{transaction}/commit (crates/secrets-http/src/lib.rs:19-20, 55, 283-292;
+  # crates/secrets-postgres/src/lib.rs:260-287). Workload action `secret:commit`.
+  - name: secrets.custody.CommitTransaction
+    input:
+      - name: tenant
+        type: String
+      - name: transaction
+        type: Uuid
+    outcomes:
+      # One Postgres transaction: delete the prepared row, apply each Put (as PutSecret) and Delete
+      # (as DeleteSecret) under the stored actor, audit commit_batch.
+      # UNMAPPED: the outcome removes the PreparedTransaction and changes many Secrets; ESS has no
+      # delete verb and an outcome has one subject. Settled by removal and multi-subject effects.
+      - name: committed
+        emits:
+          - secrets.custody.TransactionCommitted
+        payload:
+          secrets.custody.TransactionCommitted:
+            tenant: input.tenant
+            transaction: input.transaction
+        summary: Every mutation in the batch is applied atomically and the batch is gone.
+
+      - name: not-found
+        external: no transaction with this id is prepared in the tenant
+        error: secrets.custody.NotFound
+
+      # A Delete of a reference with no secret returns NotFound and rolls the whole commit back,
+      # leaving the batch prepared (crates/secrets-postgres/src/lib.rs:142, 281).
+      - name: delete-target-missing
+        external: a Delete mutation names a reference with no secret
+        error: secrets.custody.NotFound
+
+      # validate_ref runs only at commit, inside put_tx (crates/secrets-postgres/src/lib.rs:84)
+      - name: invalid-reference
+        external: a Put mutation's reference part is empty, longer than 255 bytes, or contains NUL
+        error: secrets.custody.InvalidInput
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant lacks secret:commit, or its tenant is not the path tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage, encryption or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # POST .../transactions/{transaction}/abort (crates/secrets-http/src/lib.rs:21-22, 56, 293-302;
+  # crates/secrets-postgres/src/lib.rs:289-302). Workload action `secret:abort`.
+  - name: secrets.custody.AbortTransaction
+    input:
+      - name: tenant
+        type: String
+      - name: transaction
+        type: Uuid
+    outcomes:
+      # UNMAPPED: deletes the PreparedTransaction row; ESS has no delete verb. No audit row is written.
+      - name: aborted
+        emits:
+          - secrets.custody.TransactionAborted
+        payload:
+          secrets.custody.TransactionAborted:
+            tenant: input.tenant
+            transaction: input.transaction
+        summary: The batch is discarded without applying any mutation.
+
+      - name: not-found
+        external: no transaction with this id is prepared in the tenant
+        error: secrets.custody.NotFound
+
+      - name: unauthorized
+        external: the bearer token is missing or refused by the Kubernetes authority
+        error: secrets.custody.Unauthorized
+
+      - name: forbidden
+        external: the grant lacks secret:abort, or its tenant is not the path tenant
+        error: secrets.custody.Forbidden
+
+      - name: unavailable
+        external: storage or TokenReview is unavailable
+        error: secrets.custody.Unavailable
+
+  # `secrets rewrap --actor <name>` (crates/secrets-app/src/main.rs:20, 31-37, 68-73;
+  # crates/secrets-postgres/src/lib.rs:32-76). Re-encrypts the current version of every secret whose
+  # key_id differs from the active key, in every tenant and every state; older versions are untouched.
+  - name: secrets.custody.RewrapSecrets
+    input:
+      - name: actor
+        # default "secretsctl" (crates/secrets-app/src/main.rs:35-36)
+        type: String
+    outcomes:
+      # UNMAPPED: changes many Secrets at once without moving them; an outcome has one subject.
+      - name: rewrapped
+        emits:
+          - secrets.custody.SecretsRewrapped
+        payload:
+          secrets.custody.SecretsRewrapped:
+            actor: input.actor
+        summary: Every current version is wrapped by the active key.
+
+      - name: failed
+        external: storage is unavailable, or a current version does not decrypt with the keyring
+        error: secrets.custody.Unavailable
+
+events:
+  # audit action `put` (crates/secrets-postgres/src/lib.rs:112). Not published.
+  - name: secrets.custody.SecretPut
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+      - name: owner_subject
+        type: String
+
+  # audit action `revoke` (crates/secrets-postgres/src/lib.rs:204). Not published.
+  - name: secrets.custody.SecretRevoked
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+
+  # audit action `delete` (crates/secrets-postgres/src/lib.rs:144). Not published.
+  - name: secrets.custody.SecretDeleted
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+
+  # No audit row is written at prepare (crates/secrets-postgres/src/lib.rs:220-258). Not published.
+  - name: secrets.custody.TransactionPrepared
+    fields:
+      - name: tenant
+        type: String
+      - name: transaction
+        type: Uuid
+
+  # audit action `commit_batch` with secret_id NULL (crates/secrets-postgres/src/lib.rs:285),
+  # after one `put`/`delete` row per mutation. Not published.
+  - name: secrets.custody.TransactionCommitted
+    fields:
+      - name: tenant
+        type: String
+      - name: transaction
+        type: Uuid
+
+  # No audit row is written at abort (crates/secrets-postgres/src/lib.rs:289-302). Not published.
+  - name: secrets.custody.TransactionAborted
+    fields:
+      - name: tenant
+        type: String
+      - name: transaction
+        type: Uuid
+
+  # audit action `rewrap`, one per re-encrypted secret (crates/secrets-postgres/src/lib.rs:72). Not published.
+  - name: secrets.custody.SecretsRewrapped
+    fields:
+      - name: actor
+        type: String
+
+outcome_groups:
+  # RequestBodyLimitLayer::new(1024 * 1024) wraps every route (crates/secrets-http/src/lib.rs:57);
+  # these are the commands that take a JSON body. Commit, abort and rewrap take none.
+  - name: body-limit
+    commands:
+      - secrets.custody.PutSecret
+      - secrets.custody.RevokeOwnedSecret
+      - secrets.custody.DeleteOwnedSecret
+      - secrets.custody.DeleteSecret
+      - secrets.custody.PrepareTransaction
+    outcomes:
+      - name: too-large
+        external: the request body is longer than 1048576 bytes
+        error: secrets.custody.PayloadTooLarge
+
+# The disclosure and labels inputs are optional; serde fills an absent one with `workload_only` and an
+# empty map (crates/secrets-core/src/lib.rs:52-60) before the store writes it.
+conversions:
+  - from: Optional<secrets.custody.Disclosure>
+    to: secrets.custody.Disclosure
+    because: >-
+      An absent disclosure is `workload_only` (#[serde(default = "workload_only")],
+      crates/secrets-core/src/lib.rs:52-53).
+  - from: Optional<Map<String, String>>
+    to: Map<String, String>
+    because: >-
+      Absent labels are the empty map (#[serde(default)], crates/secrets-core/src/lib.rs:54-55).
+
+views:
+  # GET /v1/user/secrets (crates/secrets-http/src/lib.rs:42, 111-121; docs/openapi.json
+  # #/paths/~1v1~1user~1secrets/get). User action `secret:list`. Both states.
+  # UNMAPPED: the rows are filtered to owner_subject == the caller's subject in the caller's tenant
+  # (crates/secrets-postgres/src/lib.rs:215); a filter over the caller is not expressible.
+  # This view also carries the `version > 0` invariant checks (it holds every state).
+  - name: secrets.custody.OwnedSecrets
+    source: secrets.custody.Secret
+    consistency: read_your_writes
+    fields: &metadata
+      - name: id
+        type: Uuid
+      - name: reference
+        type: secrets.custody.Reference
+      - name: owner_subject
+        type: String
+      - name: disclosure
+        type: secrets.custody.Disclosure
+      - name: state
+        type: secrets.custody.Secret.State
+      - name: version
+        type: Integer
+      - name: labels
+        type: Map<String, String>
+      - name: created_at
+        type: String
+      - name: updated_at
+        type: String
+
+  # POST /v1/user/secrets:detail (crates/secrets-http/src/lib.rs:43, 122-142). User action
+  # `secret:read_metadata`. Found by listing the caller's own secrets; both states.
+  - name: secrets.custody.OwnedSecretDetail
+    source: secrets.custody.Secret
+    consistency: read_your_writes
+    fields: *metadata
+
+  # POST /v1/workload/secrets:get (crates/secrets-http/src/lib.rs:47, 202-215;
+  # crates/secrets-postgres/src/lib.rs:162-181). Workload action `secret:read_value`.
+  # Response is StoredSecret {metadata, value} (crates/secrets-core/src/lib.rs:82-86), flattened here.
+  - name: secrets.custody.SecretValue
+    source: secrets.custody.Secret
+    consistency: read_your_writes
+    filter: state == Active
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+      - name: version
+        type: Integer
+      - name: value
+        type: Bytes
+
+  # POST /v1/workload/secrets:exists (crates/secrets-http/src/lib.rs:48, 216-231;
+  # crates/secrets-postgres/src/lib.rs:183-187). Workload action `secret:read_metadata`.
+  # Response {exists: bool} (crates/secrets-http/src/lib.rs:90-93): true exactly for an Active row.
+  - name: secrets.custody.ActiveSecrets
+    source: secrets.custody.Secret
+    consistency: read_your_writes
+    filter: state == Active
+    fields:
+      - name: reference
+        type: secrets.custody.Reference
+
+  # POST /v1/workload/secrets:list (crates/secrets-http/src/lib.rs:49, 232-247). Workload action
+  # `secret:list`. Body ScopeRequest {tenant, namespace} (crates/secrets-http/src/lib.rs:94-98).
+  # Both states, any owner. UNMAPPED: filtered to the requested namespace, a filter over a request
+  # parameter that is not expressible.
+  - name: secrets.custody.NamespaceSecrets
+    source: secrets.custody.Secret
+    consistency: read_your_writes
+    fields: *metadata
+
+# Not declared: /health/live, /health/ready (crates/secrets-http/src/lib.rs:62-71), /metrics,
+# /openapi.json and /docs (crates/secrets-http/src/lib.rs:72-84) read no entity. `secrets migrate`
+# (crates/secrets-app/src/main.rs:19, 65-67) changes the schema, not the domain.
+
+components:
+  # crates/secrets-app/src/main.rs:84-105 `secrets serve`, axum on SECRETS_BIND.
+  - component: secrets-service
+    summary: Encrypted secret custody over HTTP, plus the rewrap operator command.
+    owns:
+      domains:
+        - secrets.custody
+    accepts:
+      commands:
+        - secrets.custody.PutSecret
+        - secrets.custody.RevokeOwnedSecret
+        - secrets.custody.DeleteOwnedSecret
+        - secrets.custody.DeleteSecret
+        - secrets.custody.PrepareTransaction
+        - secrets.custody.CommitTransaction
+        - secrets.custody.AbortTransaction
+        - secrets.custody.RewrapSecrets
+    # publishes: nothing; the service publishes no events (see the file header).
+    reached_by: network
