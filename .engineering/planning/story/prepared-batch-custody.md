@@ -2,7 +2,7 @@
 format: aep.planning-md/2
 id: story:prepared-batch-custody
 kind: story
-status: active
+status: implemented
 title: Prepared batches are held under envelope custody for a bounded time
 relations:
 - decomposes: epic:named-federated-storage
@@ -17,7 +17,7 @@ scope:
   path: crates/secrets-postgres/tests/lifecycle.rs
 - confidence: cited
   path: spec/domains/custody.yaml
-revision: 8
+revision: 9
 ---
 ## Acceptance
 
