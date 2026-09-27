@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 - 2026-09-27
 
 - Every refusal body is `{"error": "<reason phrase>", "code": "<code>"}`, with a stable
   kebab-case code named after its outcome in `spec/domains/custody.yaml`. Refusals that shared a

@@ -1,5 +1,5 @@
 # Retrofitted from the shipped service at origin/main b63dcdf. Describes what the code does today.
-# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.3.2); crates/secrets-core/src/lib.rs;
+# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.4.0); crates/secrets-core/src/lib.rs;
 # crates/secrets-postgres/{migrations/0001_initial.sql,src/lib.rs}; crates/secrets-http/src/lib.rs;
 # crates/secrets-auth/src/lib.rs; crates/secrets-app/src/main.rs.
 #

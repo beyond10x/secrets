@@ -15,8 +15,8 @@ The crates live in this repository; depend on a release tag:
 
 ```toml
 [dependencies]
-secrets-client = { git = "https://github.com/beyond10x/secrets", tag = "v0.3.2" }
-secrets-core = { git = "https://github.com/beyond10x/secrets", tag = "v0.3.2" }
+secrets-client = { git = "https://github.com/beyond10x/secrets", tag = "v0.4.0" }
+secrets-core = { git = "https://github.com/beyond10x/secrets", tag = "v0.4.0" }
 ```
 
 ## Use it
