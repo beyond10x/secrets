@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use secrets_core::{
-    Disclosure, Mutation, PutSecret, SecretMetadata, SecretRef, SecretState, SecretStore,
-    StoreError, StoredSecret,
+    Disclosure, InvalidInput, Mutation, PutSecret, SecretMetadata, SecretRef, SecretState,
+    SecretStore, StoreError, StoredSecret,
 };
 use secrets_crypto::{Envelope, Keyring, Zeroizing};
 use sqlx::{PgPool, Postgres, Row, Transaction};
@@ -144,8 +144,7 @@ impl PostgresStore {
             .encrypt(&input.reference, version, input.disclosure, &input.value)
             .map_err(|_| StoreError::Crypto)?;
         let disclosure = disclosure_text(input.disclosure);
-        let labels = serde_json::to_value(&input.labels)
-            .map_err(|_| StoreError::Invalid("invalid labels".into()))?;
+        let labels = serde_json::to_value(&input.labels).map_err(unavailable)?;
         sqlx::query("INSERT INTO secrets(id,tenant,namespace,secret_key,owner_subject,disclosure,state,current_version,labels) VALUES($1,$2,$3,$4,$5,$6,'active',$7,$8) ON CONFLICT(tenant,namespace,secret_key) DO UPDATE SET owner_subject=EXCLUDED.owner_subject, disclosure=EXCLUDED.disclosure, state='active', current_version=EXCLUDED.current_version, labels=EXCLUDED.labels, updated_at=now()")
             .bind(id).bind(&input.reference.tenant).bind(&input.reference.namespace).bind(&input.reference.key)
             .bind(&input.owner_subject).bind(disclosure).bind(version).bind(labels)
@@ -270,7 +269,7 @@ impl SecretStore for PostgresStore {
         actor: &str,
     ) -> Result<(), StoreError> {
         if mutations.is_empty() {
-            return Err(StoreError::Invalid("empty batch".into()));
+            return Err(StoreError::Invalid(InvalidInput::EmptyBatch));
         }
         for mutation in &mutations {
             let reference = match mutation {
@@ -278,7 +277,7 @@ impl SecretStore for PostgresStore {
                 Mutation::Delete { reference } => reference,
             };
             if reference.tenant != tenant {
-                return Err(StoreError::Invalid("cross-tenant batch".into()));
+                return Err(StoreError::Invalid(InvalidInput::CrossTenantBatch));
             }
         }
         let expires_at = unix_seconds()?.saturating_add(
@@ -350,7 +349,12 @@ impl SecretStore for PostgresStore {
                     self.put_tx(&mut tx, secret, &actor).await?;
                 }
                 Mutation::Delete { reference } => {
-                    self.delete_tx(&mut tx, &reference, &actor).await?;
+                    self.delete_tx(&mut tx, &reference, &actor).await.map_err(
+                        |error| match error {
+                            StoreError::NotFound => StoreError::DeleteTargetMissing,
+                            other => other,
+                        },
+                    )?;
                 }
             }
         }
@@ -434,11 +438,18 @@ fn row_to_metadata(row: &sqlx::postgres::PgRow) -> Result<SecretMetadata, StoreE
     })
 }
 
+/// An empty or NUL-bearing part is malformed wherever it is; otherwise a part over 255 bytes is
+/// invalid.
 fn validate_ref(reference: &SecretRef) -> Result<(), StoreError> {
-    for value in [&reference.tenant, &reference.namespace, &reference.key] {
-        if value.is_empty() || value.len() > 255 || value.contains('\0') {
-            return Err(StoreError::Invalid("invalid reference".into()));
-        }
+    let parts = [&reference.tenant, &reference.namespace, &reference.key];
+    if parts
+        .iter()
+        .any(|value| value.is_empty() || value.contains('\0'))
+    {
+        return Err(StoreError::Invalid(InvalidInput::MalformedReference));
+    }
+    if parts.iter().any(|value| value.len() > 255) {
+        return Err(StoreError::Invalid(InvalidInput::InvalidReference));
     }
     Ok(())
 }
@@ -464,13 +475,12 @@ fn batch_payload(
     expires_at: i64,
     mutations: &[Mutation],
 ) -> Result<Zeroizing<Vec<u8>>, StoreError> {
-    let invalid = |_| StoreError::Invalid("invalid batch".into());
     let mut count = ByteCount(0);
-    serde_json::to_writer(&mut count, mutations).map_err(invalid)?;
+    serde_json::to_writer(&mut count, mutations).map_err(unavailable)?;
     let capacity = 8 + count.0;
     let mut payload = Zeroizing::new(Vec::with_capacity(capacity));
     payload.extend_from_slice(&expires_at.to_be_bytes());
-    serde_json::to_writer(&mut *payload, mutations).map_err(invalid)?;
+    serde_json::to_writer(&mut *payload, mutations).map_err(unavailable)?;
     if payload.len() != capacity {
         return Err(StoreError::Unavailable);
     }
@@ -509,6 +519,40 @@ mod tests {
 
     use super::*;
     use secrets_core::SecretBytes;
+
+    /// An empty or NUL-bearing part is `malformed-reference` and a part over 255 bytes is
+    /// `invalid-reference` (spec/domains/custody.yaml PutSecret); a malformed part wins wherever
+    /// it is.
+    #[test]
+    fn validate_ref_tells_a_malformed_part_from_an_overlong_one() {
+        let long = "k".repeat(256);
+        let at = |tenant: &str, namespace: &str, key: &str| SecretRef {
+            tenant: tenant.into(),
+            namespace: namespace.into(),
+            key: key.into(),
+        };
+        let cases = [
+            (at("t", "n", ""), Some(InvalidInput::MalformedReference)),
+            (at("", "n", "k"), Some(InvalidInput::MalformedReference)),
+            (at("t", "n\0", "k"), Some(InvalidInput::MalformedReference)),
+            (at("t", "n", &long), Some(InvalidInput::InvalidReference)),
+            (at(&long, "n", "k"), Some(InvalidInput::InvalidReference)),
+            (at(&long, "n", ""), Some(InvalidInput::MalformedReference)),
+            (at("t", "n", &"k".repeat(255)), None),
+            (
+                at("t", "n", &"é".repeat(128)),
+                Some(InvalidInput::InvalidReference),
+            ),
+        ];
+        for (reference, expected) in cases {
+            let seen = match validate_ref(&reference) {
+                Ok(()) => None,
+                Err(StoreError::Invalid(kind)) => Some(kind),
+                Err(other) => panic!("{other}"),
+            };
+            assert_eq!(seen, expected, "{reference:?}");
+        }
+    }
 
     #[test]
     fn batch_payload_is_expiry_then_json_in_one_exact_allocation() {

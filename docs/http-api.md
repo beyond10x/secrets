@@ -21,17 +21,34 @@ the bodies of the routes it does not describe, and the error codes.
 
 ## Errors
 
-| Status | Meaning |
-|---|---|
-| `400` | invalid input, for example an invalid reference, an empty batch or a cross-tenant batch |
-| `401` | no bearer token, or the authority did not accept it |
-| `403` | the principal lacks the action, or its tenant differs from the request's |
-| `404` | no such secret or transaction, a revoked secret on a workload read, or a secret the user does not own |
-| `409` | a transaction with this ID is already prepared in the tenant |
-| `503` | the database, the keyring or an authority is unavailable, or decryption failed |
+Every refusal has the body `{"error": "<reason phrase>", "code": "<code>"}` and nothing else. The
+reason phrase is the status's, and the code says which refusal it is, so two refusals with the
+same status are told apart by the code. Neither ever contains any part of the request. The codes
+are stable; the OpenAPI document lists them in `#/components/schemas/Error`.
 
-Error bodies are `{"error": "<reason phrase>"}`. Bodies the JSON extractor rejects get a
-plain-text message from the framework instead.
+| Status | Code | Meaning |
+|---|---|---|
+| `400` | `malformed-body` | the body is not JSON of the route's request shape |
+| `400` | `malformed-path` | the `{transaction}` path segment is not a UUID |
+| `400` | `malformed-reference` | a reference part is empty or contains a NUL byte |
+| `400` | `invalid-reference` | a reference part is longer than 255 bytes (and none is empty or NUL-bearing) |
+| `400` | `empty-batch` | a prepared batch has no mutation |
+| `400` | `cross-tenant-batch` | a prepared batch names a tenant other than the caller's |
+| `401` | `unauthorized` | no bearer token, or the authority did not accept it |
+| `403` | `missing-action` | the principal lacks the route's action |
+| `403` | `forbidden` | the principal's tenant differs from the request's |
+| `404` | `not-found` | no such secret or transaction, or a revoked secret on a workload read |
+| `404` | `not-owned` | on a user route, no secret at the reference is owned by the caller |
+| `404` | `delete-target-missing` | a commit's delete mutation names a reference with no secret |
+| `404` | `route-not-found` | no route has this path |
+| `405` | `method-not-allowed` | the path exists but does not take this method |
+| `409` | `duplicate` | a transaction with this ID is already prepared in the tenant |
+| `413` | `too-large` | the request body is longer than 1 MiB |
+| `503` | `unavailable` | the database, the keyring or an authority is unavailable, or decryption failed |
+
+`missing-action` is checked before `forbidden`, and a body or path that does not parse is refused
+before the token is checked. `not-owned` does not say whether a secret exists at the reference: a
+secret owned by someone else and no secret at all get the same answer, byte for byte.
 
 ## Metadata
 
@@ -135,6 +152,6 @@ No authentication.
 
 ## Differences from the OpenAPI document
 
-The OpenAPI document at version 0.3.2 does not declare the request bodies of
-`secrets:list`, `secrets:delete` and the prepare route, any error responses, or the `/metrics`,
+The OpenAPI document at version 0.4.0 does not declare the request bodies of
+`secrets:list`, `secrets:delete` and the prepare route, or the `/metrics`,
 `/openapi.json` and `/docs` routes. This page describes what the service does for them.

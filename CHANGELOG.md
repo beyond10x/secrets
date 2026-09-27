@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.4.0 - 2026-09-27
+
+- Every refusal body is `{"error": "<reason phrase>", "code": "<code>"}`, with a stable
+  kebab-case code named after its outcome in `spec/domains/custody.yaml`. Refusals that shared a
+  status and body are now told apart: `missing-action` and `forbidden` (403), `malformed-reference`
+  and `invalid-reference`, `empty-batch` and `cross-tenant-batch`, `malformed-body` and the other
+  400s, `not-found`, `not-owned` and `delete-target-missing` (404). The OpenAPI document declares
+  the `Error` schema and its codes on every `/v1` operation.
+- `POST /v1/user/secrets:detail` answers `not-owned` like the other user routes; a secret owned by
+  someone else and no secret at all get the same answer. An unknown path is `404`
+  `route-not-found` and a method a path does not take is `405` `method-not-allowed`, both in the
+  refusal shape instead of an empty body.
+- A body over 1 MiB is answered `413` in the refusal shape (`too-large`) instead of plain text,
+  and a `{transaction}` path segment that is not a UUID is `400` `malformed-path` instead of
+  axum's message, which quoted the segment back.
+- Breaking for `secrets-core` users: `StoreError::Invalid` carries an `InvalidInput` kind instead
+  of a string, and `StoreError::DeleteTargetMissing` is new.
+- The conformance runner reads each refusal's branch from its code alone; the custody suite has
+  100 scenarios. Every open `UNMAPPED` marker in `spec/` is resolved as decided, deferred to a
+  named story, or an ESS 0.36 limit. In the planned storage model the authorizer decides before
+  name validation.
+
 ## 0.3.2 - 2026-09-27
 
 - A JSON body that does not parse into a route's request type is refused with `400` and

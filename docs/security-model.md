@@ -115,9 +115,9 @@ taken from the verified token (see
 
 - Values travel only in JSON request and response bodies, base64-encoded, never in paths or
   query strings. Request bodies are capped at 1 MiB.
-- Errors the service raises carry only the HTTP reason phrase, such as `{"error":"Not Found"}`.
-  A body the JSON extractor cannot parse is refused with the framework's plain-text parse
-  message instead.
+- A refusal carries only the HTTP reason phrase and a fixed code, such as
+  `{"error":"Not Found","code":"not-owned"}`, never any part of the request: a body or a path
+  that does not parse is refused the same way, not with the framework's parse message.
 - The service's own log events carry stage names and status codes, not tokens, subjects or
   values.
 - Metrics carry no labels.

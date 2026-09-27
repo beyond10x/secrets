@@ -1,5 +1,5 @@
 # Retrofitted from the shipped service at origin/main b63dcdf. Describes what the code does today.
-# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.3.2); crates/secrets-core/src/lib.rs;
+# Sources: docs/openapi.json (OpenAPI 3.1.0, info.version 0.4.0); crates/secrets-core/src/lib.rs;
 # crates/secrets-postgres/{migrations/0001_initial.sql,src/lib.rs}; crates/secrets-http/src/lib.rs;
 # crates/secrets-auth/src/lib.rs; crates/secrets-app/src/main.rs.
 #
@@ -111,11 +111,11 @@ entities:
     invariants:
       # CHECK (current_version > 0) (migrations/0001_initial.sql:9)
       - version > 0
-    # UNMAPPED: relation to the stored versions. `secret_versions` rows are owned
-    # (FOREIGN KEY ... ON DELETE CASCADE, migrations/0001_initial.sql:17), so the relation is
-    # `owns`, but a version's identity is the composite (secret_id, version)
-    # (migrations/0001_initial.sql:25) and no operation reads or addresses a version. Settled by
-    # the owner deciding whether a version is an entity of this domain and naming its identity.
+    # `secret_versions` rows are owned (FOREIGN KEY ... ON DELETE CASCADE,
+    # migrations/0001_initial.sql:17) under the composite (secret_id, version)
+    # (migrations/0001_initial.sql:25), and no operation reads or addresses a version.
+    # DECIDED 2026-09-27: a stored version is storage behind Secret.value, not an entity of this
+    # domain, so no relation is declared; a contract read of old versions would be new behaviour.
     lifecycle:
       # wire values `active` / `revoked`: crates/secrets-core/src/lib.rs:75-80 SecretState;
       # migrations/0001_initial.sql:8; docs/openapi.json #/components/schemas/Metadata/properties/state
@@ -148,9 +148,11 @@ entities:
   # batch is sealed under a key the keyring does not hold.
   - name: secrets.custody.PreparedTransaction
     identity:
-      # UNMAPPED: the primary key is (tenant, id) (migrations/0001_initial.sql:34), so one
-      # transaction id may be prepared once per tenant. ESS identity is one field; declared here as
-      # the caller-chosen id. Settled by a composite identity in the language or an owner decision.
+      # The primary key is (tenant, id) (migrations/0001_initial.sql:34), so one transaction id may
+      # be prepared once per tenant. Declared as the caller-chosen id.
+      # ESS-LIMIT: `instance:` names an input field, and the tenant half of the key is the verified
+      # caller's, not input (see PrepareTransaction); ESS 0.36 has no caller-context value to
+      # compose an identity from, so a struct identity {tenant, transaction} could not be instanced.
       name: transaction
       type: Uuid
     fields:
@@ -168,15 +170,17 @@ entities:
       - name: expires_at
         # the unix second the service sealed into the envelope: its clock at prepare + 600 seconds
         type: String
-    # UNMAPPED: relation to Secret. Mutations name secrets by reference inside the sealed batch,
-    # with no foreign key, so deleting a secret leaves
-    # a prepared batch in place (a `references` reading) — but there is no single field a `via`
-    # could name. Settled by a relation form over a list of union payloads, or by the owner.
-    # UNMAPPED: no route reads a prepared transaction (crates/secrets-http/src/lib.rs:36-56), so no
-    # view is declared and `tenant`, `actor` and `mutations` are observable only through what commit
+    # Mutations name secrets by reference inside the sealed batch, with no foreign key, so deleting
+    # a secret leaves a prepared batch in place (a `references` reading).
+    # ESS-LIMIT: a relation's `via` names one field; ESS 0.36 has no relation form over the
+    # references inside a List of union payloads (Mutation.put.secret.reference,
+    # Mutation.delete.reference).
+    # No route reads a prepared transaction (crates/secrets-http/src/lib.rs:38-62), so no view is
+    # declared and `tenant`, `actor` and `mutations` are observable only through what commit
     # applies. The specification-level mutation audit (2026-09-27) found that dropping any of the
-    # three `sets` entries on PrepareTransaction.prepared changes no synthesized scenario. Settled by
-    # the owner deciding whether a read of a prepared batch belongs to the contract.
+    # three `sets` entries on PrepareTransaction.prepared changes no synthesized scenario.
+    # DECIDED 2026-09-27: a read of a prepared batch is not part of the contract; the batch is
+    # sealed so that nothing but commit reads it, and a view would disclose it.
     lifecycle:
       # Structural, not read from the code: the table has no status, so one state that is both
       # initial and terminal.
@@ -184,10 +188,11 @@ entities:
       states: [Prepared]
       terminal: [Prepared]
 
-# UNMAPPED: audit_events (migrations/0001_initial.sql:37-44; written by
-# crates/secrets-postgres/src/lib.rs:305-321 with actions put, revoke, delete, commit_batch, rewrap).
-# No operation reads it and secret_id has no foreign key, so rows outlive the secret. Whether it is
-# an entity of this domain is for the owner; it is not declared.
+# audit_events (migrations/0001_initial.sql:37-44; written by crates/secrets-postgres/src/lib.rs
+# `audit` with actions put, revoke, delete, commit_batch, rewrap). No operation reads it and
+# secret_id has no foreign key, so rows outlive the secret. Not declared as an entity.
+# DEFERRED: story:verified-audit-actor, whose `contracts/custody/scenarios/audit` set is the first to
+# assert audit records and so decides how the domain declares them.
 
 actors:
   # Identity authority: GET <origin>/v1/access-authority, exact audience, scope split into actions
@@ -217,35 +222,44 @@ actors:
     may:
       - secrets.custody.RewrapSecrets
 
-# ApiError and its status mapping: crates/secrets-http/src/lib.rs:355-394. Body is
-# {"error": <canonical reason>} for every error (crates/secrets-http/src/lib.rs:386-391).
-# None of these responses is declared in docs/openapi.json.
+# Refusal and its status mapping: crates/secrets-http/src/lib.rs:361-423 (the `refusals!` catalogue), 425-445 (store and authority errors).
+# Every refusal body is exactly {"error": <status reason phrase>, "code": <code>}
+# (crates/secrets-http/src/lib.rs:447-459), where the code is the name of the refusal outcome below
+# that answered it: two outcomes of one error, such as `forbidden` and `missing-action`, carry
+# distinct codes, so a client tells them apart from the response alone. Neither member carries any
+# part of the request. The codes are declared in docs/openapi.json #/components/schemas/Error, and
+# checks/conformance/tests/adversary_w2.rs holds the router's codes equal to this file's refusal
+# outcome names, apart from the two routing refusals `route-not-found` (404, no route has the
+# path) and `method-not-allowed` (405), which the router answers before any command is chosen
+# (crates/secrets-http/src/lib.rs:60-61) and which no outcome may reuse.
 errors:
   - name: secrets.custody.Unauthorized
-    summary: 401. No bearer token, or the authority refused it (crates/secrets-http/src/lib.rs:336-341, 377).
+    summary: 401. No bearer token, or the authority refused it; code `unauthorized` (crates/secrets-http/src/lib.rs:340-345, 439-444).
 
   - name: secrets.custody.Forbidden
-    summary: 403. The principal lacks the action, or its tenant differs from the addressed tenant (crates/secrets-http/src/lib.rs:342-353, 378).
+    summary: 403. The principal lacks the action (code `missing-action`), or its tenant differs from the addressed tenant (code `forbidden`) (crates/secrets-http/src/lib.rs:346-358).
 
   - name: secrets.custody.NotFound
-    summary: 404. No record at the address, or (user routes) not owned by the caller (crates/secrets-http/src/lib.rs:304-320, 367, 379).
+    summary: 404. No record at the address (code `not-found`), on user routes no secret the caller owns (code `not-owned`), or a commit whose Delete names no secret (code `delete-target-missing`) (crates/secrets-http/src/lib.rs:308-324, 425-430; crates/secrets-postgres/src/lib.rs:352-360).
 
   - name: secrets.custody.Conflict
-    summary: 409. A prepared transaction already exists for this tenant and id (crates/secrets-postgres/src/lib.rs:250-256).
+    summary: 409. A prepared transaction already exists for this tenant and id; code `duplicate` (crates/secrets-postgres/src/lib.rs:305-311; crates/secrets-http/src/lib.rs:431).
 
   - name: secrets.custody.InvalidInput
-    summary: 400. StoreError::Invalid (crates/secrets-http/src/lib.rs:369, 381).
+    summary: 400. A store input rule (codes `malformed-reference`, `invalid-reference`, `empty-batch`, `cross-tenant-batch`), a body that does not parse (`malformed-body`) or a path that does not parse (`malformed-path`) (crates/secrets-http/src/lib.rs:432-435, 485, 501).
 
   - name: secrets.custody.Unavailable
-    summary: 503. Storage, crypto or authority unavailable (crates/secrets-http/src/lib.rs:370, 382-384).
+    summary: 503. Storage, crypto or authority unavailable; code `unavailable` (crates/secrets-http/src/lib.rs:436, 442).
 
   - name: secrets.custody.PayloadTooLarge
-    summary: 413. The request body exceeds 1 MiB (RequestBodyLimitLayer, crates/secrets-http/src/lib.rs:57); refused by the layer before the handler authenticates, so the body is not the ApiError shape.
+    summary: 413. The request body exceeds 1 MiB (RequestBodyLimitLayer, crates/secrets-http/src/lib.rs:57); refused before the handler authenticates, by the layer from the declared length or by `JsonBody` from the bytes read, and answered in the refusal shape with code `too-large` (crates/secrets-http/src/lib.rs:59-60, 461-469, 482-484).
 
 # A JSON body that does not parse into the handler's request type (syntax, missing field, wrong
-# type, content type) is refused by `JsonBody` before the handler authenticates, as ApiError::Invalid:
-# 400 with {"error": "Bad Request"} and no part of the input (crates/secrets-http/src/lib.rs:396-415).
-# Declared as the `unparsable-body` group below.
+# type, content type) is refused by `JsonBody` before the handler authenticates: 400 with
+# {"error": "Bad Request", "code": "malformed-body"} and no part of the input
+# (crates/secrets-http/src/lib.rs:471-488). Declared as the `unparsable-body` group below. A path
+# parameter that does not parse is refused the same way by `PathParams`, as `malformed-path`
+# (crates/secrets-http/src/lib.rs:490-503): the `unparsable-path` group.
 
 commands:
   # PUT /v1/workload/secrets (crates/secrets-http/src/lib.rs:46, 176-201;
@@ -255,10 +269,11 @@ commands:
       - name: reference
         type: secrets.custody.Reference
       - name: owner_subject
-        # UNMAPPED: an empty owner_subject is replaced by the principal's subject
-        # (crates/secrets-http/src/lib.rs:192-196); a conditional source is not expressible. The ess/14
-        # fallback `{input: <field>, else: {generated: true}}` needs an Optional input and a minted
-        # value, and this is a required String falling back to the caller's subject, so it does not apply.
+        # An empty owner_subject is replaced by the principal's subject
+        # (crates/secrets-http/src/lib.rs:192-198).
+        # ESS-LIMIT: no conditional source on a caller-context value. The ess/14 fallback
+        # `{input: <field>, else: {generated: true}}` needs an Optional input and a minted value; this
+        # is a required String falling back to the verified caller's subject.
         type: String
       - name: value
         type: Bytes
@@ -340,8 +355,10 @@ commands:
             owner_subject: input.owner_subject
         summary: The secret holds a new current version and is Active again, including after a revoke.
 
-      # validate_ref refuses a part that is empty, longer than 255 bytes, or contains NUL, with one
-      # 400 for all three (crates/secrets-postgres/src/lib.rs:129, 437-444). Empty and NUL are guards.
+      # validate_ref refuses a reference with an empty or NUL-bearing part, in any part, as
+      # `malformed-reference`, and otherwise one with a part over 255 bytes as `invalid-reference`;
+      # each answers its own code (crates/secrets-postgres/src/lib.rs:129, 441-456). Empty and NUL
+      # are guards.
       - name: malformed-reference
         when:
           any:
@@ -411,8 +428,10 @@ commands:
             reference: input.reference
         summary: The secret is Revoked; workload get and exists no longer see it, list and detail still do.
 
-      # UNMAPPED: the ownership rule reads stored owner_subject against the caller, a stored-field
-      # guard `when` cannot hold (crates/secrets-http/src/lib.rs:309-319); declared external.
+      # The ownership rule reads the stored owner_subject against the caller
+      # (crates/secrets-http/src/lib.rs:308-324); declared external.
+      # ESS-LIMIT: a stored-field guard compares a stored field with input; ESS 0.36 has no
+      # caller-context value (the verified subject) for a `when` to compare it with.
       - name: not-owned
         external: no secret at the reference is owned by the calling subject
         error: secrets.custody.NotFound
@@ -444,8 +463,8 @@ commands:
     outcomes:
       # DELETE FROM secrets, cascading every version row (crates/secrets-postgres/src/lib.rs:133-144;
       # migrations/0001_initial.sql:17). Allowed from Active and Revoked.
-      # UNMAPPED: ESS has no delete verb, so this outcome names no subject and cannot say the
-      # secret stops existing. Settled by a removal effect in the language.
+      # ESS-LIMIT: no removal effect (an outcome has creates, updates, moves or preserves only), so
+      # this outcome names no subject and cannot say the secret stops existing.
       - name: deleted
         emits:
           - secrets.custody.SecretDeleted
@@ -487,7 +506,7 @@ commands:
         # recorded as the audit actor instead of the principal when present (crates/secrets-http/src/lib.rs:264)
         type: Optional<String>
     outcomes:
-      # UNMAPPED: no delete verb in ESS; see DeleteOwnedSecret.deleted.
+      # ESS-LIMIT: no removal effect; see DeleteOwnedSecret.deleted.
       - name: deleted
         emits:
           - secrets.custody.SecretDeleted
@@ -557,12 +576,12 @@ commands:
             transaction: input.transaction
         summary: The batch is held in the caller's tenant for later commit or abort, only as an AES-256-GCM envelope from the service keyring bound to the tenant, the transaction id and the actor, and for at most 600 seconds; expired batches of the tenant are removed.
 
-      # StoreError::Invalid("empty batch") (crates/secrets-postgres/src/lib.rs:272-274).
+      # StoreError::Invalid(InvalidInput::EmptyBatch) (crates/secrets-postgres/src/lib.rs:271-273).
       - name: empty-batch
         when: mutations.count == 0
         error: secrets.custody.InvalidInput
 
-      # StoreError::Invalid("cross-tenant batch") (crates/secrets-postgres/src/lib.rs:275-283).
+      # StoreError::Invalid(InvalidInput::CrossTenantBatch) (crates/secrets-postgres/src/lib.rs:274-282).
       - name: cross-tenant-batch
         external: a mutation names a tenant other than the caller's
         when: mutations.count > 0
@@ -605,8 +624,8 @@ commands:
     outcomes:
       # One Postgres transaction: delete the prepared row, apply each Put (as PutSecret) and Delete
       # (as DeleteSecret) under the stored actor, audit commit_batch.
-      # UNMAPPED: the outcome removes the PreparedTransaction and changes many Secrets; ESS has no
-      # delete verb and an outcome has one subject. Settled by removal and multi-subject effects.
+      # ESS-LIMIT: the outcome removes the PreparedTransaction and changes many Secrets; ESS 0.36
+      # has no removal effect and an outcome has one subject.
       - name: committed
         emits:
           - secrets.custody.TransactionCommitted
@@ -621,15 +640,20 @@ commands:
         external: no unexpired transaction with this id is prepared in the tenant; a batch expires 600 seconds after it is prepared, by its `expires_at` or by the expiry sealed in its envelope
         error: secrets.custody.NotFound
 
-      # A Delete of a reference with no secret returns NotFound and rolls the whole commit back,
-      # leaving the batch prepared (crates/secrets-postgres/src/lib.rs:142, 281).
+      # A Delete of a reference with no secret rolls the whole commit back, leaving the batch
+      # prepared, and answers its own code (crates/secrets-postgres/src/lib.rs:352-360).
       - name: delete-target-missing
         external: a Delete mutation names a reference with no secret
         error: secrets.custody.NotFound
 
-      # validate_ref runs only at commit, inside put_tx (crates/secrets-postgres/src/lib.rs:84)
+      # validate_ref runs only at commit, inside put_tx (crates/secrets-postgres/src/lib.rs:129,
+      # 441-456), with the two codes PutSecret answers.
+      - name: malformed-reference
+        external: a Put mutation's reference part is empty or contains NUL
+        error: secrets.custody.InvalidInput
+
       - name: invalid-reference
-        external: a Put mutation's reference part is empty, longer than 255 bytes, or contains NUL
+        external: a Put mutation's reference part is longer than 255 bytes, and none is empty or contains NUL
         error: secrets.custody.InvalidInput
 
       - name: unauthorized
@@ -660,7 +684,8 @@ commands:
       - name: transaction
         type: Uuid
     outcomes:
-      # UNMAPPED: deletes the PreparedTransaction row; ESS has no delete verb. No audit row is written.
+      # Deletes the PreparedTransaction row. No audit row is written.
+      # ESS-LIMIT: no removal effect, so the outcome cannot say the batch stops existing.
       - name: aborted
         emits:
           - secrets.custody.TransactionAborted
@@ -704,7 +729,7 @@ commands:
         # default "secretsctl" (crates/secrets-app/src/main.rs:35-36)
         type: String
     outcomes:
-      # UNMAPPED: changes many Secrets at once without moving them; an outcome has one subject.
+      # ESS-LIMIT: changes many Secrets at once without moving them; an outcome has one subject.
       # One `rewrap` audit row per re-encrypted current version (crates/secrets-postgres/src/lib.rs:93),
       # so the event exists only when some current version was under another key; which versions
       # are is stored state, not input.
@@ -960,6 +985,19 @@ outcome_groups:
         external: the request body is not JSON of the command's request shape
         error: secrets.custody.InvalidInput
 
+  # PathParams (crates/secrets-http/src/lib.rs:490-503) on every route with a `{transaction}` path
+  # segment, before the handler authenticates. The typed input carries a Uuid, so a segment that is
+  # not one is outside it and the condition is external.
+  - name: unparsable-path
+    commands:
+      - secrets.custody.PrepareTransaction
+      - secrets.custody.CommitTransaction
+      - secrets.custody.AbortTransaction
+    outcomes:
+      - name: malformed-path
+        external: the transaction path segment is not a UUID
+        error: secrets.custody.InvalidInput
+
 # The disclosure and labels inputs are optional; serde fills an absent one with `workload_only` and an
 # empty map (crates/secrets-core/src/lib.rs:52-60) before the store writes it.
 conversions:
@@ -976,8 +1014,10 @@ conversions:
 views:
   # GET /v1/user/secrets (crates/secrets-http/src/lib.rs:42, 111-121; docs/openapi.json
   # #/paths/~1v1~1user~1secrets/get). User action `secret:list`. Both states.
-  # UNMAPPED: the rows are filtered to owner_subject == the caller's subject in the caller's tenant
-  # (crates/secrets-postgres/src/lib.rs:215); a filter over the caller is not expressible.
+  # The rows are filtered to owner_subject == the caller's subject in the caller's tenant
+  # (crates/secrets-http/src/lib.rs:115-125; crates/secrets-postgres/src/lib.rs:260).
+  # ESS-LIMIT: a view filter can read a declared param but no caller-context value (the verified
+  # subject and tenant), and the route takes no parameter.
   # This view also carries the `version > 0` invariant checks (it holds every state).
   - name: secrets.custody.OwnedSecrets
     source: secrets.custody.Secret
@@ -1037,8 +1077,12 @@ views:
 
   # POST /v1/workload/secrets:list (crates/secrets-http/src/lib.rs:49, 232-247). Workload action
   # `secret:list`. Body ScopeRequest {tenant, namespace} (crates/secrets-http/src/lib.rs:94-98).
-  # Both states, any owner. UNMAPPED: filtered to the requested namespace, a filter over a request
-  # parameter that is not expressible.
+  # Both states, any owner, filtered to the requested tenant and namespace
+  # (crates/secrets-http/src/lib.rs:242-249).
+  # ESS-LIMIT: `params: [tenant, namespace]` with `filter: [reference.tenant == param.tenant,
+  # reference.namespace == param.namespace]` validates, but ess 0.36.0 synthesis cannot bind the
+  # params (ESS-SYNTH-005 on PutSecret, RevokeOwnedSecret and both Secret transitions; ESS-AUTHOR-014
+  # on two authored scenarios; tried 2026-09-27), so the filter is left undeclared.
   - name: secrets.custody.NamespaceSecrets
     source: secrets.custody.Secret
     consistency: read_your_writes

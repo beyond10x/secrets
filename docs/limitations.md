@@ -1,12 +1,12 @@
 ---
 title: Known limitations
-description: What Secrets 0.3.2 does not do, or does differently from what its model implies.
+description: What Secrets 0.4.0 does not do, or does differently from what its model implies.
 sidebar_position: 9
 ---
 
 # Known limitations
 
-These apply to version 0.3.2. Each describes the code as it is; the first two are tracked for a
+These apply to version 0.4.0. Each describes the code as it is; the first two are tracked for a
 fix.
 
 ## Rewrap covers only current versions
@@ -52,5 +52,5 @@ copies in backups or replicas remain decryptable with the keyring.
 - Audit events can be written but not read through the API.
 - `/metrics` exposes only `secrets_up`.
 - `SIGTERM` is not handled; only `SIGINT` drains in-flight requests.
-- The OpenAPI document omits some request bodies, all error responses and the service routes; the
+- The OpenAPI document omits some request bodies and the service routes; the
   [HTTP API](http-api.md#differences-from-the-openapi-document) page lists them.

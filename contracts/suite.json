@@ -54,13 +54,14 @@
     },
     "counts": {
       "authored": 8,
-      "generated": 88,
-      "outside": 76,
+      "generated": 92,
+      "outside": 77,
       "refused": 0
     },
     "generated": [
       "secrets.custody.AbortTransaction/outcome/aborted",
       "secrets.custody.AbortTransaction/outcome/forbidden",
+      "secrets.custody.AbortTransaction/outcome/malformed-path",
       "secrets.custody.AbortTransaction/outcome/missing-action",
       "secrets.custody.AbortTransaction/outcome/not-found",
       "secrets.custody.AbortTransaction/outcome/unauthorized",
@@ -76,6 +77,8 @@
       "secrets.custody.CommitTransaction/outcome/delete-target-missing",
       "secrets.custody.CommitTransaction/outcome/forbidden",
       "secrets.custody.CommitTransaction/outcome/invalid-reference",
+      "secrets.custody.CommitTransaction/outcome/malformed-path",
+      "secrets.custody.CommitTransaction/outcome/malformed-reference",
       "secrets.custody.CommitTransaction/outcome/missing-action",
       "secrets.custody.CommitTransaction/outcome/not-found",
       "secrets.custody.CommitTransaction/outcome/unauthorized",
@@ -108,6 +111,7 @@
       "secrets.custody.PrepareTransaction/outcome/empty-batch",
       "secrets.custody.PrepareTransaction/outcome/forbidden",
       "secrets.custody.PrepareTransaction/outcome/malformed-body",
+      "secrets.custody.PrepareTransaction/outcome/malformed-path",
       "secrets.custody.PrepareTransaction/outcome/missing-action",
       "secrets.custody.PrepareTransaction/outcome/prepared",
       "secrets.custody.PrepareTransaction/outcome/too-large",
@@ -201,6 +205,17 @@
         "origin": "generated",
         "reason": "other_component",
         "scenario": "secrets.storage.AddNamespace/outcome/invalid-name"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          }
+        ],
+        "origin": "generated",
+        "reason": "other_component",
+        "scenario": "secrets.storage.AddNamespace/outcome/name-too-long"
       },
       {
         "needs": [
@@ -1077,8 +1092,8 @@
   },
   "provenance": {
     "component": "secrets-service",
-    "contract_digest": "9b7823859fcc8532d313611d56fff0236fbeaa99dece88346cdde59a71f97c86",
-    "spec_digest": "79eac599218e4b164d00196f7671fda3e674b91b8714d4c9270648993f9dbf05",
+    "contract_digest": "9324f386c77dc6e63b44acfc3615e745c59f357858f87e4d4c071620dd1c6a36",
+    "spec_digest": "d63e69ff963fcd1dfe59d4acb98611e6b628ae1bbaea155b45dd952dc7ae5d88",
     "specification_version": "v1",
     "suite_version": "ess-conformance/5",
     "system": "secrets"
@@ -1437,6 +1452,225 @@
         },
         {
           "error": "secrets.custody.Forbidden",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.custody.NamespaceSecretsListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.NothingRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretExistenceChecked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretPut",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretRevoked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretValueRead",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretsRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionAborted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionCommitted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionPrepared",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameUnbound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        }
+      ]
+    },
+    "secrets.custody.AbortTransaction/outcome/malformed-path": {
+      "purpose": "`secrets.custody.AbortTransaction` answers `malformed-path` for the cause it declares as external, injected",
+      "source": [
+        {
+          "kind": "command",
+          "name": "secrets.custody.AbortTransaction"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.AbortTransaction",
+            "outcome": "malformed-path"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NamespaceSecretsListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NothingRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretExistenceChecked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretPut"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretRevoked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretValueRead"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretsRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionAborted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionCommitted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionPrepared"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MountSet"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameBound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameUnbound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceRemoved"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.custody.InvalidInput"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.custody.AbortTransaction",
+            "outcome": "malformed-path"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "command": "secrets.custody.AbortTransaction",
+          "input": {
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.AbortTransaction",
+            "outcome": "malformed-path"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.custody.InvalidInput",
           "step": "expect_error"
         },
         {
@@ -4750,6 +4984,444 @@
           "outcome": {
             "command": "secrets.custody.CommitTransaction",
             "outcome": "invalid-reference"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.custody.InvalidInput",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.custody.NamespaceSecretsListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.NothingRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretExistenceChecked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretPut",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretRevoked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretValueRead",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretsRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionAborted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionCommitted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionPrepared",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameUnbound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        }
+      ]
+    },
+    "secrets.custody.CommitTransaction/outcome/malformed-path": {
+      "purpose": "`secrets.custody.CommitTransaction` answers `malformed-path` for the cause it declares as external, injected",
+      "source": [
+        {
+          "kind": "command",
+          "name": "secrets.custody.CommitTransaction"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.CommitTransaction",
+            "outcome": "malformed-path"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NamespaceSecretsListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NothingRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretExistenceChecked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretPut"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretRevoked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretValueRead"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretsRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionAborted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionCommitted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionPrepared"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MountSet"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameBound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameUnbound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceRemoved"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.custody.InvalidInput"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.custody.CommitTransaction",
+            "outcome": "malformed-path"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "command": "secrets.custody.CommitTransaction",
+          "input": {
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.CommitTransaction",
+            "outcome": "malformed-path"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.custody.InvalidInput",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.custody.NamespaceSecretsListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.NothingRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretExistenceChecked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretPut",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretRevoked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretValueRead",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretsRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionAborted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionCommitted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionPrepared",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameUnbound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        }
+      ]
+    },
+    "secrets.custody.CommitTransaction/outcome/malformed-reference": {
+      "purpose": "`secrets.custody.CommitTransaction` answers `malformed-reference` for the cause it declares as external, injected",
+      "source": [
+        {
+          "kind": "command",
+          "name": "secrets.custody.CommitTransaction"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.CommitTransaction",
+            "outcome": "malformed-reference"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NamespaceSecretsListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NothingRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretExistenceChecked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretPut"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretRevoked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretValueRead"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretsRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionAborted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionCommitted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionPrepared"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MountSet"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameBound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameUnbound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceRemoved"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.custody.InvalidInput"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.custody.CommitTransaction",
+            "outcome": "malformed-reference"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "command": "secrets.custody.CommitTransaction",
+          "input": {
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.CommitTransaction",
+            "outcome": "malformed-reference"
           },
           "step": "expect_outcome"
         },
@@ -12020,6 +12692,253 @@
           "outcome": {
             "command": "secrets.custody.PrepareTransaction",
             "outcome": "malformed-body"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.custody.InvalidInput",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.custody.NamespaceSecretsListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.NothingRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretExistenceChecked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretPut",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretRevoked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretValueRead",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretsRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionAborted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionCommitted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionPrepared",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameUnbound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        }
+      ]
+    },
+    "secrets.custody.PrepareTransaction/outcome/malformed-path": {
+      "purpose": "`secrets.custody.PrepareTransaction` answers `malformed-path` for the cause it declares as external, injected",
+      "source": [
+        {
+          "kind": "type",
+          "name": "secrets.custody.DeleteMutation"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.custody.Disclosure"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.custody.Mutation"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.custody.PutMutation"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.custody.Reference"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.custody.SecretWrite"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.custody.PrepareTransaction"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "malformed-path"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NamespaceSecretsListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.NothingRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretExistenceChecked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretPut"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretRevoked"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretValueRead"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.SecretsRewrapped"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionAborted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionCommitted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.custody.TransactionPrepared"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MountSet"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameBound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameUnbound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceRemoved"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.custody.InvalidInput"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "malformed-path"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": []
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "malformed-path"
           },
           "step": "expect_outcome"
         },

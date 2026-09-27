@@ -93,7 +93,6 @@ impl Admin {
             minted: 0,
             references: BTreeSet::new(),
             owners: BTreeSet::new(),
-            caller_in_addressed_tenant: true,
         })
     }
 
@@ -154,9 +153,6 @@ pub struct Scenario {
     /// Every reference a command addressed, so an unparameterised view is read over each scope
     /// the scenario touched.
     pub references: BTreeSet<Address>,
-    /// Whether the last command's principal belonged to the tenant it addressed: a 403 to one is a
-    /// missing action, to the other a foreign tenant.
-    pub caller_in_addressed_tenant: bool,
     /// Every owner subject a command named or an arrangement stored.
     pub owners: BTreeSet<String>,
 }
