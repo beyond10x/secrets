@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.3.1 - 2026-09-27
 
 - `secrets rewrap` prints `rewrapped <n> secret(s)`: the count covers secrets in every state, not
   only active ones.
