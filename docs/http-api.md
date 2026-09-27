@@ -135,6 +135,6 @@ No authentication.
 
 ## Differences from the OpenAPI document
 
-The OpenAPI document at version 0.3.1 does not declare the request bodies of
+The OpenAPI document at version 0.3.2 does not declare the request bodies of
 `secrets:list`, `secrets:delete` and the prepare route, any error responses, or the `/metrics`,
 `/openapi.json` and `/docs` routes. This page describes what the service does for them.

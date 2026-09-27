@@ -1,7 +1,7 @@
 use axum::{
     Json, Router,
     body::Body,
-    extract::{Path, State},
+    extract::{FromRequest, Path, Request, State},
     http::{HeaderMap, StatusCode, header},
     response::{Html, IntoResponse, Response},
     routing::{delete, get, post, put},
@@ -122,7 +122,7 @@ async fn user_list(
 async fn user_detail(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(reference): Json<SecretRef>,
+    JsonBody(reference): JsonBody<SecretRef>,
 ) -> Result<Json<SecretMetadata>, ApiError> {
     let principal = authorize_ref(
         &headers,
@@ -143,7 +143,7 @@ async fn user_detail(
 async fn user_revoke(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(reference): Json<SecretRef>,
+    JsonBody(reference): JsonBody<SecretRef>,
 ) -> Result<Json<SecretMetadata>, ApiError> {
     let principal = authorize_ref(
         &headers,
@@ -160,7 +160,7 @@ async fn user_revoke(
 async fn user_delete(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(reference): Json<SecretRef>,
+    JsonBody(reference): JsonBody<SecretRef>,
 ) -> Result<StatusCode, ApiError> {
     let principal = authorize_ref(
         &headers,
@@ -176,7 +176,7 @@ async fn user_delete(
 async fn workload_put(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(input): Json<PutSecret>,
+    JsonBody(input): JsonBody<PutSecret>,
 ) -> Result<Json<SecretMetadata>, ApiError> {
     let principal = authorize_ref(
         &headers,
@@ -202,7 +202,7 @@ async fn workload_put(
 async fn workload_get(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(reference): Json<SecretRef>,
+    JsonBody(reference): JsonBody<SecretRef>,
 ) -> Result<Json<secrets_core::StoredSecret>, ApiError> {
     authorize_ref(
         &headers,
@@ -216,7 +216,7 @@ async fn workload_get(
 async fn workload_exists(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(reference): Json<SecretRef>,
+    JsonBody(reference): JsonBody<SecretRef>,
 ) -> Result<Json<ExistsResponse>, ApiError> {
     authorize_ref(
         &headers,
@@ -232,7 +232,7 @@ async fn workload_exists(
 async fn workload_list(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(scope): Json<ScopeRequest>,
+    JsonBody(scope): JsonBody<ScopeRequest>,
 ) -> Result<Json<ListResponse>, ApiError> {
     let principal = authorize(&headers, &*state.workload_authority, "secret:list").await?;
     tenant_match(&principal, &scope.tenant)?;
@@ -248,7 +248,7 @@ async fn workload_list(
 async fn workload_delete(
     State(state): State<AppState>,
     headers: HeaderMap,
-    Json(request): Json<DeleteRequest>,
+    JsonBody(request): JsonBody<DeleteRequest>,
 ) -> Result<StatusCode, ApiError> {
     let principal = authorize_ref(
         &headers,
@@ -270,7 +270,7 @@ async fn workload_prepare(
     State(state): State<AppState>,
     headers: HeaderMap,
     Path((tenant, transaction)): Path<(String, Uuid)>,
-    Json(request): Json<PrepareRequest>,
+    JsonBody(request): JsonBody<PrepareRequest>,
 ) -> Result<StatusCode, ApiError> {
     let principal = authorize(&headers, &*state.workload_authority, "secret:prepare").await?;
     tenant_match(&principal, &tenant)?;
@@ -390,6 +390,25 @@ impl IntoResponse for ApiError {
             ),
         )
             .into_response()
+    }
+}
+
+/// A JSON request body. A body that does not parse into `T` is refused as `ApiError::Invalid`,
+/// whose response carries only the status reason: axum's own rejection text quotes the offending
+/// input, and values never belong in errors. A body over the size limit keeps its 413.
+struct JsonBody<T>(T);
+
+impl<S: Send + Sync, T: serde::de::DeserializeOwned> FromRequest<S> for JsonBody<T> {
+    type Rejection = Response;
+
+    async fn from_request(request: Request, state: &S) -> Result<Self, Self::Rejection> {
+        match Json::<T>::from_request(request, state).await {
+            Ok(Json(value)) => Ok(Self(value)),
+            Err(rejection) if rejection.status() == StatusCode::PAYLOAD_TOO_LARGE => {
+                Err(rejection.into_response())
+            }
+            Err(_) => Err(ApiError::Invalid.into_response()),
+        }
     }
 }
 

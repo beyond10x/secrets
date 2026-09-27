@@ -1,0 +1,38 @@
+# PUT /v1/workload/tenants/{tenant}/transactions/{transaction} reads PrepareRequest {actor, mutations}
+# (crates/secrets-http/src/lib.rs:105-109, 269-282); docs/openapi.json declares no request body for it.
+# Commit applies each mutation it sealed (crates/secrets-postgres/src/lib.rs:347-356).
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-prepared-batch-body-is-what-commit-applies
+summary: The prepared batch body the OpenAPI document omits is what commit applies.
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PrepareTransaction
+  actor: secrets.custody.Workload
+  input:
+    transaction: 0191f5a0-0000-7000-8000-000000000001
+    actor: workload-a
+    mutations:
+    - op: put
+      value:
+        secret:
+          reference: {tenant: tenant-a, namespace: connectors, key: batch-token}
+          owner_subject: user-a
+          value: YmF0Y2g=
+  outcome: prepared
+- at: '2026-09-27T12:00:01Z'
+  command: secrets.custody.CommitTransaction
+  actor: secrets.custody.Workload
+  input:
+    tenant: tenant-a
+    transaction: 0191f5a0-0000-7000-8000-000000000001
+  outcome: committed
+  events:
+  - event: secrets.custody.TransactionCommitted
+    payload: {tenant: tenant-a, transaction: 0191f5a0-0000-7000-8000-000000000001}
+assert:
+- view: secrets.custody.SecretValue
+  contains:
+    reference: {tenant: tenant-a, namespace: connectors, key: batch-token}
+    value: YmF0Y2g=
+    version: 1

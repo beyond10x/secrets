@@ -1,0 +1,19 @@
+# validate_ref refuses a part over 255 bytes (crates/secrets-postgres/src/lib.rs:439); the external
+# `invalid-reference` in spec/domains/custody.yaml. Before the split the synthesized scenario reached the
+# branch only through NUL, so dropping `value.len() > 255` survived it.
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-put-with-a-256-byte-key-is-an-invalid-reference
+summary: A put whose key is 256 ASCII characters is refused as an invalid reference and stores nothing.
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PutSecret
+  actor: secrets.custody.Workload
+  input:
+    reference: {tenant: tenant-a, namespace: connectors, key: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}
+    owner_subject: user-a
+    value: bG9uZw==
+  outcome: invalid-reference
+  error:
+    name: secrets.custody.InvalidInput
+  no_events: [secrets.custody.SecretPut]

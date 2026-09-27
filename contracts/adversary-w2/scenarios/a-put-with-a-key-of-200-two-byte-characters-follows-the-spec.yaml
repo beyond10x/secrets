@@ -1,0 +1,19 @@
+# validate_ref counts bytes with `str::len` (crates/secrets-postgres/src/lib.rs:439): 200 characters
+# of U+00E9 are 400 bytes, over the 255-byte bound, so the put is the external `invalid-reference`
+# of spec/domains/custody.yaml even though `.count` reads 200.
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-put-with-a-key-of-200-two-byte-characters-follows-the-spec
+summary: A put whose key is 200 two-byte characters is 400 bytes and is refused as an invalid reference.
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PutSecret
+  actor: secrets.custody.Workload
+  input:
+    reference: {tenant: tenant-a, namespace: connectors, key: 'éééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééééé'}
+    owner_subject: user-a
+    value: d2lkZQ==
+  outcome: invalid-reference
+  error:
+    name: secrets.custody.InvalidInput
+  no_events: [secrets.custody.SecretPut]

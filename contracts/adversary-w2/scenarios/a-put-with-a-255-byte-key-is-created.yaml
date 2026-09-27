@@ -1,0 +1,15 @@
+# The upper boundary of validate_ref's length rule (crates/secrets-postgres/src/lib.rs:437-444): 255
+# ASCII bytes is inside it, so `> 255` flipped to `>= 255` refuses this put.
+type: ess-scenario/1
+domain: secrets.custody
+scenario: a-put-with-a-255-byte-key-is-created
+summary: A put whose key is exactly 255 ASCII characters is stored.
+timeline:
+- at: '2026-09-27T12:00:00Z'
+  command: secrets.custody.PutSecret
+  actor: secrets.custody.Workload
+  input:
+    reference: {tenant: tenant-a, namespace: connectors, key: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'}
+    owner_subject: user-a
+    value: Ym91bmQ=
+  outcome: created

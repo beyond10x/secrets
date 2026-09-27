@@ -3,6 +3,7 @@ FROM rust:1.97.0-bookworm AS builder
 WORKDIR /source
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
+COPY checks ./checks
 COPY docs ./docs
 RUN --mount=type=cache,id=secrets-cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
     --mount=type=cache,id=secrets-target,target=/source/target,sharing=locked \
