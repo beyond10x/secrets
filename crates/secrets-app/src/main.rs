@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Command::Rewrap(args) => {
             let store = connect(&args.database).await?;
             println!(
-                "rewrapped {} active secret(s)",
+                "rewrapped {} secret(s)",
                 store.rewrap_all(&args.actor).await?
             );
         }

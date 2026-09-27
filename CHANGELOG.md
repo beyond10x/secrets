@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- `secrets rewrap` prints `rewrapped <n> secret(s)`: the count covers secrets in every state, not
+  only active ones.
+- The specification moves to format `ess/14` and CI installs ESS 0.36.0 and AEP 0.61.1; the
+  planning store's protocol pin moves to AEP 0.61.1. A put over an existing reference now declares
+  its version as the previous one plus one, put and revoke declare the `updated_at` the database
+  sets, and put and revoke declare the metadata they return. In the planned storage model a write
+  declares its version as assigned by the backend.
+
 ## 0.3.0 - 2026-09-27
 
 - Prepared batches are held encrypted, in the same envelope custody as secret versions, and
