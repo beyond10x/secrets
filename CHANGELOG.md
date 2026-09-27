@@ -1,8 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.3.0 - 2026-09-27
 
-- Prepared batches are held encrypted and expire after 600 seconds.
+- Prepared batches are held encrypted, in the same envelope custody as secret versions, and
+  expire after 600 seconds. Commit or abort of an expired batch is `404`. Migration `0002`
+  discards batches prepared by an earlier release; commit or abort every held batch before
+  upgrading.
+- `secrets rewrap` re-encrypts held batches in a transaction of its own after the secrets, so a
+  commit during a live key rotation completes.
+- `SecretBytes` zeroizes its value on drop and redacts it from `Debug` output.
 
 ## 0.2.0 - 2026-09-27
 
