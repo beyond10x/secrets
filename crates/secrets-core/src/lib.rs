@@ -105,14 +105,35 @@ pub enum Mutation {
     Delete { reference: SecretRef },
 }
 
+/// Which input rule a store refused. Each is its own refusal, so a caller can tell them apart; none
+/// carries any part of the input.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
+pub enum InvalidInput {
+    /// A reference part is empty or contains NUL.
+    #[error("malformed reference")]
+    MalformedReference,
+    /// A reference part is longer than 255 bytes.
+    #[error("invalid reference")]
+    InvalidReference,
+    /// A prepared batch has no mutation.
+    #[error("empty batch")]
+    EmptyBatch,
+    /// A prepared batch names a tenant other than the one it is prepared in.
+    #[error("cross-tenant batch")]
+    CrossTenantBatch,
+}
+
 #[derive(Debug, Error)]
 pub enum StoreError {
     #[error("not found")]
     NotFound,
+    /// A commit's Delete mutation names a reference with no secret; nothing is applied.
+    #[error("delete target missing")]
+    DeleteTargetMissing,
     #[error("conflict")]
     Conflict,
     #[error("invalid input: {0}")]
-    Invalid(String),
+    Invalid(InvalidInput),
     #[error("storage unavailable")]
     Unavailable,
     #[error("cryptographic operation failed")]

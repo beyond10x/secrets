@@ -52,5 +52,5 @@ copies in backups or replicas remain decryptable with the keyring.
 - Audit events can be written but not read through the API.
 - `/metrics` exposes only `secrets_up`.
 - `SIGTERM` is not handled; only `SIGINT` drains in-flight requests.
-- The OpenAPI document omits some request bodies, all error responses and the service routes; the
+- The OpenAPI document omits some request bodies and the service routes; the
   [HTTP API](http-api.md#differences-from-the-openapi-document) page lists them.

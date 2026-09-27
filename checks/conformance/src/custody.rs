@@ -255,7 +255,6 @@ fn token(
     action: &str,
 ) -> R<String> {
     let actions = &[action];
-    context.scenario.caller_in_addressed_tenant = context.forced.as_deref() != Some("forbidden");
     match context.forced.as_deref() {
         Some("unauthorized") => Ok(UNREGISTERED_TOKEN.to_owned()),
         Some("missing-action") => {
@@ -311,10 +310,11 @@ fn send(
     reply
 }
 
-/// The declared error a refusal status carries. A refusal the router's `ApiError` produced must
-/// carry its `{"error": <canonical reason>}` body (crates/secrets-http/src/lib.rs `ApiError`);
-/// `413` comes from the body-limit layer before any handler and is not that shape.
-fn refusal(reply: &Reply) -> R<Option<&'static str>> {
+/// A refusal as the service answered it: the declared error its status carries, and the declared
+/// outcome its `code` names. Every refusal body is exactly
+/// `{"error": <status reason>, "code": <outcome name>}` (crates/secrets-http/src/lib.rs `Refusal`),
+/// and the branch is read from that body alone — never from what this adapter sent or forced.
+fn refusal(reply: &Reply) -> R<Option<(&'static str, String)>> {
     let error = match reply.status {
         StatusCode::BAD_REQUEST => "secrets.custody.InvalidInput",
         StatusCode::UNAUTHORIZED => "secrets.custody.Unauthorized",
@@ -322,64 +322,45 @@ fn refusal(reply: &Reply) -> R<Option<&'static str>> {
         StatusCode::NOT_FOUND => "secrets.custody.NotFound",
         StatusCode::CONFLICT => "secrets.custody.Conflict",
         StatusCode::SERVICE_UNAVAILABLE => "secrets.custody.Unavailable",
-        StatusCode::PAYLOAD_TOO_LARGE => return Ok(Some("secrets.custody.PayloadTooLarge")),
+        StatusCode::PAYLOAD_TOO_LARGE => "secrets.custody.PayloadTooLarge",
         _ => return Ok(None),
     };
-    let expected = json!({"error": reply.status.canonical_reason()});
-    if reply.json::<Value>().ok() != Some(expected.clone()) {
+    let shaped = reply.json::<Value>().ok().and_then(|body| {
+        let object = body.as_object()?;
+        let reason = object.get("error")?.as_str()?;
+        let code = object.get("code")?.as_str()?;
+        (object.len() == 2 && Some(reason) == reply.status.canonical_reason())
+            .then(|| code.to_owned())
+    });
+    let Some(code) = shaped else {
         return Err(unavailable(
             "reading a refusal",
             format!(
-                "status {} did not carry {expected}: {}",
+                "status {} did not carry exactly {{\"error\": {:?}, \"code\": <code>}}: {}",
                 reply.status,
+                reply.status.canonical_reason().unwrap_or_default(),
                 String::from_utf8_lossy(&reply.body)
             ),
         ));
-    }
-    Ok(Some(error))
-}
-
-/// Maps a refusal onto the command's declared branch, by the status the service answered.
-fn refused(reply: &Reply, branches: &[(StatusCode, &str)]) -> R<Observed> {
-    let error = refusal(reply)?;
-    let outcome = branches
-        .iter()
-        .find(|(status, _)| *status == reply.status)
-        .map(|(_, outcome)| (*outcome).to_owned());
-    Ok(Observed {
-        error: outcome.as_ref().and(error),
-        outcome,
-        events: Vec::new(),
-    })
-}
-
-const COMMON: [(StatusCode, &str); 3] = [
-    (StatusCode::UNAUTHORIZED, "unauthorized"),
-    (StatusCode::SERVICE_UNAVAILABLE, "unavailable"),
-    (StatusCode::PAYLOAD_TOO_LARGE, "too-large"),
-];
-
-/// The command's declared refusals by status. When the scenario forced `malformed-body` the adapter
-/// sent a body that does not parse, and a 400 is that refusal.
-fn branches(
-    context: &Context<'_>,
-    extra: &[(StatusCode, &'static str)],
-) -> Vec<(StatusCode, &'static str)> {
-    let malformed = (context.forced.as_deref() == Some("malformed-body"))
-        .then_some((StatusCode::BAD_REQUEST, "malformed-body"));
-    // Both refusals answer `403 {"error": "Forbidden"}`; the request tells them apart by whose
-    // principal it carried.
-    let forbidden = if context.scenario.caller_in_addressed_tenant {
-        "missing-action"
-    } else {
-        "forbidden"
     };
-    malformed
-        .into_iter()
-        .chain(extra.iter().copied())
-        .chain([(StatusCode::FORBIDDEN, forbidden)])
-        .chain(COMMON)
-        .collect()
+    Ok(Some((error, code)))
+}
+
+/// The declared branch a refusal took: the outcome its code names, carrying the error its status
+/// is. A status that is no declared refusal is an undeclared branch.
+fn refused(reply: &Reply) -> R<Observed> {
+    Ok(match refusal(reply)? {
+        Some((error, code)) => Observed {
+            outcome: Some(code),
+            error: Some(error),
+            events: Vec::new(),
+        },
+        None => Observed {
+            outcome: None,
+            error: None,
+            events: Vec::new(),
+        },
+    })
 }
 
 // ---- durable records ------------------------------------------------------------------------
@@ -598,21 +579,7 @@ fn put(context: &mut Context<'_>, input: Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::OK {
-        // validate_ref answers one 400 for all three rules (crates/secrets-postgres/src/lib.rs:439);
-        // the guarded `malformed-reference` is the input with an empty or NUL-bearing part.
-        let parts = [&reference.tenant, &reference.namespace, &reference.key];
-        let invalid = if parts
-            .iter()
-            .any(|part| part.is_empty() || part.contains('\0'))
-        {
-            "malformed-reference"
-        } else {
-            "invalid-reference"
-        };
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::BAD_REQUEST, invalid)]),
-        );
+        return refused(&reply);
     }
     let metadata: SecretMetadata = reply.json()?;
     context
@@ -675,10 +642,7 @@ fn revoke(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::OK {
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::NOT_FOUND, "not-owned")]),
-        );
+        return refused(&reply);
     }
     let metadata: SecretMetadata = reply.json()?;
     let events = audit_since(context, mark)?
@@ -740,10 +704,7 @@ fn delete_owned(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::NO_CONTENT {
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::NOT_FOUND, "not-owned")]),
-        );
+        return refused(&reply);
     }
     deleted(context, mark, before, &reference)
 }
@@ -778,10 +739,7 @@ fn delete(context: &mut Context<'_>, input: Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::NO_CONTENT {
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::NOT_FOUND, "not-found")]),
-        );
+        return refused(&reply);
     }
     deleted(context, mark, before, &reference)
 }
@@ -790,8 +748,15 @@ fn transaction_input(input: &Value) -> R<(String, Uuid)> {
     Ok((field(input, "tenant")?, field(input, "transaction")?))
 }
 
-fn transaction_path(tenant: &str, transaction: Uuid, verb: &str) -> String {
-    format!("/v1/workload/tenants/{tenant}/transactions/{transaction}{verb}")
+/// The route of a transaction; its id segment is not a UUID when the scenario forced
+/// `malformed-path`.
+fn transaction_path(context: &Context<'_>, tenant: &str, transaction: Uuid, verb: &str) -> String {
+    let segment = if context.forced.as_deref() == Some("malformed-path") {
+        "not-a-transaction".to_owned()
+    } else {
+        transaction.to_string()
+    };
+    format!("/v1/workload/tenants/{tenant}/transactions/{segment}{verb}")
 }
 
 fn transaction_payload(tenant: &str, transaction: Uuid) -> BTreeMap<String, Node> {
@@ -851,33 +816,10 @@ fn prepare(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         PREPARE,
     )?;
     let body = body(context, &json!({"actor": actor, "mutations": batch}))?;
-    let reply = send(
-        context,
-        true,
-        Method::PUT,
-        &transaction_path(&tenant, transaction, ""),
-        &token,
-        Some(body),
-    )?;
+    let path = transaction_path(context, &tenant, transaction, "");
+    let reply = send(context, true, Method::PUT, &path, &token, Some(body))?;
     if reply.status != StatusCode::NO_CONTENT {
-        // Both store refusals answer the same 400 body (crates/secrets-postgres/src/lib.rs:272-283,
-        // crates/secrets-http/src/lib.rs `ApiError::Invalid`); the empty one is the batch the input
-        // left empty.
-        let invalid = if mutations.is_empty() {
-            "empty-batch"
-        } else {
-            "cross-tenant-batch"
-        };
-        return refused(
-            &reply,
-            &branches(
-                context,
-                &[
-                    (StatusCode::BAD_REQUEST, invalid),
-                    (StatusCode::CONFLICT, "duplicate"),
-                ],
-            ),
-        );
+        return refused(&reply);
     }
     if !prepared(context, &tenant, transaction)? {
         return Err(unavailable(
@@ -905,8 +847,11 @@ fn commit(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         Some("delete-target-missing") => Some(vec![Mutation::Delete {
             reference: in_tenant(&tenant, "missing"),
         }]),
-        Some("invalid-reference") => Some(vec![Mutation::Put {
+        Some("malformed-reference") => Some(vec![Mutation::Put {
             secret: fixture_put(in_tenant(&tenant, ""), FIXTURE_OWNER),
+        }]),
+        Some("invalid-reference") => Some(vec![Mutation::Put {
+            secret: fixture_put(in_tenant(&tenant, &"k".repeat(256)), FIXTURE_OWNER),
         }]),
         _ if exists => None,
         _ => Some(vec![Mutation::Put {
@@ -916,7 +861,9 @@ fn commit(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     if exists
         && matches!(
             forced.as_deref(),
-            Some("not-found" | "delete-target-missing" | "invalid-reference")
+            Some(
+                "not-found" | "delete-target-missing" | "malformed-reference" | "invalid-reference"
+            )
         )
     {
         return Err(cannot_arrange("a batch is already prepared under this id"));
@@ -943,34 +890,26 @@ fn commit(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         COMMIT,
     )?;
     let mark = audit_mark(context)?;
-    let reply = send(
-        context,
-        false,
-        Method::POST,
-        &transaction_path(&tenant, transaction, "/commit"),
-        &token,
-        None,
-    )?;
-    if reply.status == StatusCode::NOT_FOUND {
-        let error = refusal(&reply)?;
-        // A missing delete target rolls the commit back and leaves the batch prepared; an absent or
-        // expired batch is gone (crates/secrets-postgres/src/lib.rs `commit`).
-        let outcome = if prepared(context, &tenant, transaction)? {
-            "delete-target-missing"
-        } else {
-            "not-found"
-        };
-        return Ok(Observed {
-            outcome: Some(outcome.to_owned()),
-            error,
-            events: Vec::new(),
-        });
-    }
+    let path = transaction_path(context, &tenant, transaction, "/commit");
+    let reply = send(context, false, Method::POST, &path, &token, None)?;
     if reply.status != StatusCode::NO_CONTENT {
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::BAD_REQUEST, "invalid-reference")]),
-        );
+        let observed = refused(&reply)?;
+        // A refused commit rolls back and leaves the batch prepared; an absent or expired batch is
+        // gone (crates/secrets-postgres/src/lib.rs `commit`). The code is checked against that
+        // record, not replaced by it.
+        let held = prepared(context, &tenant, transaction)?;
+        let gone = observed.outcome.as_deref() == Some("not-found");
+        if reply.status == StatusCode::NOT_FOUND && held == gone {
+            return Err(unavailable(
+                "observing a refused commit",
+                format!(
+                    "the service coded {:?} and the batch is {}",
+                    observed.outcome,
+                    if held { "still prepared" } else { "gone" }
+                ),
+            ));
+        }
+        return Ok(observed);
     }
     let events = audit_since(context, mark)?
         .into_iter()
@@ -1014,19 +953,10 @@ fn abort(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         &tenant,
         ABORT,
     )?;
-    let reply = send(
-        context,
-        true,
-        Method::POST,
-        &transaction_path(&tenant, transaction, "/abort"),
-        &token,
-        None,
-    )?;
+    let path = transaction_path(context, &tenant, transaction, "/abort");
+    let reply = send(context, true, Method::POST, &path, &token, None)?;
     if reply.status != StatusCode::NO_CONTENT {
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::NOT_FOUND, "not-found")]),
-        );
+        return refused(&reply);
     }
     if prepared(context, &tenant, transaction)? {
         return Err(unavailable(
@@ -1140,10 +1070,7 @@ fn read_value(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::OK {
-        return refused(
-            &reply,
-            &branches(context, &[(StatusCode::NOT_FOUND, "not-found")]),
-        );
+        return refused(&reply);
     }
     let stored: StoredSecret = reply.json()?;
     Ok(Observed {
@@ -1182,7 +1109,7 @@ fn check_exists(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::OK {
-        return refused(&reply, &branches(context, &[]));
+        return refused(&reply);
     }
     reply.json::<Exists>()?;
     Ok(Observed {
@@ -1218,7 +1145,7 @@ fn list_namespace(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         Some(body),
     )?;
     if reply.status != StatusCode::OK {
-        return refused(&reply, &branches(context, &[]));
+        return refused(&reply);
     }
     reply.json::<Listing>()?;
     Ok(Observed {
