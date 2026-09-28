@@ -6,7 +6,7 @@ sidebar_position: 10
 
 # Roadmap
 
-> **Planned, not shipped.** Nothing on this page exists in a release yet. It describes the next
+> **Planned, not shipped.** Nothing described here exists in a release yet. It describes the next
 > milestone as it is specified today; names, commands and limits may change before it ships.
 
 ## Next milestone: named, scoped secrets across several backends
