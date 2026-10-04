@@ -6,7 +6,16 @@ status: active
 title: The specification is current ESS and generates the reference pages
 relations:
 - decomposes: epic:encrypted-custody
-revision: 4
+scope:
+- confidence: cited
+  path: .github/workflows/check.yml
+- confidence: cited
+  path: checks/conformance
+- confidence: cited
+  path: contracts
+- confidence: cited
+  path: spec
+revision: 8
 ---
 # Story: ess-current-format
 

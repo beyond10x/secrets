@@ -7,7 +7,22 @@ title: Secrets publishes its own documentation site at /secrets/
 relations:
 - depends_on: story:ess-current-format
 - decomposes: epic:encrypted-custody
-revision: 4
+scope:
+- confidence: cited
+  path: .github/workflows/b10x-docs-site.yml
+- confidence: cited
+  path: .github/workflows/pages.yml
+- confidence: cited
+  path: AGENTS.md
+- confidence: cited
+  path: README.md
+- confidence: cited
+  path: Taskfile.yml
+- confidence: cited
+  path: crates/secrets-docs
+- confidence: cited
+  path: website
+revision: 11
 ---
 # Story: standalone-site
 
