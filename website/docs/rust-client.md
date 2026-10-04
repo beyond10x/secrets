@@ -1,25 +1,19 @@
 ---
 title: Rust client
-description: Use the secrets-client crate from a Rust workload to store, read, list, delete and batch secrets.
 sidebar_position: 6
+description: Call Secrets from a Rust workload with the secrets-client crate.
 ---
 
 # Rust client
 
-`secrets-client` is the official Rust client for the workload routes. It is a thin wrapper over the
-[HTTP API](http-api.md) and uses the types from `secrets-core`. It does not cover the user routes.
-
-## Add the dependency
-
-The crates live in this repository; depend on a release tag:
+`secrets-client` wraps the workload routes of the [HTTP API](./http-api.md) with the types from
+`secrets-core`. It does not cover the user routes.
 
 ```toml
 [dependencies]
 secrets-client = { git = "https://github.com/beyond10x/secrets", tag = "v0.4.0" }
 secrets-core = { git = "https://github.com/beyond10x/secrets", tag = "v0.4.0" }
 ```
-
-## Use it
 
 ```rust
 use secrets_client::Client;
@@ -44,16 +38,13 @@ async fn example(token: String) -> Result<(), secrets_client::Error> {
         .await?;
     let stored = client.get(&reference).await?;
     assert_eq!(stored.metadata.version, 1);
-    let _names = client.references("tenant-a", "connectors").await?;
     client.delete(&reference, "connector-cleanup").await?;
     Ok(())
 }
 ```
 
-`token` is the workload's projected service-account token. The client keeps the token it was
-created with; build a new client after the projected token is refreshed.
-
-## Methods
+`token` is the workload's projected service-account token. The client keeps the token it was built
+with; build a new one after the token is refreshed.
 
 | Method | Route |
 |---|---|
@@ -66,23 +57,15 @@ created with; build a new client after the projected token is refreshed.
 | `commit(tenant, transaction)` | `POST .../transactions/{transaction}/commit` |
 | `abort(tenant, transaction)` | `POST .../transactions/{transaction}/abort` |
 
-All methods are `async` and return `Result<_, secrets_client::Error>`.
-
-## Errors
+Every method is `async` and returns `Result<_, secrets_client::Error>`:
 
 | Variant | Cause |
 |---|---|
 | `NotFound` | `404` |
-| `Refused` | any other `4xx`, including `401`, `403`, `400` and `409` |
-| `Service` | a `5xx`, or a response body that could not be decoded |
+| `Refused` | any other `4xx` |
+| `Service` | a `5xx`, or a body that does not decode |
 | `Transport` | an invalid origin or a failed connection |
 
-Errors carry no response body, so they never echo a value.
-
-## Notes
-
-- Route paths are joined onto the origin as relative URLs. If the origin has a path, end it with
-  `/`, or its last segment is replaced.
-- `StoredSecret.value` is a `SecretBytes`, which zeroes its buffer when dropped.
-- `delete` and `prepare` send the `actor` you pass, and the service records it in the audit log
-  as given; see [Known limitations](limitations.md#audit-actors-can-be-caller-chosen).
+Errors carry no response body. Paths are joined onto the origin as relative URLs, so an origin with
+a path must end in `/`. `StoredSecret.value` zeroes its buffer when dropped. The `actor` passed to
+`delete` and `prepare` is recorded in the audit log as given.

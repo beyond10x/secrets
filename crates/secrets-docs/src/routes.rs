@@ -17,9 +17,12 @@ use serde_json::json;
 /// Where the site is served, with both slashes.
 pub const BASE: &str = "/secrets/";
 
-/// Whether `html` is a client redirect rather than a page.
+/// Whether `html` is a client redirect rather than a page: a refresh, or the copy docs-system
+/// writes at `x/index.html` that sends `/x/` on to `/x`.
 fn is_redirect(html: &str) -> bool {
-    html.contains("http-equiv=\"refresh\"") || html.contains("http-equiv=refresh")
+    html.contains("http-equiv=\"refresh\"")
+        || html.contains("http-equiv=refresh")
+        || html.contains("<!-- b10x-trailing-slash-copy -->")
 }
 
 /// Every value of an `id` attribute in `html`, quoted or not.
@@ -129,7 +132,18 @@ mod tests {
         let site = std::env::temp_dir().join(format!("secrets-docs-routes-{}", std::process::id()));
         let _ = fs::remove_dir_all(&site);
         fs::create_dir_all(site.join("docs/operations")).unwrap();
+        fs::create_dir_all(site.join("docs/status")).unwrap();
         fs::write(site.join("index.html"), r#"<main id="main">"#).unwrap();
+        fs::write(
+            site.join("docs/status.html"),
+            r#"<h2 id="known-limitations">"#,
+        )
+        .unwrap();
+        fs::write(
+            site.join("docs/status/index.html"),
+            r#"<head><!-- b10x-trailing-slash-copy --></head><h2 id="known-limitations">"#,
+        )
+        .unwrap();
         fs::write(site.join("404.html"), r#"<main id="lost">"#).unwrap();
         fs::write(site.join("docs.html"), r#"<h1 id="secrets">"#).unwrap();
         fs::write(site.join("docs/operations.html"), r#"<h2 id="probes">"#).unwrap();
@@ -151,7 +165,12 @@ mod tests {
             .collect();
         assert_eq!(
             paths,
-            ["/secrets/", "/secrets/docs", "/secrets/docs/operations"]
+            [
+                "/secrets/",
+                "/secrets/docs",
+                "/secrets/docs/operations",
+                "/secrets/docs/status"
+            ]
         );
         assert_eq!(inventory["routes"][2]["anchors"][0], "probes");
     }
