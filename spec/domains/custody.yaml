@@ -463,9 +463,9 @@ commands:
     outcomes:
       # DELETE FROM secrets, cascading every version row (crates/secrets-postgres/src/lib.rs:133-144;
       # migrations/0001_initial.sql:17). Allowed from Active and Revoked.
-      # ESS-LIMIT: no removal effect (an outcome has creates, updates, moves or preserves only), so
-      # this outcome names no subject and cannot say the secret stops existing.
       - name: deleted
+        deletes: secrets.custody.Secret
+        instance: reference
         emits:
           - secrets.custody.SecretDeleted
         payload:
@@ -506,8 +506,9 @@ commands:
         # recorded as the audit actor instead of the principal when present (crates/secrets-http/src/lib.rs:264)
         type: Optional<String>
     outcomes:
-      # ESS-LIMIT: no removal effect; see DeleteOwnedSecret.deleted.
       - name: deleted
+        deletes: secrets.custody.Secret
+        instance: reference
         emits:
           - secrets.custody.SecretDeleted
         payload:
@@ -685,8 +686,9 @@ commands:
         type: Uuid
     outcomes:
       # Deletes the PreparedTransaction row. No audit row is written.
-      # ESS-LIMIT: no removal effect, so the outcome cannot say the batch stops existing.
       - name: aborted
+        deletes: secrets.custody.PreparedTransaction
+        instance: transaction
         emits:
           - secrets.custody.TransactionAborted
         payload:

@@ -1,4 +1,5 @@
-format: ess-inputs/1
+format: ess-inputs/2
+requires: ess 0.52.0
 specification: []
 scenarios:
 - custody/scenarios/a-prepared-batch-body-is-what-commit-applies.yaml
