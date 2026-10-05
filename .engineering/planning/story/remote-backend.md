@@ -27,7 +27,7 @@ scope:
   path: crates/secrets-remote
 - confidence: cited
   path: spec/domains/storage.yaml
-revision: 13
+revision: 14
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 10, decided_on: {"recorded":{"review_outcome":1}}}
 - {from: "proposed", to: "active", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 11, decided_on: {"recorded":{"review_outcome":1}}}
@@ -84,11 +84,15 @@ reference `{tenant, namespace, key = "<user>/<name>"}`, with the scope's user as
 
 ## Guards
 
-Authored `ess-scenario/1` under `contracts/storage/scenarios/remote`, run by `checks/conformance`
-(`secrets-library`) through the composed stack, with a namespace mounted on `remote/custody`: the
-remote backend over `secrets_client::Client` against the shipped router and PostgreSQL store,
-served on `127.0.0.1:0` per scenario, with a workload token of tenant `default`.
+Authored scenarios under `contracts/storage/scenarios/remote` and `contracts/storage/scenarios/response`,
+run by `checks/conformance` (`secrets-library`) through the composed stack, with a namespace mounted on
+`remote/custody`: the remote backend over `secrets_client::Client` against the shipped router and
+PostgreSQL store, served on `127.0.0.1:0` per scenario, with a workload token of tenant `default`.
 
+- `a-value-written-to-a-remote-mount-reads-back-equal` (`ess-scenario/4`, story:read-response-scenarios):
+  the primary evidence that a read returns the bytes written. `Read.read` declares `returns: true`;
+  the runner hands ESS the value and version the read returned, and the scenario asserts the value
+  literally after a write and again, binary, after a replace
 - `a-remote-secret-round-trips`: add the namespace, write (created, then replaced), read, list,
   rename to a `/` name, delete, and the forced `not-found` after each move; Namespaces shows the
   mount and SecretMetadata what remains
@@ -102,7 +106,9 @@ served on `127.0.0.1:0` per scenario, with a workload token of tenant `default`.
 
 Falsification (2026-10-05): bounding `write` in `crates/secrets-remote/src/lib.rs` by the port's
 1 MiB instead of `max_value_bytes()` fails `a-value-the-custody-service-cannot-carry-is-too-large`;
-the file was restored byte for byte (sha256 `b2250aa4…0b662` before and after).
+the file was restored byte for byte (sha256 `b2250aa4…0b662` before and after). Falsification
+(2026-10-05, story:read-response-scenarios): `read` returning the stored bytes reversed fails
+`a-value-written-to-a-remote-mount-reads-back-equal`; restored byte for byte (same sha256).
 
 ESS cannot express these, so Rust tests in `crates/secrets-remote` guard them:
 
@@ -116,6 +122,6 @@ ESS cannot express these, so Rust tests in `crates/secrets-remote` guard them:
   `a_listing_keeps_only_keys_under_the_user_s_prefix`
 - no response text in the error: `a_5xx_answer_is_unavailable_and_repeats_none_of_its_body`,
   `a_service_nobody_answers_for_is_unavailable`, `an_unreadable_success_body_is_unavailable`
-- a read returns the bytes written, and the largest value round-trips:
-  `write_read_list_and_delete_round_trip`,
+- a read returns the bytes written, kept beside the ESS scenario above, and the largest value
+  round-trips: `write_read_list_and_delete_round_trip`,
   `the_largest_value_the_service_takes_round_trips_and_one_byte_more_is_too_large`

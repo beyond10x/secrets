@@ -76,6 +76,9 @@ pub struct Observed {
     pub outcome: Option<String>,
     pub error: Option<&'static str>,
     pub events: Vec<(&'static str, BTreeMap<String, Node>)>,
+    /// What the command returned to its caller, by declared response field, when its branch
+    /// declares `returns: true` (`secrets.storage.Read`'s `read`); `None` otherwise.
+    pub response: Option<BTreeMap<String, Node>>,
 }
 
 /// The credential a command is sent with, decided by the domain module from the actor the scenario
@@ -387,6 +390,7 @@ impl ConformanceTarget for SecretsTarget {
                     .map_err(|error| unavailable("naming the error", error))?,
             ));
         }
+        result.response = observed.response;
         for (event, payload) in observed.events {
             let mut occurrence = ObservedEvent::new(
                 event

@@ -127,6 +127,20 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
     let exposed = exposed.to_str().unwrap();
     let protected = sandbox.file("protected", MARKER.as_bytes(), 0o600);
     let protected = protected.to_str().unwrap();
+    // `read --out` targets: new files, a symlink to a file, a dangling symlink and a directory.
+    let path = |name: &str| sandbox.root.join(name).to_str().unwrap().to_owned();
+    let (fresh, fresh_work, linked, dangling) = (
+        path("read-fresh"),
+        path("read-fresh-work"),
+        path("read-linked"),
+        path("read-dangling"),
+    );
+    std::os::unix::fs::symlink(protected, &linked).unwrap();
+    std::os::unix::fs::symlink(path("nowhere"), &dangling).unwrap();
+    let home = path("home");
+    let (missing, bad) = (path("read-missing"), path("read-bad"));
+    // The --json pass reads into files of its own, so its result rows are checked too.
+    let (fresh_json, fresh_work_json) = (path("read-fresh-json"), path("read-fresh-work-json"));
     let mut runs: Vec<(Vec<&str>, Option<&[u8]>)> = vec![
         (vec!["namespace", "add", "work"], None),
         (
@@ -145,6 +159,20 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
         (vec!["describe", "openai", MARKER], None),
         (vec!["describe", "openai"], None),
         (vec!["describe", "missing"], None),
+        // The first run of each writes the file; a later one is refused, the path existing.
+        (vec!["read", "openai", "--out", &fresh], None),
+        (
+            vec!["read", "team/openai", "-n", "work", "--out", &fresh_work],
+            None,
+        ),
+        (vec!["read", "openai", "--out", protected], None),
+        (vec!["read", "openai", "--out", &linked], None),
+        (vec!["read", "openai", "--out", &dangling], None),
+        (vec!["read", "openai", "--out", &home], None),
+        (vec!["read", "openai"], None),
+        (vec!["read", "openai", MARKER], None),
+        (vec!["read", "missing", "--out", &missing], None),
+        (vec!["read", "Bad", "--out", &bad], None),
         (vec!["list"], None),
         (vec!["list", "--all"], None),
         (vec!["list", "-n", "work"], None),
@@ -162,7 +190,14 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
     let json: Vec<_> = runs
         .iter()
         .map(|(args, input)| {
-            let mut args = args.clone();
+            let mut args: Vec<&str> = args
+                .iter()
+                .map(|arg| match *arg {
+                    arg if arg == fresh => fresh_json.as_str(),
+                    arg if arg == fresh_work => fresh_work_json.as_str(),
+                    arg => arg,
+                })
+                .collect();
             args.insert(0, "--json");
             (args, *input)
         })
@@ -180,6 +215,88 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
         !config.contains(MARKER),
         "the configuration holds the secret"
     );
+    // The value went into the files `read` created, and nowhere a refusal pointed.
+    assert_eq!(fs::read(&fresh).unwrap(), MARKER.as_bytes());
+    assert_eq!(fs::read(&fresh_work).unwrap(), MARKER.as_bytes());
+    assert_eq!(fs::read(&fresh_json).unwrap(), MARKER.as_bytes());
+    assert_eq!(fs::read(&fresh_work_json).unwrap(), MARKER.as_bytes());
+    assert!(fs::symlink_metadata(&dangling).unwrap().is_symlink());
+    assert!(!sandbox.root.join("nowhere").exists());
+    assert!(!PathBuf::from(&missing).exists());
+}
+
+/// story:cli-read-out-file: a value written by `put` reads back byte for byte into a new file of
+/// mode 0600; an existing file and a symlink are refused (2) and left as they were; nothing but
+/// the result row reaches stdout, and no temporary file stays behind.
+#[test]
+fn read_writes_a_value_into_a_new_0600_file_only() {
+    use std::os::unix::fs::PermissionsExt as _;
+    let sandbox = Sandbox::new();
+    let value = b"line one\nline two\n\x00\xff";
+    let stored = sandbox.piped(&["put", "openai", "--raw"], value);
+    assert!(stored.status.success(), "{}", text(&stored.stderr));
+    let out = sandbox.root.join("out");
+    fs::create_dir_all(&out).unwrap();
+    let target = out.join("openai.key");
+    let read = sandbox.run(&[
+        "--json",
+        "read",
+        "openai",
+        "--out",
+        target.to_str().unwrap(),
+    ]);
+    assert!(read.status.success(), "{}", text(&read.stderr));
+    assert_eq!(fs::read(&target).unwrap(), value);
+    let mode = fs::metadata(&target).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o600);
+    let printed: serde_json::Value = serde_json::from_slice(&read.stdout).unwrap();
+    assert_eq!(printed["outcome"], "read");
+    assert_eq!(printed["name"], "openai");
+    assert!(read.stderr.is_empty(), "{}", text(&read.stderr));
+
+    let existing = out.join("existing");
+    fs::write(&existing, b"keep").unwrap();
+    let linked = out.join("linked");
+    std::os::unix::fs::symlink(&existing, &linked).unwrap();
+    let dangling = out.join("dangling");
+    std::os::unix::fs::symlink(out.join("absent"), &dangling).unwrap();
+    for (path, message) in [
+        (&target, "exists"),
+        (&existing, "exists"),
+        (&linked, "symlink"),
+        (&dangling, "symlink"),
+        (&out, "exists"),
+    ] {
+        let refused = sandbox.run(&["read", "openai", "--out", path.to_str().unwrap()]);
+        assert_eq!(
+            code(&refused),
+            2,
+            "{}: {}",
+            path.display(),
+            text(&refused.stderr)
+        );
+        assert!(
+            text(&refused.stderr).contains(message),
+            "{}",
+            text(&refused.stderr)
+        );
+        assert!(refused.stdout.is_empty());
+    }
+    assert_eq!(fs::read(&target).unwrap(), value);
+    assert_eq!(fs::read(&existing).unwrap(), b"keep");
+    assert!(!out.join("absent").exists());
+
+    // A name nothing is stored under is `not-found` (3) and creates no file.
+    let missing = out.join("missing");
+    let refused = sandbox.run(&["read", "missing", "--out", missing.to_str().unwrap()]);
+    assert_eq!(code(&refused), 3, "{}", text(&refused.stderr));
+    assert!(!missing.exists());
+    let mut left: Vec<_> = fs::read_dir(&out)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
+    left.sort();
+    assert_eq!(left, ["dangling", "existing", "linked", "openai.key"]);
 }
 
 #[test]
@@ -427,6 +544,118 @@ fn each_storage_refusal_has_its_own_exit_code() {
     assert_eq!(refusal["error"], "invalid-name");
     assert_eq!(refusal["part"], "name");
     assert_eq!(refusal["reason"], "too-long");
+}
+
+/// story:readonly-test-backend: a `test-hooks` build mounts the read-only, binding-required fake
+/// for `[backends.onepassword.<label>]`; writes, deletes, renames and listings on it are
+/// `unsupported` (5).
+#[test]
+fn a_test_hooks_build_mounts_the_read_only_fake_for_the_onepassword_kind() {
+    let sandbox = Sandbox::new();
+    let path = sandbox.config_file();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"[backends.onepassword.vault]\n").unwrap();
+    let added = sandbox.run(&["namespace", "add", "vault", "--mount", "onepassword/vault"]);
+    assert!(added.status.success(), "{}", text(&added.stderr));
+    let written = sandbox.piped(&["put", "openai", "-n", "vault"], MARKER.as_bytes());
+    assert_eq!(code(&written), 5, "{}", text(&written.stderr));
+    assert_clean(&written, "put on a read-only mount");
+    for args in [
+        &["delete", "openai", "-n", "vault"][..],
+        &["rename", "openai", "openai-work", "-n", "vault"][..],
+        &["list", "-n", "vault"][..],
+    ] {
+        assert_eq!(code(&sandbox.run(args)), 5, "{args:?}");
+    }
+}
+
+/// Runs `args` and kills it after five seconds; answers whether it finished, and its output.
+fn bounded(mut command: Command) -> (bool, Output) {
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while std::time::Instant::now() < deadline && child.try_wait().unwrap().is_none() {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    let finished = child.try_wait().unwrap().is_some();
+    if !finished {
+        let _ = child.kill();
+    }
+    (finished, child.wait_with_output().unwrap())
+}
+
+/// story:cli-scope-flags: any `--tenant` or `--user` other than `default` is `denied` (4), naming
+/// the flag, before the configuration file or the keychain is opened. Both are FIFOs here, so a
+/// command that opened either would wait for a writer and be killed.
+#[test]
+fn a_second_tenant_or_user_is_denied_before_the_configuration_or_keychain_is_opened() {
+    let sandbox = Sandbox::new();
+    let config = sandbox.config_file();
+    fs::create_dir_all(config.parent().unwrap()).unwrap();
+    let keychain = sandbox.root.join("keychain.ron");
+    for fifo in [&config, &keychain] {
+        let made = Command::new("mkfifo")
+            .arg("-m")
+            .arg("600")
+            .arg(fifo)
+            .status()
+            .unwrap();
+        assert!(made.success());
+    }
+    let commands: [&[&str]; 11] = [
+        &["put", "openai"],
+        &["describe", "openai"],
+        &["list"],
+        &["list", "--all"],
+        &["delete", "openai"],
+        &["rename", "openai", "openai-work"],
+        &["namespace", "add", "work"],
+        &["namespace", "list"],
+        &["namespace", "remove", "work"],
+        &["mount", "set", "default", "remote/prod"],
+        &["bind", "openai", "op://Work/OpenAI/credential"],
+    ];
+    for (flags, part) in [
+        (&["--tenant", "other"][..], "tenant"),
+        (&["--tenant=-x", "--user", "other"][..], "tenant"),
+        (&["--user", "other"][..], "user"),
+        (&["--tenant", "default", "--user", "Bad"][..], "user"),
+    ] {
+        for command in commands {
+            let mut args = vec!["--json"];
+            args.extend_from_slice(flags);
+            args.extend_from_slice(command);
+            let (finished, output) = bounded(sandbox.command(&args));
+            assert!(
+                finished,
+                "{args:?} opened the configuration or the keychain"
+            );
+            assert_eq!(code(&output), 4, "{args:?}: {}", text(&output.stderr));
+            let refusal: serde_json::Value = serde_json::from_slice(&output.stderr).unwrap();
+            assert_eq!(refusal["error"], "denied", "{args:?}");
+            assert_eq!(refusal["part"], part, "{args:?}");
+            assert!(output.stdout.is_empty(), "{args:?}");
+        }
+    }
+    for fifo in [&config, &keychain] {
+        let kind = fs::symlink_metadata(fifo).unwrap().file_type();
+        assert!(std::os::unix::fs::FileTypeExt::is_fifo(&kind));
+    }
+}
+
+/// story:cli-scope-flags: `--tenant default --user default` is the default scope, spelled out.
+#[test]
+fn the_default_tenant_and_user_may_be_named() {
+    let sandbox = Sandbox::new();
+    let stored = sandbox.piped(
+        &["--tenant", "default", "--user", "default", "put", "openai"],
+        MARKER.as_bytes(),
+    );
+    assert!(stored.status.success(), "{}", text(&stored.stderr));
+    assert_eq!(sandbox.names("default"), ["openai"]);
 }
 
 #[test]

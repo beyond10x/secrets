@@ -41,7 +41,19 @@ struct Table {
     keychain: BTreeMap<String, KeychainEntry>,
     #[serde(default)]
     remote: BTreeMap<String, RemoteEntry>,
+    /// Test only (feature `test-hooks`): a mount of kind `onepassword` played by the read-only,
+    /// binding-required recording fake, so conformance can reach routing's read-only rules
+    /// (story:readonly-test-backend). A default build has no such key, refuses the table that
+    /// names one, and so cannot mount the fake.
+    #[cfg(feature = "test-hooks")]
+    #[serde(default)]
+    onepassword: BTreeMap<String, FakeEntry>,
 }
+
+#[cfg(feature = "test-hooks")]
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct FakeEntry {}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -257,6 +269,17 @@ pub fn load(path: &std::path::Path) -> Backends {
             }
         };
         mounted.push((backend, storage));
+    }
+    #[cfg(feature = "test-hooks")]
+    for label in table.onepassword.into_keys() {
+        let Some(backend) = reference(BackendKind::Onepassword, &label) else {
+            notes.push("config: a onepassword label is not a valid name".to_owned());
+            continue;
+        };
+        mounted.push((
+            backend,
+            Arc::new(secrets_core::storage::testing::RecordingBackend::read_only_bound()),
+        ));
     }
     Backends {
         mounted,

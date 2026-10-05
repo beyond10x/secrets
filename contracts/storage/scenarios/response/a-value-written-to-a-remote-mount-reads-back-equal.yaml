@@ -1,0 +1,56 @@
+# story:read-response-scenarios, "a value written to a remote mount reads back equal". The runner
+# mounts `remote/custody` as the remote backend over an in-process custody service (the shipped
+# router and PostgreSQL store, on a loopback port). `Read.read` declares `returns: true`, so each
+# read asserts the returned `value` literally: the bytes the write before it stored, the second
+# time binary and after a replace, so a backend that returns other bytes or the earlier version
+# fails here. `version` is the custody version and is not asserted.
+type: ess-scenario/4
+domain: secrets.storage
+scenario: a-value-written-to-a-remote-mount-reads-back-equal
+summary: A value written through the custody service, and the value that replaces it, each read back byte for byte.
+timeline:
+- at: '2026-10-05T16:10:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: vault}
+    mount: {kind: remote, label: custody}
+  outcome: added
+- at: '2026-10-05T16:10:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T16:10:02Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: read
+  response:
+    value: c2VjcmV0
+- at: '2026-10-05T16:10:03Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    value: AP/+CmtleQ==
+  outcome: replaced
+- at: '2026-10-05T16:10:04Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: read
+  response:
+    value: AP/+CmtleQ==

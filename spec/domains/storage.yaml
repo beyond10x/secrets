@@ -565,6 +565,7 @@ commands:
       - name: read
         preserves: secrets.storage.Secret
         instance: address
+        returns: true
         summary: The caller holds the value; nothing changed.
 
   # Decided by the coordinator 2026-09-27: Delete never removes a Binding, and is unsupported on a

@@ -1,5 +1,6 @@
 //! The local commands: the storage stack over the configuration file, and what each command
-//! prints. Every result is a name, a scope, a backend or a version; no command reads a value back.
+//! prints. Every result is a name, a scope, a backend or a version; `read` writes a value only into
+//! a new mode-0600 file and prints where it went.
 use std::{
     path::{Path, PathBuf},
     process::ExitCode,
@@ -7,7 +8,7 @@ use std::{
 };
 
 use secrets_core::{
-    authorize::{Authorized, Authorizer as _, LocalAuthorizer, Resource},
+    authorize::{Authorized, Authorizer as _, Denial, LocalAuthorizer, Resource},
     storage::{
         Action, Address, AddressError, BackendKind, BackendRef, Locator, MAX_VALUE_BYTES,
         NameError, NamespaceKey, Part, Scope, ScopeName, SecretMetadata, SecretStorage as _,
@@ -30,6 +31,8 @@ pub enum Failure {
     },
     /// The command line or the input was refused before anything was stored.
     Refused(String),
+    /// The local authorizer refused `--tenant` or `--user`, before anything was opened.
+    Denied(Denial),
 }
 
 impl From<StorageError> for Failure {
@@ -240,6 +243,15 @@ fn exit_code(error: StorageError) -> u8 {
 
 impl Local {
     /// The stack over the configuration file and every backend it configures.
+    /// Nothing opened: no configuration read and no backend built, for a command refused before.
+    pub fn unopened(json: bool) -> Self {
+        Self {
+            json,
+            stack: None,
+            trouble: Vec::new(),
+        }
+    }
+
     pub fn open(json: bool) -> Self {
         let Some(path) = config_path() else {
             return Self {
@@ -346,6 +358,42 @@ impl Local {
             text: format!(
                 "{outcome} {} (scope {}, backend {}, version {})",
                 address.name,
+                scope_text(&address.scope),
+                backend_text(&backend),
+                version_text(version.as_ref()),
+            ),
+        })
+    }
+
+    /// Writes the value into a new mode-0600 file at `out`; prints only where it went. The path is
+    /// checked, and its temporary file created, before any backend is asked.
+    pub async fn read(&self, namespace: &str, name: &str, out: &Path) -> Outcome {
+        let address = address(namespace, name)?;
+        let stack = self.stack()?;
+        let pending =
+            crate::out::prepare(out).map_err(|refusal| Failure::Refused(refusal.to_string()))?;
+        let revealed = stack
+            .storage
+            .read(&Target::unbound(address.clone()))
+            .await?;
+        pending
+            .commit(revealed.value.expose())
+            .map_err(|refusal| Failure::Refused(refusal.to_string()))?;
+        let backend = self.mount_of(&address.scope).await?;
+        let version = revealed.version;
+        Ok(Report {
+            json: json!({
+                "outcome": "read",
+                "name": address.name,
+                "scope": address.scope,
+                "backend": backend,
+                "version": version,
+                "out": out.to_string_lossy(),
+            }),
+            text: format!(
+                "read {} into {} (scope {}, backend {}, version {})",
+                address.name,
+                out.display(),
                 scope_text(&address.scope),
                 backend_text(&backend),
                 version_text(version.as_ref()),
@@ -569,6 +617,29 @@ impl Local {
                     println!("{}", report.text);
                 }
                 ExitCode::SUCCESS
+            }
+            Err(Failure::Denied(denial)) => {
+                // Which flag was refused, never its value.
+                let part = match denial {
+                    Denial::Tenant => "tenant",
+                    Denial::User => "user",
+                };
+                let message = meaning(command, StorageError::Denied);
+                if json {
+                    eprintln!(
+                        "{}",
+                        json!({
+                            "error": StorageError::Denied.code(),
+                            "part": part,
+                            "reason": null,
+                            "message": message,
+                            "notes": [],
+                        })
+                    );
+                } else {
+                    eprintln!("secretsctl: denied ({part}): {message}");
+                }
+                ExitCode::from(exit_code(StorageError::Denied))
             }
             Err(Failure::Refused(reason)) => {
                 if json {

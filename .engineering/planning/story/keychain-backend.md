@@ -23,7 +23,7 @@ scope:
   path: contracts/storage/scenarios/keychain
 - confidence: cited
   path: crates/secrets-keychain
-revision: 11
+revision: 12
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":2}}}
 - {from: "proposed", to: "active", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"review_outcome":2}}}
@@ -62,10 +62,14 @@ writes only its own module.
 
 ## Guards
 
-Authored `ess-scenario/1` under `contracts/storage/scenarios/keychain`, run by `checks/conformance`
-(`secrets-library`) through the composed stack: `Authorized<FederatedStorage>` with namespace
-`default` on the keychain backend over a fresh `keyring_core::mock::Store` per scenario.
+Authored scenarios under `contracts/storage/scenarios/keychain` and `contracts/storage/scenarios/response`,
+run by `checks/conformance` (`secrets-library`) through the composed stack: `Authorized<FederatedStorage>`
+with namespace `default` on the keychain backend over a fresh `keyring_core::mock::Store` per scenario.
 
+- `a-value-written-to-a-keychain-mount-reads-back-equal` (`ess-scenario/4`, story:read-response-scenarios):
+  the primary evidence that a read returns the bytes written. `Read.read` declares `returns: true`;
+  the runner hands ESS the value and version the read returned, and the scenario asserts the value
+  literally after a write and again, binary, after a replace
 - `a-keychain-secret-round-trips`: write (created, then replaced), read, list, rename, delete, and
   the forced `not-found` afterwards; SecretMetadata holds what remains and excludes what was
   renamed or deleted
@@ -76,11 +80,13 @@ Authored `ess-scenario/1` under `contracts/storage/scenarios/keychain`, run by `
 
 Falsification (2026-10-05): `failure()` in `crates/secrets-keychain/src/lib.rs` mapping every
 keychain error to `NotFound` fails `a-keychain-fault-is-unavailable`; the file was restored byte
-for byte (sha256 `444247aa…07e2e9` before and after).
+for byte (sha256 `444247aa…07e2e9` before and after). Falsification (2026-10-05,
+story:read-response-scenarios): `read` returning the stored bytes reversed fails
+`a-value-written-to-a-keychain-mount-reads-back-equal`; restored byte for byte (same sha256).
 
 ESS cannot express these, so Rust tests in `crates/secrets-keychain/tests/backend.rs` guard them:
 
-- a read returns the bytes written (no response claim at suite format 5):
+- a read returns the bytes written, kept beside the ESS scenario above:
   `a_written_value_reads_back_and_is_listed_with_its_version`, `empty_and_binary_values_round_trip`
 - two tenants and two users holding one name stay separate: the local authorizer denies every
   scope but tenant and user `default` before the keychain is reached, so no scenario can write

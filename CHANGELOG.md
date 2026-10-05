@@ -1,5 +1,25 @@
 # Changelog
 
+## Unreleased
+
+- Conformance mounts the read-only, binding-required recording fake for every mount of kind
+  `onepassword`, in process and, through `[backends.onepassword.<label>]`, in a `secretsctl` built
+  with `test-hooks`; a default build refuses that table and cannot mount it. The library suite
+  answers 108 of 108; the CLI suite answers its read-only and 1Password-mount scenarios. No
+  1Password backend exists yet.
+- `secretsctl` takes `--tenant` and `--user`, both `default` by default. Any other value is
+  `denied` (exit 4, the JSON refusal naming the flag) by the local authorizer before the
+  configuration file is read or any backend is opened. The CLI suite answers its 15 `denied` and
+  `denied-user` scenarios.
+- `secretsctl read <name> --out <file>` writes a value into a new file of mode 0600 and never to
+  stdout or stderr. It refuses an existing path, a symlink and a directory before any backend is
+  asked, writes a temporary file beside the path and links it into place without replacing
+  anything. The CLI suite answers its 8 `Read` scenarios: 89 of 89.
+- `secrets.storage` `Read.read` declares `returns: true`. Both conformance runners hand ESS the
+  value and version a read returned, and two authored scenarios assert that a value written to a
+  keychain mount and to a remote mount, and the value that replaces it, read back byte for byte.
+  The library suite is 110 scenarios, all answered.
+
 ## 0.5.0 - 2026-10-05
 
 - `secrets-core` gains the `secrets.storage` port (`secrets_core::storage`): `SecretStorage`,

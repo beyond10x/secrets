@@ -75,11 +75,21 @@
 //! refuse what the arrangement made true, and the command is reported as taking no declared
 //! branch.
 //!
-//! # What stays unsupported
+//! # The 1Password kind
 //!
-//! A mount of kind `onepassword` named by a scenario: no 1Password backend exists this round
-//! (story:onepassword-backend is archived). The read-only fake is mounted under that kind only for
-//! the forced `unsupported` and `unresolved` arrangements, under a label of the adapter's own.
+//! No 1Password backend exists (story:onepassword-backend is archived). Every mount of kind
+//! `onepassword` is played by the read-only, binding-required recording fake
+//! (story:readonly-test-backend): a mount a scenario names, configured as an operator would, and
+//! the mounts the forced `unsupported` and `unresolved` arrangements add under labels of the
+//! adapter's own. The scenarios that reach it check routing's capability and binding rules, which
+//! the fake declares as the kind does; they do not check 1Password itself.
+//!
+//! # Read's response
+//!
+//! `Read.read` declares `returns: true`. A read that succeeded hands ESS what the stack returned:
+//! `value` as base64 text and `version` as text, or `null` when the backend returned none
+//! ([`read_response`]). The scenarios under `contracts/storage/scenarios/response` assert the value
+//! literally.
 //!
 //! # Events
 //!
@@ -452,11 +462,10 @@ impl World {
                     Fault::Remote,
                 );
             }
+            // The read-only, binding-required fake plays the kind (story:readonly-test-backend).
             BackendKind::Onepassword => {
-                return Err(TargetError::unsupported(
-                    "mounting a 1Password backend",
-                    "no 1Password backend exists this round (story:onepassword-backend is archived)",
-                ));
+                let fake = Arc::new(RecordingBackend::read_only_bound());
+                self.insert(backend.clone(), fake.clone(), Fault::Fake(fake));
             }
         }
         Ok(())
@@ -862,7 +871,7 @@ pub(crate) fn namespace_key(scope: &Scope) -> NamespaceKey {
 }
 
 /// The capabilities a secret command needs of its backend.
-fn needs(command: &str) -> &'static [Capability] {
+pub(crate) fn needs(command: &str) -> &'static [Capability] {
     match command {
         "Write" => &[Capability::Write],
         "Read" => &[Capability::Read],
@@ -999,6 +1008,7 @@ fn command(
 
 fn undeclared() -> Observed {
     Observed {
+        response: None,
         outcome: None,
         error: None,
         events: Vec::new(),
@@ -1007,6 +1017,7 @@ fn undeclared() -> Observed {
 
 fn refused(outcome: &str, error: StorageError) -> Observed {
     Observed {
+        response: None,
         outcome: Some(outcome.to_owned()),
         error: declared(error),
         events: Vec::new(),
@@ -1079,6 +1090,7 @@ fn answer(
         Err(refusal) => Ok(match admitted {
             Err(denial) => refused(denial.outcome(), StorageError::Denied),
             Ok(()) => Observed {
+                response: None,
                 outcome: branch(command, &refusal).map(ToOwned::to_owned),
                 error: declared(refusal.error()),
                 events: Vec::new(),
@@ -1307,6 +1319,19 @@ fn arrange(command: &str, outcome: &str, input: &mut Value, remote: bool) -> R<(
 enum Done {
     Unit,
     Written(Written),
+    Revealed(Revealed),
+}
+
+/// `Read`'s response as the specification declares it: `value` (Bytes, as base64 text) and
+/// `version` (`null` when the backend keeps none).
+pub(crate) fn read_response(value: &[u8], version: Option<&str>) -> BTreeMap<String, Node> {
+    BTreeMap::from([
+        ("value".to_owned(), Node::Text(STANDARD.encode(value))),
+        (
+            "version".to_owned(),
+            version.map_or(Node::Null, |version| Node::Text(version.to_owned())),
+        ),
+    ])
 }
 
 pub(crate) fn node(value: &impl Serialize) -> R<Node> {
@@ -1494,7 +1519,7 @@ async fn execute(
         Accepted::Read(address) => stack
             .read(&Target::unbound(address.clone()))
             .await
-            .map(|_| Done::Unit),
+            .map(Done::Revealed),
         Accepted::Delete(address) => unit(stack.delete(&Target::unbound(address.clone())).await),
         Accepted::Rename(address, new_name) => unit(
             stack
@@ -1553,8 +1578,12 @@ fn succeeded(command: &str, accepted: &Accepted, done: &Done) -> R<Observed> {
                 vec![("address", node(address)?)],
             ),
         ),
-        (Accepted::Read(_), _) => {
+        (Accepted::Read(_), Done::Revealed(revealed)) => {
             return Ok(Observed {
+                response: Some(read_response(
+                    revealed.value.expose(),
+                    revealed.version.as_ref().map(|version| version.as_str()),
+                )),
                 outcome: Some("read".to_owned()),
                 error: None,
                 events: Vec::new(),
@@ -1581,11 +1610,13 @@ fn succeeded(command: &str, accepted: &Accepted, done: &Done) -> R<Observed> {
                 vec![("scope", node(scope)?)],
             ),
         ),
-        (Accepted::Write(..), Done::Unit) => {
-            return Err(unavailable("reading a write's answer", command));
+        (Accepted::Write(..), Done::Unit | Done::Revealed(_))
+        | (Accepted::Read(_), Done::Unit | Done::Written(_)) => {
+            return Err(unavailable("reading the stack's answer", command));
         }
     };
     Ok(Observed {
+        response: None,
         outcome: Some(outcome.to_owned()),
         error: None,
         events: vec![event],

@@ -11,9 +11,7 @@ default = []
 # The platform's own credential store for the keychain backend. Without it the keychain is
 # unavailable and says so.
 native-keychain = ["secrets-keychain/native-keychain"]
-# Test only: `SECRETSCTL_TEST_KEYCHAIN_FILE` puts the keychain backend on a file-backed
-# `keyring_core::sample` store. Absent from a default build, so the variable is never read there.
-test-hooks = ["keyring-core/sample"]
+test-hooks = ["keyring-core/sample", "secrets-core/testing"]
 
 [dependencies]
 async-trait.workspace = true
