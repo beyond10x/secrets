@@ -6,14 +6,38 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = []
+# The platform's own credential store for the keychain backend. Without it the keychain is
+# unavailable and says so.
+native-keychain = ["secrets-keychain/native-keychain"]
+test-hooks = ["keyring-core/sample", "secrets-core/testing"]
+
 [dependencies]
+async-trait.workspace = true
 base64.workspace = true
 clap.workspace = true
 getrandom.workspace = true
+keyring-core.workspace = true
 reqwest.workspace = true
+rpassword.workspace = true
+secrets-client = { path = "../secrets-client" }
+secrets-core = { path = "../secrets-core" }
+secrets-federation = { path = "../secrets-federation", features = ["file-config"] }
+secrets-keychain = { path = "../secrets-keychain" }
+secrets-remote = { path = "../secrets-remote" }
+serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true
+toml.workspace = true
+zeroize.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[[test]]
+name = "cli"
+required-features = ["test-hooks"]
 
 [lints]
 workspace = true
-

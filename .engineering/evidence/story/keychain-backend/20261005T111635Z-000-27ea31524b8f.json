@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-05T11:16:35Z",
+  "actor": "human:timo",
+  "artifact": "story:keychain-backend",
+  "kind": "story",
+  "revision": 10,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check exit 0 (2026-10-05, c81627f): secrets-service conformance 111 total, 111 passed x3; secrets-library conformance 96 total, 95 passed, 1 unsupported (SetMount to a 1Password mount), 0 failed, 0 error, 0 skipped x3 against contracts/storage-baseline.json; 146 Rust tests passed; contracts/storage/scenarios/keychain 3/3 authored scenarios passed; falsification of the keychain error mapping failed a-keychain-fault-is-unavailable, source restored byte for byte"
+  }
+}

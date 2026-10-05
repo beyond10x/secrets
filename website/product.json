@@ -60,9 +60,9 @@
         },
         {
           "title": "Named secrets over several backends",
-          "description": "An in-process library with named, scoped secrets over the OS keychain, read-only 1Password and this service, and a CLI that never prints a secret.",
-          "status": "planned",
-          "href": "/docs/status#planned-named-secrets-over-several-backends"
+          "description": "An in-process library with named, scoped secrets over the OS keychain and this service, one backend per namespace and no fallback, and secretsctl, a local CLI that never prints a secret. Read-only 1Password is planned.",
+          "status": "shipped",
+          "href": "/docs/status#named-secrets-over-several-backends"
         }
       ]
     },
@@ -109,7 +109,7 @@
     {
       "kind": "status",
       "eyebrow": "Status",
-      "title": "Version 0.4.1. Here is what exists.",
+      "title": "Version 0.6.0. Here is what exists.",
       "lede": "Shipped means in the released service today. Planned means specified and on the plan only.",
       "items": "data/status.json"
     },

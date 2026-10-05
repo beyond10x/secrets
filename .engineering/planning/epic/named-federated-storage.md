@@ -7,7 +7,7 @@ title: Named, scoped secrets behind several storage backends at once
 summary: One SecretStorage port, mount routing per namespace, keychain, 1Password and the custody service as backends, a local CLI.
 relations:
 - derived_from: executable-system-specification:secrets-storage
-revision: 1
+revision: 2
 ---
 ## Outcome
 
@@ -38,3 +38,8 @@ passes against the shipped service.
 
 Vault; Connectors; namespace-shared secrets with no owning user; the external authorizer (an
 authority service deciding `check(context, action, resource)`), which is the agent-platform round.
+
+1Password is deferred (operator, 2026-10-05: "onepassword is out of scope for now"):
+`story:onepassword-backend` is archived with its scope kept. This round mounts the OS keychain and
+the custody service; `spec/domains/storage.yaml` keeps its 1Password declarations as the planned
+model.

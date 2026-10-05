@@ -146,6 +146,7 @@ fn command(
         (
             _,
             Ok(Observed {
+                response: None,
                 error: Some("secrets.custody.Unauthorized" | "secrets.custody.Forbidden"),
                 ..
             }),
@@ -420,11 +421,13 @@ fn refusal(reply: &Reply) -> R<Option<(&'static str, String)>> {
 fn refused(reply: &Reply) -> R<Observed> {
     Ok(match refusal(reply)? {
         Some((error, code)) => Observed {
+            response: None,
             outcome: Some(code),
             error: Some(error),
             events: Vec::new(),
         },
         None => Observed {
+            response: None,
             outcome: None,
             error: None,
             events: Vec::new(),
@@ -674,6 +677,7 @@ fn put(context: &mut Context<'_>, input: Value) -> R<Observed> {
         })
         .collect();
     Ok(Observed {
+        response: None,
         outcome: Some(
             if metadata.version == 1 {
                 "created"
@@ -746,6 +750,7 @@ fn revoke(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         })
         .collect();
     Ok(Observed {
+        response: None,
         outcome: Some("revoked".to_owned()),
         error: None,
         events,
@@ -773,6 +778,7 @@ fn deleted(
         })
         .collect();
     Ok(Observed {
+        response: None,
         outcome: Some("deleted".to_owned()),
         error: None,
         events,
@@ -918,6 +924,7 @@ fn prepare(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         ));
     }
     Ok(Observed {
+        response: None,
         outcome: Some("prepared".to_owned()),
         error: None,
         events: vec![(
@@ -1006,6 +1013,7 @@ fn commit(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         })
         .collect();
     Ok(Observed {
+        response: None,
         outcome: Some("committed".to_owned()),
         error: None,
         events,
@@ -1044,6 +1052,7 @@ fn abort(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         ));
     }
     Ok(Observed {
+        response: None,
         outcome: Some("aborted".to_owned()),
         error: None,
         events: vec![(
@@ -1080,6 +1089,7 @@ fn rewrap(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     })?;
     let Ok(count) = result else {
         return Ok(Observed {
+            response: None,
             outcome: Some("failed".to_owned()),
             error: Some("secrets.custody.Unavailable"),
             events: Vec::new(),
@@ -1100,12 +1110,14 @@ fn rewrap(context: &mut Context<'_>, input: &Value) -> R<Observed> {
             Vec::new()
         };
         return Ok(Observed {
+            response: None,
             outcome: Some("nothing-to-rewrap".to_owned()),
             error: None,
             events,
         });
     }
     Ok(Observed {
+        response: None,
         outcome: Some("rewrapped".to_owned()),
         error: None,
         events: rewraps
@@ -1154,6 +1166,7 @@ fn read_value(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     }
     let stored: StoredSecret = reply.json()?;
     Ok(Observed {
+        response: None,
         outcome: Some("read".to_owned()),
         error: None,
         events: vec![(
@@ -1194,6 +1207,7 @@ fn check_exists(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     }
     reply.json::<Exists>()?;
     Ok(Observed {
+        response: None,
         outcome: Some("checked".to_owned()),
         error: None,
         events: vec![(
@@ -1231,6 +1245,7 @@ fn list_namespace(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     }
     reply.json::<Listing>()?;
     Ok(Observed {
+        response: None,
         outcome: Some("listed".to_owned()),
         error: None,
         events: vec![(

@@ -1,0 +1,19 @@
+# 64 + 1 + 63 = 128 bytes, the first segment exactly 64: both bounds admit it, so the port goes on to
+# the value and refuses only the value. A name refusal here would mean a bound is one byte short.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check
+summary: A name of exactly 128 bytes with a 64-byte segment is accepted, so an oversized value is refused as too large rather than the name.
+timeline:
+- at: '2026-10-05T12:00:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    value: AA==
+  outcome: too-large
+  error:
+    name: secrets.storage.TooLarge
+  no_events: [secrets.storage.SecretWritten]

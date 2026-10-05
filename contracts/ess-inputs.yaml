@@ -1,5 +1,5 @@
 format: ess-inputs/2
-requires: ess 0.52.0
+requires: ess 0.53.0
 specification: []
 scenarios:
 - custody/scenarios/a-prepared-batch-body-is-what-commit-applies.yaml
@@ -10,3 +10,36 @@ scenarios:
 - adversary-w2/scenarios/a-put-with-a-256-byte-key-is-an-invalid-reference.yaml
 - adversary-w2/scenarios/a-put-with-a-key-of-200-two-byte-characters-follows-the-spec.yaml
 - adversary-w2/scenarios/a-put-with-an-empty-key-is-an-invalid-reference.yaml
+- storage/scenarios/port/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check.yaml
+- storage/scenarios/port/a-name-of-129-bytes-is-too-long.yaml
+- storage/scenarios/port/a-new-name-of-129-bytes-is-too-long.yaml
+- storage/scenarios/port/a-segment-of-65-bytes-is-an-invalid-name.yaml
+- storage/scenarios/port/a-value-above-one-mib-is-too-large.yaml
+- storage/scenarios/keychain/a-keychain-fault-is-unavailable.yaml
+- storage/scenarios/keychain/a-keychain-secret-round-trips.yaml
+- storage/scenarios/keychain/the-same-name-in-two-namespaces-stays-separate.yaml
+- storage/scenarios/remote/a-custody-failure-is-unavailable.yaml
+- storage/scenarios/remote/a-remote-secret-round-trips.yaml
+- storage/scenarios/remote/a-value-the-custody-service-cannot-carry-is-too-large.yaml
+- storage/scenarios/remote/the-same-name-in-two-remote-namespaces-stays-separate.yaml
+- storage/scenarios/federation/a-name-in-a-namespace-that-does-not-exist-is-unresolved.yaml
+- storage/scenarios/federation/changes-on-a-read-only-mount-are-unsupported.yaml
+- storage/scenarios/federation/conflicts-the-specification-names.yaml
+- storage/scenarios/federation/each-namespace-routes-to-its-own-mount.yaml
+- storage/scenarios/authorize/a-second-tenant-is-denied-before-any-backend.yaml
+- storage/scenarios/authorize/a-second-user-is-denied-before-any-backend.yaml
+- storage/scenarios/authorize/tenant-and-user-default-may-do-everything-in-any-namespace.yaml
+- storage/scenarios/response/a-value-written-to-a-keychain-mount-reads-back-equal.yaml
+- storage/scenarios/response/a-value-written-to-a-remote-mount-reads-back-equal.yaml
+- storage/scenarios/cli/a-namespace-on-the-remote-backend-round-trips.yaml
+- storage/scenarios/cli/bind-binds-a-name-once.yaml
+- storage/scenarios/cli/delete-removes-a-secret.yaml
+- storage/scenarios/cli/describe-shows-the-name-scope-and-version-of-a-secret.yaml
+- storage/scenarios/cli/list-reads-the-secrets-of-a-namespace.yaml
+- storage/scenarios/cli/mount-set-moves-a-namespace-to-another-backend.yaml
+- storage/scenarios/cli/namespace-add-creates-a-namespace-once.yaml
+- storage/scenarios/cli/namespace-list-holds-every-namespace-with-its-mount.yaml
+- storage/scenarios/cli/namespace-remove-refuses-default-and-a-namespace-in-use.yaml
+- storage/scenarios/cli/put-stores-a-secret-in-the-local-scope.yaml
+- storage/scenarios/cli/rename-moves-a-secret-to-a-new-name.yaml
+- storage/scenarios/cli/unbind-removes-a-binding.yaml

@@ -38,20 +38,48 @@ it must know. The cross-repository decision is Atlas ADR 0023 (Secrets is the sh
 
 `task check` and `task conformance` need `SECRETS_TEST_DATABASE_URL` pointing at a disposable
 PostgreSQL database; conformance refuses to run without it. CI provides one. Tool versions:
-`ess` 0.52.0 (`contracts/ess-inputs.yaml` `requires`), `aep` 0.68.0, Rust 1.97.
+`ess` 0.53.0 (`contracts/ess-inputs.yaml` `requires`), `aep` 0.68.0, Rust 1.97.
 
 ## Specification
 
 ESS drives this repository. `spec/domains/custody.yaml` is retrofitted from the shipped service and
-cites a source for every declaration; `spec/domains/storage.yaml` is the planned named-storage
-model, which no code implements. Change the specification first, then the code.
+cites a source for every declaration; `spec/domains/storage.yaml` is the named-storage model,
+whose port `secrets-core` implements (`secrets_core::storage`), with the local authorizer
+(`secrets_core::authorize`), mount routing (`secrets-federation`) and the keychain
+(`secrets-keychain`) and remote (`secrets-remote`) backends. Change the specification first, then
+the code.
 
-- `contracts/suite.json` and `contracts/schema/` are generated; `task conformance` fails on drift.
-  Regenerate with the exact arguments in `checks/conformance/src/gate.rs`.
-- The runner (`checks/conformance/`) sends every command through the real router and store and
-  reads the branch from the response; it never decides a branch from the suite.
-- `contracts/baseline.json` holds the floor: 111 answered, 0 skipped. Raise it when the suite
-  grows; never lower it to pass.
+- `contracts/suite.json` (`secrets-service`), `contracts/storage-suite.json` (`secrets-library`),
+  `contracts/cli-suite.json` (`secrets-library` with the authored scenarios under
+  `contracts/storage/scenarios/cli`) and `contracts/schema/` are generated; `task conformance`
+  fails on drift. Regenerate with the
+  exact arguments in `checks/conformance/src/gate.rs`.
+- The runner (`checks/conformance/`) sends every custody command through the real router and
+  store, and every storage command through the composed storage stack in process, and reads the
+  branch from the response and from which backends the call reached; it never decides a branch
+  from the suite. `Read.read` declares `returns: true`: both runners hand the value and version
+  `Read` returned to ESS as the typed response, and the authored scenarios under
+  `contracts/storage/scenarios/response` assert the value literally. The stack is composed in
+  `checks/conformance/src/storage.rs`: keychain on a mock store, remote against an in-process
+  custody service, recording fakes for read-only and faulting mounts. Every mount of kind
+  `onepassword` is the read-only, binding-required recording fake; no 1Password backend exists.
+- The CLI suite runs through the built `secretsctl` (`checks/conformance/src/cli.rs`): the runner
+  builds it with feature `test-hooks` in a target directory of its own (`secretsctl-conformance`),
+  gives each scenario its own `XDG_CONFIG_HOME` under `target/conformance/cli` and a file-backed
+  keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`); a `test-hooks` build also mounts the read-only fake
+  for `[backends.onepassword.<label>]`. It reads the branch from the exit status, the JSON
+  refusal (with the flag a denial names) and the world before the command, and holds a denial to
+  leaving the configuration, its lock and the keychain file unchanged. What ESS cannot state (no
+  value on stdout or stderr, `read --out` creating only a new mode-0600 file and refusing a
+  symlink, a value in argv refused, `put`'s sources, the configuration file's mode, a denial
+  decided before the configuration or keychain is opened, an inert test hook and an unmountable
+  fake in a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`,
+  `review_invariants.rs`, `review_default_build.rs`).
+- `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
+  `contracts/storage-baseline.json` holds the library's: 110 answered, 0 unsupported.
+  `contracts/cli-baseline.json` holds the CLI's: 89 answered, 0 unsupported.
+  Every authored scenario must pass. Raise a floor or lower a ceiling when the suite grows; never
+  the reverse to pass.
 - Every authored scenario under `contracts/*/scenarios/` is listed in `contracts/ess-inputs.yaml`.
 
 ## Plan

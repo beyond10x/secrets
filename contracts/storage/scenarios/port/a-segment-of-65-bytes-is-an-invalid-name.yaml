@@ -1,0 +1,19 @@
+# 70 bytes in total, under the 128-byte bound, but the second segment is 65 bytes: the per-segment
+# bound is the only rule it breaks (crates/secrets-core/src/storage.rs, `segment`).
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-segment-of-65-bytes-is-an-invalid-name
+summary: A name with one 65-byte segment is refused as an invalid name although its total is within 128 bytes.
+timeline:
+- at: '2026-10-05T12:00:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: team/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+    value: AA==
+  outcome: invalid-name
+  error:
+    name: secrets.storage.InvalidName
+  no_events: [secrets.storage.SecretWritten]

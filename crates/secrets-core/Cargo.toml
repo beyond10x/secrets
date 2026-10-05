@@ -17,3 +17,8 @@ zeroize.workspace = true
 [lints]
 workspace = true
 
+[features]
+testing = []
+
+[dev-dependencies]
+serde_json.workspace = true

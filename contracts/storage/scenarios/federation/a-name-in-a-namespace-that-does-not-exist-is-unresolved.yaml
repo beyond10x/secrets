@@ -1,0 +1,93 @@
+# story:mount-federation, "a name with no mount or binding is `not-found` and the fakes record no
+# call", for the mount half. Every `unresolved` here is forced, and the runner leaves the namespace
+# absent; it reads `not-found` as `unresolved` only when the call reached no backend, so a router
+# that asked a backend first fails this scenario (ESS-LIMIT #27 cannot claim "no backend is called"
+# in the specification itself). The binding half needs a binding-required mount, which only the
+# runner's own arrangement mounts; the Rust test
+# `an_unbound_name_on_a_binding_backend_is_not_found_and_no_backend_is_called` guards it.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-name-in-a-namespace-that-does-not-exist-is-unresolved
+summary: Every secret command in a namespace that does not exist, or no longer does, is unresolved and reaches no backend.
+timeline:
+- at: '2026-10-05T15:00:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: nowhere, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: unresolved
+  error:
+    name: secrets.storage.NotFound
+  no_events: [secrets.storage.SecretWritten]
+- at: '2026-10-05T15:00:01Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: nowhere, user: default}
+      name: openai
+  outcome: unresolved
+  error:
+    name: secrets.storage.NotFound
+- at: '2026-10-05T15:00:02Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: nowhere, user: default}
+      name: openai
+  outcome: unresolved
+  error:
+    name: secrets.storage.NotFound
+- at: '2026-10-05T15:00:03Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: nowhere, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: unresolved
+  error:
+    name: secrets.storage.NotFound
+- at: '2026-10-05T15:00:04Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: default, namespace: nowhere, user: default}
+  outcome: unresolved
+  error:
+    name: secrets.storage.NotFound
+- at: '2026-10-05T15:00:05Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: gone}
+  outcome: added
+- at: '2026-10-05T15:00:06Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: gone}
+  outcome: removed
+- at: '2026-10-05T15:00:07Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: gone, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: unresolved
+  error:
+    name: secrets.storage.NotFound
+assert:
+- view: secrets.storage.Namespaces
+  excludes:
+    namespace: {tenant: default, namespace: gone}
+- view: secrets.storage.Namespaces
+  excludes:
+    namespace: {tenant: default, namespace: nowhere}

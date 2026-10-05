@@ -1,0 +1,129 @@
+# story:local-authorizer, "a second tenant is denied by name before any backend is reached". The
+# runner reads `denied` only when the call reached no backend and did not consult the namespace
+# configuration store, so a denial decided after either fails here. The last two acts name a
+# 129-byte name and a name the grammar refuses: the authorizer decides first, so both are denials.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-second-tenant-is-denied-before-any-backend
+summary: Every storage command in tenant acme is denied, even with a name the port would refuse, and nothing is stored.
+timeline:
+- at: '2026-10-05T16:10:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: acme, namespace: work}
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+  no_events: [secrets.storage.NamespaceAdded]
+- at: '2026-10-05T16:10:01Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: acme, namespace: default}
+    mount: {kind: keychain, label: default}
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:02Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: acme, namespace: default}
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:03Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: openai
+    locator: op://Work/OpenAI/credential
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:04Z'
+  command: secrets.storage.Unbind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: openai
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:05Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+  no_events: [secrets.storage.SecretWritten]
+- at: '2026-10-05T16:10:06Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: openai
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:07Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: openai
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:08Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:09Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: acme, namespace: default, user: default}
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+  no_events: [secrets.storage.MetadataListed]
+- at: '2026-10-05T16:10:10Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    value: c2VjcmV0
+  outcome: denied
+  error:
+    name: secrets.storage.Denied
+- at: '2026-10-05T16:10:11Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: acme, namespace: default, user: default}
+      name: -openai
+  outcome: denied
+  error:
+    name: secrets.storage.Denied

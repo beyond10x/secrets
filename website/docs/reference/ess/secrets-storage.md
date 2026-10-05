@@ -108,8 +108,9 @@ An instance is identified by `address`, a `secrets.storage.Address`. The name is
 It holds:
 
 - `locator` — `String`
+- `namespace` — `secrets.storage.NamespaceKey`
 
-It declares no relation to another entity, and no other entity names it.
+Its `namespace` is what [`Namespace`](#namespace) owns it by, as `bindings`.
 
 No invariant is declared, so nothing here constrains an instance at rest.
 
@@ -138,8 +139,9 @@ An instance is identified by `namespace`, a `secrets.storage.NamespaceKey`. The 
 It holds:
 
 - `mount` — `Optional<secrets.storage.BackendRef>`, which may be absent
+- `tenant` — `secrets.storage.ScopeName`
 
-It references at most one [`Backend`](#backend), as `mount`, carried by `Namespace.mount`.
+It references at most one [`Backend`](#backend), as `mount`, carried by `Namespace.mount`. It owns any number of [`Binding`](#binding), as `bindings`, carried by `Binding.namespace`. Its `tenant` is what [`Tenant`](#tenant) owns it by, as `namespaces`.
 
 No invariant is declared, so nothing here constrains an instance at rest.
 
@@ -168,8 +170,9 @@ An instance is identified by `address`, a `secrets.storage.Address`. The name is
 It holds:
 
 - `version` — `Optional<String>`, which may be absent
+- `namespace` — `secrets.storage.NamespaceKey`
 
-It declares no relation to another entity, and no other entity names it.
+It references at most one [`Namespace`](#namespace), as `namespace`, carried by `Secret.namespace`.
 
 No invariant is declared, so nothing here constrains an instance at rest.
 
@@ -197,7 +200,7 @@ An instance is identified by `tenant`, a `secrets.storage.ScopeName`. The name i
 
 It holds nothing beyond its identity and its state.
 
-It declares no relation to another entity, and no other entity names it.
+It owns any number of [`Namespace`](#namespace), as `namespaces`, carried by `Namespace.tenant`.
 
 No invariant is declared, so nothing here constrains an instance at rest.
 
@@ -233,6 +236,7 @@ It exposes:
 
 - `namespace` — `secrets.storage.NamespaceKey`
 - `mount` — `Optional<secrets.storage.BackendRef>`, which may be absent
+- `tenant` — `secrets.storage.ScopeName`
 - `state` — `secrets.storage.Namespace.State`
 
 It declares no order, so the rows come back in whatever order the implementation has, and two reads may disagree.
@@ -253,6 +257,7 @@ It exposes:
 
 - `address` — `secrets.storage.Address`
 - `version` — `Optional<String>`, which may be absent
+- `namespace` — `secrets.storage.NamespaceKey`
 - `state` — `secrets.storage.Secret.State`
 
 It declares no order, so the rows come back in whatever order the implementation has, and two reads may disagree.
@@ -284,7 +289,7 @@ It has seven outcomes.
 
 **`no-backend`** — Decided outside the input: the mount names a backend that is not configured. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`added`** — The namespace exists in the tenant, with the given mount or the default keychain one. The default branch, taken when no other outcome's condition matched. It creates a `secrets.storage.Namespace`, which starts in `Present`. The new instance's identity is published as `namespace` on `secrets.storage.NamespaceAdded`. It emits `secrets.storage.NamespaceAdded`. It sets `mount` from `input.mount`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`added`** — The namespace exists in the tenant, with the given mount or the default keychain one. The default branch, taken when no other outcome's condition matched. It creates a `secrets.storage.Namespace`, which starts in `Present`. The new instance's identity is published as `namespace` on `secrets.storage.NamespaceAdded`. It emits `secrets.storage.NamespaceAdded`. It sets `mount` from `input.mount` and `tenant` from `input.namespace.tenant`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the namespace configuration store could not be reached. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -311,7 +316,7 @@ It has eight outcomes.
 
 **`already-bound`** — Decided outside the input: the address already has a binding. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Conflict`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`bound`** — The address resolves to the locator in the namespace's backend. The default branch, taken when no other outcome's condition matched. It creates a `secrets.storage.Binding`, which starts in `Present`. The new instance's identity is published as `address` on `secrets.storage.NameBound`. It emits `secrets.storage.NameBound`. It sets `locator` from `input.locator`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`bound`** — The address resolves to the locator in the namespace's backend. The default branch, taken when no other outcome's condition matched. It creates a `secrets.storage.Binding`, which starts in `Present`. The new instance's identity is published as `address` on `secrets.storage.NameBound`. It emits `secrets.storage.NameBound`. It sets `locator` from `input.locator` and `namespace` from `{tenant: input.address.scope.tenant, namespace: input.address.scope.namespace}`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the namespace configuration store could not be reached. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -339,7 +344,7 @@ It has nine outcomes.
 
 **`not-found`** — Decided outside the input: the backend holds no secret at the address. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`deleted`** — The backend no longer holds a secret at the address; any binding stays. The default branch, taken when no other outcome's condition matched. No entity in this specification changes. It emits `secrets.storage.SecretDeleted`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`deleted`** — The backend no longer holds a secret at the address; any binding stays. The default branch, taken when no other outcome's condition matched. It removes the `secrets.storage.Secret` its input names; no view shows it afterwards. The instance is the one named by the input field `address`. It emits `secrets.storage.SecretDeleted`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the resolved backend could not be reached or did not answer. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -409,7 +414,7 @@ It has six outcomes.
 
 **`in-use`** — Decided outside the input: secrets or bindings remain in the namespace. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Conflict`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`removed`** — The namespace no longer exists. The default branch, taken when no other outcome's condition matched. No entity in this specification changes. It emits `secrets.storage.NamespaceRemoved`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`removed`** — The namespace no longer exists. The default branch, taken when no other outcome's condition matched. It removes the `secrets.storage.Namespace` its input names; no view shows it afterwards. The instance is the one named by the input field `namespace`. It emits `secrets.storage.NamespaceRemoved`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the namespace configuration store could not be reached. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -487,7 +492,7 @@ It has five outcomes.
 
 **`not-found`** — Decided outside the input: the address has no binding. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`unbound`** — The address has no binding; on a read-only backend it now resolves not-found. The default branch, taken when no other outcome's condition matched. No entity in this specification changes. It emits `secrets.storage.NameUnbound`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`unbound`** — The address has no binding; on a read-only backend it now resolves not-found. The default branch, taken when no other outcome's condition matched. It removes the `secrets.storage.Binding` its input names; no view shows it afterwards. The instance is the one named by the input field `address`. It emits `secrets.storage.NameUnbound`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the namespace configuration store could not be reached. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -510,13 +515,13 @@ It has 10 outcomes.
 
 **`invalid-name`** — Decided outside the input: a name has an empty segment, a segment not starting with [a-z0-9], or a segment over 64 bytes. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.InvalidName`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`too-large`** — Decided outside the input: the value is longer than 1048576 bytes. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.TooLarge`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
+**`too-large`** — Decided outside the input: the value is longer than 1048576 bytes, or than the resolved backend accepts. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.TooLarge`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
 **`unresolved`** — Decided outside the input: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
 **`unsupported`** — Decided outside the input: the resolved backend lacks the write capability (onepassword). No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unsupported`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`created`** — The backend holds the value at the address; the value is in no view or event. Decided outside the input: no secret is stored at the address. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. It creates a `secrets.storage.Secret`, which starts in `Stored`. The new instance's identity is published as `address` on `secrets.storage.SecretWritten`. It emits `secrets.storage.SecretWritten`. It sets `version` from `implementation-generated`. A test reaches it by injecting the declared fault, because no input can.
+**`created`** — The backend holds the value at the address; the value is in no view or event. Decided outside the input: no secret is stored at the address. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. It creates a `secrets.storage.Secret`, which starts in `Stored`. The new instance's identity is published as `address` on `secrets.storage.SecretWritten`. It emits `secrets.storage.SecretWritten`. It sets `version` from `implementation-generated` and `namespace` from `{tenant: input.address.scope.tenant, namespace: input.address.scope.namespace}`. A test reaches it by injecting the declared fault, because no input can.
 
 **`replaced`** — The backend holds the new value at the address. The default branch, taken when no other outcome's condition matched. It changes a `secrets.storage.Secret` without moving it along its lifecycle. The instance is the one named by the input field `address`. It emits `secrets.storage.SecretWritten`. It sets `version` from `implementation-generated`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
@@ -724,7 +729,7 @@ Reported by `secrets.storage.Write` on its `unresolved` outcome.
 
 ### `TooLarge`
 
-The secret value exceeds 1 MiB.
+The secret value exceeds 1 MiB, or what the resolved backend accepts.
 
 It carries nothing beyond its name, so a caller can tell what went wrong and not which value caused it.
 
@@ -783,4 +788,4 @@ It may invoke [`AddNamespace`](#addnamespace), [`Bind`](#bind), [`Delete`](#dele
 
 ---
 
-Generated from secrets v1 · model digest `8fc1ce6b8e0119b0901a09c31987df0c481fc68faee8ee0e83c0b71e5f0ff659` · contract digest `slice-sha256/2:d00500b13dcea7cb249cb846c454fdefd300b33affab9da0572121450882f8b4`. Do not edit this file; change the specification and regenerate it with `task docs-generate`.
+Generated from secrets v1 · model digest `eda35ed424ae69e311e33d1752c384d664711234779b5fa54ee7ca79db25c39b` · contract digest `slice-sha256/2:677fa2be846900b66a94a6a075b8342a0b1cdb09e9a9558b430e467eb842d1f5`. Do not edit this file; change the specification and regenerate it with `task docs-generate`.

@@ -1,0 +1,19 @@
+# The rename's target name is held to the same 128-byte total as the address name
+# (Address::parse_rename, crates/secrets-core/src/storage.rs).
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-new-name-of-129-bytes-is-too-long
+summary: A rename to a name of 129 bytes is refused as a new name that is too long and renames nothing.
+timeline:
+- at: '2026-10-05T12:00:00Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    new_name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+  outcome: new-name-too-long
+  error:
+    name: secrets.storage.InvalidName
+  no_events: [secrets.storage.SecretRenamed]

@@ -50,12 +50,177 @@
         "digest": "sha256:1273eacd84177fe2f2474621511c1aea4a205ebc091e44f3083a678b0255c12d",
         "disposition": "accepted",
         "scenario": "secrets.custody/authored/secret-metadata-carries-its-timestamps"
+      },
+      "storage/scenarios/authorize/a-second-tenant-is-denied-before-any-backend.yaml": {
+        "digest": "sha256:bb25cd4604f6c2367cd668bb24160ec0dfc56eb539971428e4b1705a521b0d36",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-second-tenant-is-denied-before-any-backend"
+      },
+      "storage/scenarios/authorize/a-second-user-is-denied-before-any-backend.yaml": {
+        "digest": "sha256:e37214e840c98ef16d1f2016254d1f74c43737956aaa3355fc0529fb0cb13200",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-second-user-is-denied-before-any-backend"
+      },
+      "storage/scenarios/authorize/tenant-and-user-default-may-do-everything-in-any-namespace.yaml": {
+        "digest": "sha256:417cc9256ad43d7ba527fbf488a3c74b096562338aa8b5e0ff137ad954744797",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/tenant-and-user-default-may-do-everything-in-any-namespace"
+      },
+      "storage/scenarios/cli/a-namespace-on-the-remote-backend-round-trips.yaml": {
+        "digest": "sha256:7e36939a4e86f187eec93dc325f423bb5317303faae2ff6d0baba31a9eed2010",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-namespace-on-the-remote-backend-round-trips"
+      },
+      "storage/scenarios/cli/bind-binds-a-name-once.yaml": {
+        "digest": "sha256:56cde2646145b3af2c8bf18f143365a6752531db40e0a2e0bc7717d799dd7e31",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/bind-binds-a-name-once"
+      },
+      "storage/scenarios/cli/delete-removes-a-secret.yaml": {
+        "digest": "sha256:8c770b0be9471741429f1364bbd3e3747aa0dcd9d2945f8b3eefb92aeebcf477",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/delete-removes-a-secret"
+      },
+      "storage/scenarios/cli/describe-shows-the-name-scope-and-version-of-a-secret.yaml": {
+        "digest": "sha256:b6ac90fdb9b73bddfa6452b52d91325071d33f5888d51b7cfad72e765cfbad08",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/describe-shows-the-name-scope-and-version-of-a-secret"
+      },
+      "storage/scenarios/cli/list-reads-the-secrets-of-a-namespace.yaml": {
+        "digest": "sha256:4c7b2956837f04bfd0570d084378669e539b4bb04fa157a939e346b8d58470cd",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/list-reads-the-secrets-of-a-namespace"
+      },
+      "storage/scenarios/cli/mount-set-moves-a-namespace-to-another-backend.yaml": {
+        "digest": "sha256:dee3275e40df067eb5cfa2486888706c7c3666592c25f67265f2f12578eb8461",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/mount-set-moves-a-namespace-to-another-backend"
+      },
+      "storage/scenarios/cli/namespace-add-creates-a-namespace-once.yaml": {
+        "digest": "sha256:5b5e30deed87a278d976cd98ce9b15ecfa42c29153fe3a57c4a15aaec92e9715",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/namespace-add-creates-a-namespace-once"
+      },
+      "storage/scenarios/cli/namespace-list-holds-every-namespace-with-its-mount.yaml": {
+        "digest": "sha256:376e53baf65e571ada7ab4b7e6448df72c8ba820e2d52c5eed50553a8889f490",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/namespace-list-holds-every-namespace-with-its-mount"
+      },
+      "storage/scenarios/cli/namespace-remove-refuses-default-and-a-namespace-in-use.yaml": {
+        "digest": "sha256:f1aeb747d8aff5e4aa2aad7abaeb04a82e0d1c90e9f8659e0ea0b85ed61a9a15",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/namespace-remove-refuses-default-and-a-namespace-in-use"
+      },
+      "storage/scenarios/cli/put-stores-a-secret-in-the-local-scope.yaml": {
+        "digest": "sha256:0e2754a9eab5d8404fdb529f29433983b513b22cb296a1fe558dba90e6d150b3",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/put-stores-a-secret-in-the-local-scope"
+      },
+      "storage/scenarios/cli/rename-moves-a-secret-to-a-new-name.yaml": {
+        "digest": "sha256:754ef70ad969dac2ce3ed90260cb7ef07d039911cbb51ffdee5a1494fd96db24",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/rename-moves-a-secret-to-a-new-name"
+      },
+      "storage/scenarios/cli/unbind-removes-a-binding.yaml": {
+        "digest": "sha256:8ddde0c32f80dbf615dfc96c8b964b0349fb49eac778ff16bb5d6eefbf4150bc",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/unbind-removes-a-binding"
+      },
+      "storage/scenarios/federation/a-name-in-a-namespace-that-does-not-exist-is-unresolved.yaml": {
+        "digest": "sha256:cec49ce975ea878bc16419ce7f929d0b14112b56b4f523e0cd67a12fe0de53d7",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-name-in-a-namespace-that-does-not-exist-is-unresolved"
+      },
+      "storage/scenarios/federation/changes-on-a-read-only-mount-are-unsupported.yaml": {
+        "digest": "sha256:35f257310919c39b532a418c7af88da8c86bc87c4d041f7518d51ff287b667c7",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/changes-on-a-read-only-mount-are-unsupported"
+      },
+      "storage/scenarios/federation/conflicts-the-specification-names.yaml": {
+        "digest": "sha256:782f1377934908576a2a568b47f7ef6a3cce4edf451f447b516b1f003b2e2f31",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/conflicts-the-specification-names"
+      },
+      "storage/scenarios/federation/each-namespace-routes-to-its-own-mount.yaml": {
+        "digest": "sha256:586f5863002f737888118d69ec6ca51530110ba7bd87c6c17a88fc1c1824327c",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/each-namespace-routes-to-its-own-mount"
+      },
+      "storage/scenarios/keychain/a-keychain-fault-is-unavailable.yaml": {
+        "digest": "sha256:a05d884d319ab42e177e6f7f141048a0c4fa20f73132ec461052dd62df58a39f",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-keychain-fault-is-unavailable"
+      },
+      "storage/scenarios/keychain/a-keychain-secret-round-trips.yaml": {
+        "digest": "sha256:cb5b6804d7ee2e3ee7d4bc98b4ffea458343a9648130e2dd17cf18e5e8de2fc0",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-keychain-secret-round-trips"
+      },
+      "storage/scenarios/keychain/the-same-name-in-two-namespaces-stays-separate.yaml": {
+        "digest": "sha256:556b785ba98729340911c3bc3ac11c4315266412d4428f8a228faa3d15a3c110",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/the-same-name-in-two-namespaces-stays-separate"
+      },
+      "storage/scenarios/port/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check.yaml": {
+        "digest": "sha256:46bb0356d65f184220f3e305791283e7eb181f9e64bf6ca6f58378da4925d55c",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check"
+      },
+      "storage/scenarios/port/a-name-of-129-bytes-is-too-long.yaml": {
+        "digest": "sha256:49803494fc3a17fe919c539c2ef83513531383e693fd4b3db5ea596bfbf539f2",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-name-of-129-bytes-is-too-long"
+      },
+      "storage/scenarios/port/a-new-name-of-129-bytes-is-too-long.yaml": {
+        "digest": "sha256:4df48998f09561e699955063f60b47e923f69649a1fc7b856f0ae6bc4c60c8e6",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-new-name-of-129-bytes-is-too-long"
+      },
+      "storage/scenarios/port/a-segment-of-65-bytes-is-an-invalid-name.yaml": {
+        "digest": "sha256:f1ba1205e388a45cebf3d05ba06b10566690ac6d5ccedc1794c11f5d2eb68aa6",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-segment-of-65-bytes-is-an-invalid-name"
+      },
+      "storage/scenarios/port/a-value-above-one-mib-is-too-large.yaml": {
+        "digest": "sha256:85f1114e53f0786d066f852654630abab59622321ff3226592f00fad28650847",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-above-one-mib-is-too-large"
+      },
+      "storage/scenarios/remote/a-custody-failure-is-unavailable.yaml": {
+        "digest": "sha256:fc01906b087b01f919f1a89d9dec08edbc0b22d09305c64408fdf46ab8bb3355",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-custody-failure-is-unavailable"
+      },
+      "storage/scenarios/remote/a-remote-secret-round-trips.yaml": {
+        "digest": "sha256:ef9261172ffaa1cc3d899a0f8f86a219189c41d554eeae8c7356b5fe033396f8",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-remote-secret-round-trips"
+      },
+      "storage/scenarios/remote/a-value-the-custody-service-cannot-carry-is-too-large.yaml": {
+        "digest": "sha256:2b6bd9d15a510529fb689280eb7858cdcd13f528f3bb7c759dc744f830a0f79a",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-the-custody-service-cannot-carry-is-too-large"
+      },
+      "storage/scenarios/remote/the-same-name-in-two-remote-namespaces-stays-separate.yaml": {
+        "digest": "sha256:68b951c01ceedd96f76786f636bf1bafa621d2bc9d6ef697f7326b8940afa22c",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate"
+      },
+      "storage/scenarios/response/a-value-written-to-a-keychain-mount-reads-back-equal.yaml": {
+        "digest": "sha256:800540ed6b900d978386b586a4cb7781427f0b252a37c5ac455d22d99cb0d13b",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-keychain-mount-reads-back-equal"
+      },
+      "storage/scenarios/response/a-value-written-to-a-remote-mount-reads-back-equal.yaml": {
+        "digest": "sha256:a02ae2d5f3e867620cb59be90ccd4ceed6436ef7e95f89f382027ba119e59782",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-remote-mount-reads-back-equal"
       }
     },
     "counts": {
       "authored": 8,
       "generated": 103,
-      "outside": 77,
+      "outside": 110,
       "refused": 0
     },
     "generated": [
@@ -349,8 +514,20 @@
             "name": "secrets.storage.Delete"
           },
           {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
             "kind": "event",
             "name": "secrets.storage.SecretDeleted"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretWritten"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
           }
         ],
         "origin": "generated",
@@ -663,11 +840,23 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
             "name": "secrets.storage.RemoveNamespace"
           },
           {
             "kind": "event",
+            "name": "secrets.storage.NamespaceAdded"
+          },
+          {
+            "kind": "event",
             "name": "secrets.storage.NamespaceRemoved"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
           }
         ],
         "origin": "generated",
@@ -951,7 +1140,15 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
             "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NameBound"
           },
           {
             "kind": "event",
@@ -1087,6 +1284,893 @@
         "origin": "generated",
         "reason": "other_component",
         "scenario": "secrets.storage.Write/outcome/unsupported"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-custody-failure-is-unavailable"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-keychain-fault-is-unavailable"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretWritten"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-keychain-secret-round-trips"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.RemoveNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-name-in-a-namespace-that-does-not-exist-is-unresolved"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-name-of-129-bytes-is-too-long"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-namespace-on-the-remote-backend-round-trips"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-new-name-of-129-bytes-is-too-long"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretWritten"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-remote-secret-round-trips"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.RemoveNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.SetMount"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-second-tenant-is-denied-before-any-backend"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-second-user-is-denied-before-any-backend"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-segment-of-65-bytes-is-an-invalid-name"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-value-above-one-mib-is-too-large"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-value-the-custody-service-cannot-carry-is-too-large"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-keychain-mount-reads-back-equal"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-remote-mount-reads-back-equal"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NameBound"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/bind-binds-a-name-once"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/changes-on-a-read-only-mount-are-unsupported"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.RemoveNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.SetMount"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/conflicts-the-specification-names"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretDeleted"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/delete-removes-a-secret"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/describe-shows-the-name-scope-and-version-of-a-secret"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.SetMount"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.MountSet"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/each-namespace-routes-to-its-own-mount"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.MetadataListed"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/list-reads-the-secrets-of-a-namespace"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.SetMount"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.MountSet"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/mount-set-moves-a-namespace-to-another-backend"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NamespaceAdded"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/namespace-add-creates-a-namespace-once"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/namespace-list-holds-every-namespace-with-its-mount"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.RemoveNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NamespaceRemoved"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/namespace-remove-refuses-default-and-a-namespace-in-use"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretWritten"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/put-stores-a-secret-in-the-local-scope"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretRenamed"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/rename-moves-a-secret-to-a-new-name"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.RemoveNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.SetMount"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NamespaceAdded"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NamespaceRemoved"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretRenamed"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/tenant-and-user-default-may-do-everything-in-any-namespace"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/the-same-name-in-two-namespaces-stays-separate"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NameUnbound"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/unbind-removes-a-binding"
       }
     ],
     "refused": [],
@@ -1103,10 +2187,11 @@
   },
   "provenance": {
     "component": "secrets-service",
-    "contract_digest": "fa305f3d8d5d30fdb96363595b1e718aa5d1863de1893d1e9a061559b24f8779",
-    "spec_digest": "8fc1ce6b8e0119b0901a09c31987df0c481fc68faee8ee0e83c0b71e5f0ff659",
+    "contract_digest": "f2be20e5c489abe7a443559413e7c9853fac9db61584cf61a28c09fd677e3e82",
+    "scenario_initial_state": "empty",
+    "spec_digest": "eda35ed424ae69e311e33d1752c384d664711234779b5fa54ee7ca79db25c39b",
     "specification_version": "v1",
-    "suite_version": "ess-conformance/27",
+    "suite_version": "ess-conformance/35",
     "system": "secrets"
   },
   "scenarios": {
@@ -1484,7 +2569,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.AbortTransaction",
           "input": {
@@ -1509,7 +2594,14 @@
         {
           "event": "secrets.custody.TransactionAborted",
           "payload": {
-            "tenant": "tenant"
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction",
+              "kind": "instance"
+            }
           },
           "shape": {
             "tenant": {
@@ -1521,7 +2613,179 @@
               "kind": "uuid"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
+        },
+        {
+          "event": "secrets.custody.NamespaceSecretsListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.NothingRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretExistenceChecked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretPut",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretRevoked",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretValueRead",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.SecretsRewrapped",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionCommitted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.custody.TransactionPrepared",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NameUnbound",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "caller": {
+            "subject": "subject-262145"
+          },
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-4189dc1de179"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction-swapped",
+          "step": "capture_instance"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "caller": {
+            "subject": "subject-262144"
+          },
+          "command": "secrets.custody.AbortTransaction",
+          "input": {
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction-swapped",
+              "kind": "instance"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.AbortTransaction",
+            "outcome": "aborted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.custody.TransactionAborted",
+          "payload": {
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction-swapped",
+              "kind": "instance"
+            }
+          },
+          "shape": {
+            "tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "transaction": {
+              "holds": "primitive",
+              "kind": "uuid"
+            }
+          },
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -4676,14 +5940,29 @@
       "purpose": "`secrets.custody.CommitTransaction` sent as `secrets.custody.Operator`, which the specification does not grant it, is refused before it runs",
       "source": [
         {
+          "kind": "entity",
+          "name": "secrets.custody.PreparedTransaction"
+        },
+        {
           "kind": "command",
           "name": "secrets.custody.CommitTransaction"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.custody.PrepareTransaction"
         },
         {
           "kind": "outcome",
           "name": {
             "command": "secrets.custody.CommitTransaction",
             "outcome": "committed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
           }
         },
         {
@@ -4777,6 +6056,53 @@
       ],
       "steps": [
         {
+          "actor": "secrets.custody.Workload",
+          "caller": {
+            "subject": "subject-262144"
+          },
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction",
+          "step": "capture_instance"
+        },
+        {
           "actor": "secrets.custody.Operator",
           "command": "secrets.custody.CommitTransaction",
           "input": {
@@ -4785,8 +6111,8 @@
               "value": "tenant"
             },
             "transaction": {
-              "kind": "literal",
-              "value": "00000000-0000-4000-8000-d624f5690fe3"
+              "instance": "prepared-transaction",
+              "kind": "instance"
             }
           },
           "step": "execute_command"
@@ -4818,6 +6144,53 @@
           ]
         },
         {
+          "actor": "secrets.custody.Workload",
+          "caller": {
+            "subject": "subject-262145"
+          },
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-4189dc1de179"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction-swapped",
+          "step": "capture_instance"
+        },
+        {
           "actor": "secrets.custody.Operator",
           "command": "secrets.custody.CommitTransaction",
           "input": {
@@ -4826,8 +6199,8 @@
               "value": "tenant"
             },
             "transaction": {
-              "kind": "literal",
-              "value": "00000000-0000-4000-8000-d624f5690fe3"
+              "instance": "prepared-transaction-swapped",
+              "kind": "instance"
             }
           },
           "step": "execute_command"
@@ -4864,14 +6237,29 @@
       "purpose": "`secrets.custody.CommitTransaction` answers `committed` for an input no other branch's guard claims",
       "source": [
         {
+          "kind": "entity",
+          "name": "secrets.custody.PreparedTransaction"
+        },
+        {
           "kind": "command",
           "name": "secrets.custody.CommitTransaction"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.custody.PrepareTransaction"
         },
         {
           "kind": "outcome",
           "name": {
             "command": "secrets.custody.CommitTransaction",
             "outcome": "committed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
           }
         },
         {
@@ -4965,6 +6353,53 @@
           "caller": {
             "subject": "subject-262144"
           },
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction",
+          "step": "capture_instance"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "caller": {
+            "subject": "subject-262145"
+          },
           "command": "secrets.custody.CommitTransaction",
           "input": {
             "tenant": {
@@ -4972,8 +6407,8 @@
               "value": "tenant"
             },
             "transaction": {
-              "kind": "literal",
-              "value": "00000000-0000-4000-8000-d624f5690fe3"
+              "instance": "prepared-transaction",
+              "kind": "instance"
             }
           },
           "step": "execute_command"
@@ -4988,9 +6423,18 @@
         {
           "event": "secrets.custody.TransactionCommitted",
           "payload": {
-            "actor": "subject-262144",
-            "tenant": "tenant",
-            "transaction": "00000000-0000-4000-8000-d624f5690fe3"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -5006,7 +6450,7 @@
               "kind": "uuid"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -5089,6 +6533,53 @@
           "caller": {
             "subject": "subject-262145"
           },
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-4189dc1de179"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction-swapped",
+          "step": "capture_instance"
+        },
+        {
+          "actor": "secrets.custody.Workload",
+          "caller": {
+            "subject": "subject-262144"
+          },
           "command": "secrets.custody.CommitTransaction",
           "input": {
             "tenant": {
@@ -5096,8 +6587,8 @@
               "value": "tenant"
             },
             "transaction": {
-              "kind": "literal",
-              "value": "00000000-0000-4000-8000-d624f5690fe3"
+              "instance": "prepared-transaction-swapped",
+              "kind": "instance"
             }
           },
           "step": "execute_command"
@@ -5112,9 +6603,18 @@
         {
           "event": "secrets.custody.TransactionCommitted",
           "payload": {
-            "actor": "subject-262145",
-            "tenant": "tenant",
-            "transaction": "00000000-0000-4000-8000-d624f5690fe3"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -5130,7 +6630,7 @@
               "kind": "uuid"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -8942,7 +10442,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262144"
+              "value": "subject-262145"
             },
             "reference": {
               "instance": "secret",
@@ -8972,7 +10472,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -8990,7 +10490,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.DeleteOwnedSecret",
           "input": {
@@ -9014,7 +10514,14 @@
         {
           "event": "secrets.custody.SecretDeleted",
           "payload": {
-            "actor": "subject-262144"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -9034,7 +10541,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -9258,7 +10765,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262145"
+              "value": "subject-262144"
             },
             "reference": {
               "instance": "secret-swapped",
@@ -9288,7 +10795,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -9306,7 +10813,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.DeleteOwnedSecret",
           "input": {
@@ -9330,7 +10837,14 @@
         {
           "event": "secrets.custody.SecretDeleted",
           "payload": {
-            "actor": "subject-262145"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "reference": {
+              "instance": "secret-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -9350,7 +10864,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -10652,7 +12166,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.DeleteOwnedSecret",
           "input": {
@@ -10853,7 +12367,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.DeleteOwnedSecret",
           "input": {
@@ -10983,7 +12497,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.DeleteOwnedSecret",
           "input": {
@@ -11184,7 +12698,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.DeleteOwnedSecret",
           "input": {
@@ -12879,7 +14393,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.DeleteSecret",
           "input": {
@@ -12904,7 +14418,14 @@
         {
           "event": "secrets.custody.SecretDeleted",
           "payload": {
-            "actor": "subject-262144"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -12924,7 +14445,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -13132,7 +14653,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.DeleteSecret",
           "input": {
@@ -13157,7 +14678,14 @@
         {
           "event": "secrets.custody.SecretDeleted",
           "payload": {
-            "actor": "subject-262145"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "reference": {
+              "instance": "secret-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -13177,7 +14705,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -24083,7 +25611,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -24122,8 +25650,18 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "actor": "subject-262144",
-            "owner_subject": "owner_subject-1"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject-1"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -24147,7 +25685,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -24414,7 +25952,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -24453,8 +25991,18 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "actor": "subject-262145",
-            "owner_subject": "owner_subject-1"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject-1"
+            },
+            "reference": {
+              "instance": "secret-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -24478,7 +26026,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -29418,7 +30966,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -29619,7 +31167,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -29749,7 +31297,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -29950,7 +31498,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -30301,7 +31849,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262144"
+              "value": "subject-262145"
             },
             "reference": {
               "instance": "secret",
@@ -30331,7 +31879,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -30349,7 +31897,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -30373,7 +31921,14 @@
         {
           "event": "secrets.custody.SecretRevoked",
           "payload": {
-            "actor": "subject-262144"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -30393,7 +31948,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -30481,7 +32036,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -30523,7 +32078,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -30548,7 +32103,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -30573,7 +32128,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -30681,7 +32236,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262145"
+              "value": "subject-262144"
             },
             "reference": {
               "instance": "secret-swapped",
@@ -30711,7 +32266,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -30729,7 +32284,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -30753,7 +32308,14 @@
         {
           "event": "secrets.custody.SecretRevoked",
           "payload": {
-            "actor": "subject-262145"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "reference": {
+              "instance": "secret-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -30773,7 +32335,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -30861,7 +32423,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -30903,7 +32465,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -30928,7 +32490,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -30953,7 +32515,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -33172,7 +34734,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -33316,7 +34878,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -33548,7 +35110,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262144"
+              "value": "subject-262145"
             },
             "reference": {
               "instance": "secret",
@@ -33578,7 +35140,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -33596,7 +35158,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -33729,7 +35291,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262145"
+              "value": "subject-262144"
             },
             "reference": {
               "instance": "secret-swapped",
@@ -33759,7 +35321,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -33777,7 +35339,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -34046,7 +35608,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -34085,8 +35647,18 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "actor": "subject-262144",
-            "owner_subject": "owner_subject-1"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject-1"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -34110,7 +35682,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -34465,7 +36037,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -34504,8 +36076,18 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "actor": "subject-262144",
-            "owner_subject": "owner_subject"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject"
+            },
+            "reference": {
+              "instance": "secret-2",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -34529,7 +36111,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "step": "query_view",
@@ -34704,7 +36286,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -34743,8 +36325,18 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "actor": "subject-262145",
-            "owner_subject": "owner_subject-1"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject-1"
+            },
+            "reference": {
+              "instance": "secret-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -34768,7 +36360,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -35123,7 +36715,7 @@
         {
           "actor": "secrets.custody.Workload",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.PutSecret",
           "input": {
@@ -35162,8 +36754,18 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "actor": "subject-262145",
-            "owner_subject": "owner_subject"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject"
+            },
+            "reference": {
+              "instance": "secret-2-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -35187,7 +36789,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "step": "query_view",
@@ -35526,7 +37128,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262144"
+              "value": "subject-262145"
             },
             "reference": {
               "instance": "secret",
@@ -35556,7 +37158,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -35574,7 +37176,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262144"
+            "subject": "subject-262145"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -35598,7 +37200,14 @@
         {
           "event": "secrets.custody.SecretRevoked",
           "payload": {
-            "actor": "subject-262144"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262145"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -35618,7 +37227,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -35706,7 +37315,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -35748,7 +37357,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -35773,7 +37382,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -35798,7 +37407,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262144"
+                "value": "subject-262145"
               },
               "reference": {
                 "instance": "secret",
@@ -35906,7 +37515,7 @@
             },
             "owner_subject": {
               "kind": "literal",
-              "value": "subject-262145"
+              "value": "subject-262144"
             },
             "reference": {
               "instance": "secret-swapped",
@@ -35936,7 +37545,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -35954,7 +37563,7 @@
         {
           "actor": "secrets.custody.User",
           "caller": {
-            "subject": "subject-262145"
+            "subject": "subject-262144"
           },
           "command": "secrets.custody.RevokeOwnedSecret",
           "input": {
@@ -35978,7 +37587,14 @@
         {
           "event": "secrets.custody.SecretRevoked",
           "payload": {
-            "actor": "subject-262145"
+            "actor": {
+              "kind": "literal",
+              "value": "subject-262144"
+            },
+            "reference": {
+              "instance": "secret-swapped",
+              "kind": "instance"
+            }
           },
           "shape": {
             "actor": {
@@ -35998,7 +37614,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -36086,7 +37702,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -36128,7 +37744,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -36153,7 +37769,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",
@@ -36178,7 +37794,7 @@
             "fields": {
               "owner_subject": {
                 "kind": "literal",
-                "value": "subject-262145"
+                "value": "subject-262144"
               },
               "reference": {
                 "instance": "secret-swapped",

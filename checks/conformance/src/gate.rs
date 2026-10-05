@@ -8,9 +8,28 @@ use std::{
     process::Command,
 };
 
-/// The component whose suite this runner answers. `secrets.storage` belongs to `secrets-library`,
-/// which no code implements yet; its scenarios are outside this suite rather than unsupported in it.
-const COMPONENT: &str = "secrets-service";
+use crate::target::Component;
+
+/// Every component this runner answers: its suite and the baseline its runs are held to. Each
+/// suite holds only its own component's scenarios; the other's are outside it. The CLI suite is
+/// the library's generated scenarios with the authored CLI scenarios, run through `secretsctl`.
+const SUITES: [(Component, &str, &str); 3] = [
+    (
+        Component::Service,
+        "contracts/suite.json",
+        "contracts/baseline.json",
+    ),
+    (
+        Component::Library,
+        "contracts/storage-suite.json",
+        "contracts/storage-baseline.json",
+    ),
+    (
+        Component::Cli,
+        "contracts/cli-suite.json",
+        "contracts/cli-baseline.json",
+    ),
+];
 
 fn ess(args: &[&str]) -> Result<(), Box<dyn Error>> {
     if !Command::new("ess").args(args).status()?.success() {
@@ -115,8 +134,63 @@ pub fn check() -> Result<(), Box<dyn Error>> {
     every_authored_scenario_is_declared()?;
     // A unique projection directory keeps stale generated files from masking drift.
     let projection = format!("target/conformance/projection-{}", std::process::id());
+    // A process id repeats across CI runs, and a restored `target/` cache can hold that run's
+    // directory with its ESS ownership state pruned, which ESS refuses to write into.
+    match fs::remove_dir_all(&projection) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
+        _ => {}
+    }
     fs::create_dir_all(&projection)?;
-    let suite = format!("{projection}/suite.json");
+    for (component, committed, _) in SUITES {
+        let suite = format!("{projection}/{}.json", component.name());
+        synthesize(component, &suite)?;
+        if fs::read(&suite)? != fs::read(committed)? {
+            return Err(format!("suite drift: regenerate {committed} with ESS").into());
+        }
+    }
+    let schemas = format!("{projection}/schema");
+    ess(&[
+        "generate", "--path", "spec", "--kind", "schema", "--out", &schemas,
+    ])?;
+    // `.ess-output` is ESS's destination-specific ownership ledger, not a projected artifact.
+    if files(&Path::new(&schemas).join("schema"))? != files(Path::new("contracts/schema/schema"))? {
+        return Err("schema drift: regenerate contracts/schema with ESS".into());
+    }
+    let identity = identity()?;
+    for (component, _, baseline) in SUITES {
+        let suite = format!("{projection}/{}.json", component.name());
+        let mut previous = None;
+        for iteration in 1..=3 {
+            let output = PathBuf::from(format!(
+                "target/conformance/{}/run-{iteration}",
+                component.name()
+            ));
+            crate::execute(
+                component,
+                Path::new(&suite),
+                Path::new(baseline),
+                &output,
+                &identity,
+            )?;
+            let report: serde_json::Value =
+                serde_json::from_slice(&fs::read(output.join("report.json"))?)?;
+            let counts = report["counts"].clone();
+            if previous.as_ref().is_some_and(|old| old != &counts) {
+                return Err(format!(
+                    "{} conformance counts changed across identical consecutive runs",
+                    component.name()
+                )
+                .into());
+            }
+            previous = Some(counts);
+        }
+    }
+    println!("conformance and deterministic ESS projections passed ({identity})");
+    Ok(())
+}
+
+/// `component`'s suite, synthesized from the specification and the authored scenarios.
+fn synthesize(component: Component, out: &str) -> Result<(), Box<dyn Error>> {
     ess(&[
         "verify",
         "conform",
@@ -128,41 +202,10 @@ pub fn check() -> Result<(), Box<dyn Error>> {
         "--target",
         "ir",
         "--component",
-        COMPONENT,
+        component.specified(),
         "--scenarios",
-        "contracts",
+        component.scenarios(),
         "--out",
-        &suite,
-    ])?;
-    if fs::read(&suite)? != fs::read("contracts/suite.json")? {
-        return Err("suite drift: regenerate contracts/suite.json with ESS".into());
-    }
-    let schemas = format!("{projection}/schema");
-    ess(&[
-        "generate", "--path", "spec", "--kind", "schema", "--out", &schemas,
-    ])?;
-    // `.ess-output` is ESS's destination-specific ownership ledger, not a projected artifact.
-    if files(&Path::new(&schemas).join("schema"))? != files(Path::new("contracts/schema/schema"))? {
-        return Err("schema drift: regenerate contracts/schema with ESS".into());
-    }
-    let identity = identity()?;
-    let mut previous = None;
-    for iteration in 1..=3 {
-        let output = PathBuf::from(format!("target/conformance/run-{iteration}"));
-        crate::execute(
-            Path::new(&suite),
-            Path::new("contracts/baseline.json"),
-            &output,
-            &identity,
-        )?;
-        let report: serde_json::Value =
-            serde_json::from_slice(&fs::read(output.join("report.json"))?)?;
-        let counts = report["counts"].clone();
-        if previous.as_ref().is_some_and(|old| old != &counts) {
-            return Err("conformance counts changed across identical consecutive runs".into());
-        }
-        previous = Some(counts);
-    }
-    println!("custody conformance and deterministic ESS projections passed ({identity})");
-    Ok(())
+        out,
+    ])
 }

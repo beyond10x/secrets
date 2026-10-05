@@ -1,0 +1,43 @@
+# story:local-cli, `namespace add`. `exists` is forced; the runner adds only the namespace it
+# names. Through the CLI target the mount `keychain/team` is configured the way an operator would,
+# as `[backends.keychain.team]` in the scenario's `config.toml`.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: namespace-add-creates-a-namespace-once
+summary: Namespace add creates a namespace on the default mount or the one named, and adding it again is a conflict.
+timeline:
+- at: '2026-10-05T16:05:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: added
+  events:
+  - event: secrets.storage.NamespaceAdded
+    payload:
+      namespace: {tenant: default, namespace: work}
+- at: '2026-10-05T16:05:01Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: exists
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NamespaceAdded]
+- at: '2026-10-05T16:05:02Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: team}
+    mount: {kind: keychain, label: team}
+  outcome: added
+assert:
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: work}
+    state: Present
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: team}
+    mount: {kind: keychain, label: team}

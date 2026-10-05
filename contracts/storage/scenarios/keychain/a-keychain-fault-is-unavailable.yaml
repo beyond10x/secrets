@@ -1,0 +1,69 @@
+# story:keychain-backend, "a backend fault surfaces as `unavailable` with no backend text". Each
+# forced `unavailable` arms the mock keyring entry behind the address to fail its next call with a
+# platform error, so the keychain backend's own error mapping is what answers. The error declares
+# no field, so no backend text can be claimed; that none reaches the error is guarded by the Rust
+# test `a_backend_fault_is_unavailable_with_no_backend_text`.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-keychain-fault-is-unavailable
+summary: A keychain that fails a write, a read or a delete answers unavailable, stores nothing and removes nothing.
+timeline:
+- at: '2026-10-05T13:20:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+  no_events: [secrets.storage.SecretWritten]
+- at: '2026-10-05T13:20:01Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+  outcome: not-found
+  error:
+    name: secrets.storage.NotFound
+- at: '2026-10-05T13:20:02Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T13:20:03Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+- at: '2026-10-05T13:20:04Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+  no_events: [secrets.storage.SecretDeleted]
+assert:
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    state: Stored

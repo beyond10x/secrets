@@ -9,7 +9,7 @@ value.
 
 **Documentation: <https://beyond10x.github.io/secrets/>**
 
-Version 0.4.1, in development. HTTP contract: [OpenAPI 3.1](docs/openapi.json).
+Version 0.6.0, in development. HTTP contract: [OpenAPI 3.1](docs/openapi.json).
 
 ## Why
 
@@ -41,7 +41,10 @@ cluster: see [Getting started](https://beyond10x.github.io/secrets/docs/getting-
 
 | Crate | Role |
 |---|---|
-| `secrets-core` | resource model and storage port |
+| `secrets-core` | resource model, storage port and local authorizer |
+| `secrets-federation` | routes each namespace to exactly one storage backend |
+| `secrets-keychain` | the OS keychain as a storage backend |
+| `secrets-remote` | this service as a storage backend |
 | `secrets-crypto` | envelope encryption and the versioned keyring |
 | `secrets-postgres` | migrations and the transactional store |
 | `secrets-auth` | Identity and Kubernetes authorities |
@@ -50,7 +53,7 @@ cluster: see [Getting started](https://beyond10x.github.io/secrets/docs/getting-
 | `secrets-app` | the `secrets` binary: `serve`, `migrate`, `rewrap` |
 | `secretsctl` | operator helpers |
 | `secrets-docs` | generates the site's specification pages |
-| `checks/conformance` | runs the ESS specification against the service |
+| `checks/conformance` | runs the ESS specification against the service and the storage library |
 
 The specification is in [`spec/`](spec/) (ESS), the site in [`website/`](website/).
 

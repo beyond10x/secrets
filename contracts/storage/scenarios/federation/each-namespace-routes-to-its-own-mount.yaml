@@ -1,0 +1,110 @@
+# story:mount-federation, "every request reaches exactly one backend". Three namespaces on two
+# keychain mounts, each its own keychain service. The runner counts the calls that reach each
+# mounted backend and reports no declared branch for a command that reached more than one, or one
+# its namespace was not mounted on when it began; so every outcome below also claims the route.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: each-namespace-routes-to-its-own-mount
+summary: Each namespace reaches only the backend it is mounted on, and after SetMount only the new one.
+timeline:
+- at: '2026-10-05T15:30:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: alpha}
+    mount: {kind: keychain, label: alpha}
+  outcome: added
+- at: '2026-10-05T15:30:01Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: beta}
+    mount: {kind: keychain, label: beta}
+  outcome: added
+- at: '2026-10-05T15:30:02Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: gamma}
+  outcome: added
+- at: '2026-10-05T15:30:03Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: gamma}
+    mount: {kind: keychain, label: alpha}
+  outcome: set
+  events:
+  - event: secrets.storage.MountSet
+    payload:
+      namespace: {tenant: default, namespace: gamma}
+      mount: {kind: keychain, label: alpha}
+- at: '2026-10-05T15:30:04Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: alpha, user: default}
+      name: openai
+    value: YWxwaGE=
+  outcome: created
+- at: '2026-10-05T15:30:05Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: beta, user: default}
+      name: openai
+    value: YmV0YQ==
+  outcome: created
+- at: '2026-10-05T15:30:06Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: gamma, user: default}
+      name: openai
+    value: Z2FtbWE=
+  outcome: created
+- at: '2026-10-05T15:30:07Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: gamma, user: default}
+      name: openai
+  outcome: read
+- at: '2026-10-05T15:30:08Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: default, namespace: beta, user: default}
+  outcome: listed
+assert:
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: alpha}
+    mount: {kind: keychain, label: alpha}
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: beta}
+    mount: {kind: keychain, label: beta}
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: gamma}
+    mount: {kind: keychain, label: alpha}
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: alpha, user: default}
+      name: openai
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: beta, user: default}
+      name: openai
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: gamma, user: default}
+      name: openai

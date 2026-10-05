@@ -12,6 +12,69 @@
   of the put, revoke, delete and commit events as `{caller: subject}`, and `not-owned` as a guard
   on the stored owner against the caller.
 
+## 0.6.0 - 2026-10-06
+
+- `secretsctl` manages named secrets locally: `put`, `describe`, `list`, `delete`, `rename`,
+  `namespace add|list|remove`, `mount set`, `bind` and `unbind`, over the OS keychain and this
+  service. Configuration lives in `$XDG_CONFIG_HOME/b10x-secrets/config.toml`, written atomically
+  with mode 0600 and holding no secret. `put` takes a value only from a hidden prompt, a pipe, FIFO
+  or socket on stdin, or a file no group or other user can access; a value in argv is refused. No
+  command writes secret bytes to stdout or stderr. A remote origin must be https, or http to a
+  loopback host. The CLI conformance suite runs the built binary.
+- Conformance mounts the read-only, binding-required recording fake for every mount of kind
+  `onepassword`, in process and, through `[backends.onepassword.<label>]`, in a `secretsctl` built
+  with `test-hooks`; a default build refuses that table and cannot mount it. The library suite
+  answers every scenario; the CLI suite answers its read-only and 1Password-mount scenarios. No
+  1Password backend exists yet.
+- `secretsctl` takes `--tenant` and `--user`, both `default` by default. Any other value is
+  `denied` (exit 4, the JSON refusal naming the flag) by the local authorizer before the
+  configuration file is read or any backend is opened. The CLI suite answers its 15 `denied` and
+  `denied-user` scenarios.
+- `secretsctl read <name> --out <file>` writes a value into a new file of mode 0600 and never to
+  stdout or stderr. It refuses an existing path, a symlink and a directory before any backend is
+  asked, writes a temporary file beside the path and links it into place without replacing
+  anything. The CLI suite answers its 8 `Read` scenarios: 89 of 89.
+- `secrets.storage` `Read.read` declares `returns: true`. Both conformance runners hand ESS the
+  value and version a read returned, and two authored scenarios assert that a value written to a
+  keychain mount and to a remote mount, and the value that replaces it, read back byte for byte.
+  The library suite is 110 scenarios, all answered.
+- ESS 0.53.0: CI installs it from the release tarball checked against `SHA256SUMS`, the runner
+  links `ess-conformance` and `ess-primitives` at tag `0.53.0`, and the specification is `ess/22`.
+  The suites are `ess-conformance/35`, start from an empty namespace and compare event identity
+  fields with the instance they name. Counts are unchanged: 111, 110 and 89, all answered.
+- `secrets.storage` declares the relations ESS 0.53.0's dotted input paths make writable: a Tenant
+  owns its Namespaces (`Namespace.tenant`), a Namespace owns its Bindings (`Binding.namespace`) and
+  a Secret references its Namespace (`Secret.namespace`). `SecretMetadata` rows carry `namespace`
+  and `Namespaces` rows carry `tenant`, and the suites assert both.
+- The `unsupported` refusals of the storage secret commands stay external: a guard reading the
+  namespace's mount does not synthesize in ESS 0.53.0 (beyond10x/ess#462, beyond10x/ess#463).
+  Every remaining `ESS-LIMIT` marker names ESS 0.53.0 or the open issue it waits for.
+
+## 0.5.0 - 2026-10-05
+
+- `secrets-core` gains the `secrets.storage` port (`secrets_core::storage`): `SecretStorage`,
+  `SecretName`, scopes, addresses, `Action` and the closed `StorageError` codes. Names are refused
+  above 128 bytes in total or 64 per segment, values above 1 MiB, and secret bytes have no Debug,
+  Display or Serialize. A recording fake backend, `storage::testing::RecordingBackend`, sits behind
+  the `testing` feature.
+- `secrets_core::authorize`: `LocalAuthorizer` allows tenant and user `default` and denies every
+  other scope before any backend is reached; `Authorized` wraps any `SecretStorage`.
+- New crates: `secrets-federation` routes each namespace to exactly one mounted backend with no
+  fallback, over a namespace, mount and binding store; `secrets-keychain` is the OS keychain over
+  an injected `keyring_core` store, with the native stores behind the `native-keychain` feature;
+  `secrets-remote` is this service as a backend through `secrets-client`, storing a secret at
+  custody key `<user>/<name>` with the user as owner.
+- `secrets-client` gains `Client::with_http` to supply the HTTP client.
+- The `secrets.storage` conformance suite runs on every check against the composed stack: 96
+  scenarios, 95 answered; the one unsupported mounts a 1Password backend, which is deferred.
+- The specification declares `deletes:` where ESS 0.52.0 allows it (commit's prepared batch, and
+  the storage namespace, binding and secret removals), and every remaining `ESS-LIMIT` marker names
+  the ESS version or issue it was checked against. A value the resolved backend cannot carry is
+  `too-large`; the remote backend's limit is about 768 KiB, the service's 1 MiB request body after
+  base64.
+- The documentation site re-pins docs-system at `9d35e63`, so family links reach
+  `/engineering-protocols/`.
+
 ## 0.4.1 - 2026-10-05
 
 - Documentation moves to its own site, <https://beyond10x.github.io/secrets/>, built from

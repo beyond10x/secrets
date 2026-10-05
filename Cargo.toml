@@ -9,12 +9,15 @@ members = [
   "crates/secrets-postgres",
   "crates/secretsctl",
   "crates/secrets-docs",
+  "crates/secrets-federation",
+  "crates/secrets-keychain",
+  "crates/secrets-remote",
   "checks/conformance",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "0.4.1"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
@@ -28,6 +31,7 @@ base64 = "0.22"
 clap = { version = "4.6", features = ["derive", "env"] }
 getrandom = "0.3"
 http = "1"
+keyring-core = "1.0"
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -41,6 +45,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2"
 uuid = { version = "1", features = ["v7", "serde"] }
 zeroize = { version = "1", features = ["derive"] }
+toml = "0.9"
+rpassword = "7"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

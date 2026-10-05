@@ -1,0 +1,87 @@
+# story:local-cli, the remote backend. Through the CLI target the mount `remote/prod` is configured
+# as `[backends.remote.prod]` in the scenario's `config.toml`, with the custody service's loopback
+# origin and `token_file` naming a mode-0600 file that holds a workload token: the token is in no
+# argv and not in the configuration. Every command below then reaches the custody service from the
+# `secretsctl` process.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-namespace-on-the-remote-backend-round-trips
+summary: A namespace mounted on the remote backend takes a put, a replace, a listing, a rename and a delete through the CLI.
+timeline:
+- at: '2026-10-05T16:11:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: team}
+    mount: {kind: remote, label: prod}
+  outcome: added
+- at: '2026-10-05T16:11:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T16:11:02Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: openai
+    value: c2VjcmV0LTI=
+  outcome: replaced
+- at: '2026-10-05T16:11:03Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: default, namespace: team, user: default}
+  outcome: listed
+- at: '2026-10-05T16:11:04Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: renamed
+- at: '2026-10-05T16:11:05Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: anthropic
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T16:11:06Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: openai-work
+  outcome: deleted
+assert:
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: team}
+    mount: {kind: remote, label: prod}
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: anthropic
+- view: secrets.storage.SecretMetadata
+  excludes:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: openai-work
+- view: secrets.storage.SecretMetadata
+  excludes:
+    address:
+      scope: {tenant: default, namespace: team, user: default}
+      name: openai
