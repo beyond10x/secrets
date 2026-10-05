@@ -105,6 +105,35 @@ pub enum Mutation {
     Delete { reference: SecretRef },
 }
 
+/// Who a change is attributed to in the audit record: the principal the authority verified, and the
+/// actor the request named, if it named one. The claim is recorded beside the verified principal,
+/// never in its place.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Actor {
+    pub verified: String,
+    pub claimed: Option<String>,
+}
+
+impl Actor {
+    pub fn verified(subject: impl Into<String>) -> Self {
+        Self {
+            verified: subject.into(),
+            claimed: None,
+        }
+    }
+
+    pub fn claiming(mut self, claimed: Option<String>) -> Self {
+        self.claimed = claimed;
+        self
+    }
+}
+
+impl From<&str> for Actor {
+    fn from(subject: &str) -> Self {
+        Self::verified(subject)
+    }
+}
+
 /// Which input rule a store refused. Each is its own refusal, so a caller can tell them apart; none
 /// carries any part of the input.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Error)]
@@ -143,14 +172,14 @@ pub enum StoreError {
 #[async_trait]
 pub trait SecretStore: Send + Sync {
     async fn ready(&self) -> Result<(), StoreError>;
-    async fn put(&self, input: PutSecret) -> Result<SecretMetadata, StoreError>;
+    async fn put(&self, input: PutSecret, actor: &Actor) -> Result<SecretMetadata, StoreError>;
     async fn get(&self, reference: &SecretRef) -> Result<StoredSecret, StoreError>;
     async fn exists(&self, reference: &SecretRef) -> Result<bool, StoreError>;
-    async fn delete(&self, reference: &SecretRef, actor: &str) -> Result<(), StoreError>;
+    async fn delete(&self, reference: &SecretRef, actor: &Actor) -> Result<(), StoreError>;
     async fn revoke(
         &self,
         reference: &SecretRef,
-        actor: &str,
+        actor: &Actor,
     ) -> Result<SecretMetadata, StoreError>;
     async fn list(
         &self,
@@ -162,9 +191,11 @@ pub trait SecretStore: Send + Sync {
         tenant: &str,
         transaction: Uuid,
         mutations: Vec<Mutation>,
-        actor: &str,
+        claimed_actor: &str,
     ) -> Result<(), StoreError>;
-    async fn commit(&self, tenant: &str, transaction: Uuid) -> Result<(), StoreError>;
+    /// Applies a prepared batch, attributing every change to `actor`, the verified principal that
+    /// commits, with the actor the prepare request named as its claim.
+    async fn commit(&self, tenant: &str, transaction: Uuid, actor: &str) -> Result<(), StoreError>;
     async fn abort(&self, tenant: &str, transaction: Uuid) -> Result<(), StoreError>;
 }
 

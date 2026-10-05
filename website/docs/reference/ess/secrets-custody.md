@@ -352,7 +352,7 @@ It has eight outcomes.
 
 **`deleted`** — The secret and all its encrypted versions are gone. The default branch, taken when no other outcome's condition matched. It removes the `secrets.custody.Secret` its input names; no view shows it afterwards. The instance is the one named by the input field `reference`. It emits `secrets.custody.SecretDeleted`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
-**`not-owned`** — Decided outside the input: no secret at the reference is owned by the calling subject. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.custody.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
+**`not-owned`** — Taken when the existing subject's stored fields satisfy `owner_subject != caller.subject`. No entity in this specification changes. It reports `secrets.custody.NotFound`. It emits nothing. A test establishes and independently observes the subject enum fact before selecting this branch.
 
 **`unauthorized`** — Decided outside the input: the bearer token is missing or refused by the Identity authority. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.custody.Unauthorized`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -524,7 +524,7 @@ It has eight outcomes.
 
 **`revoked`** — The secret is Revoked; workload get and exists no longer see it, list and detail still do. The default branch, taken when no other outcome's condition matched. It moves a `secrets.custody.Secret` from `Active` and `Revoked` to `Revoked`, along the declared move `revoke`. The instance is the one named by the input field `reference`. It emits `secrets.custody.SecretRevoked`. It sets `updated_at` from `implementation-generated`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
-**`not-owned`** — Decided outside the input: no secret at the reference is owned by the calling subject. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.custody.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
+**`not-owned`** — Taken when the existing subject's stored fields satisfy `owner_subject != caller.subject`. No entity in this specification changes. It reports `secrets.custody.NotFound`. It emits nothing. A test establishes and independently observes the subject enum fact before selecting this branch.
 
 **`unauthorized`** — Decided outside the input: the bearer token is missing or refused by the Identity authority. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.custody.Unauthorized`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -587,6 +587,7 @@ Nothing in this system reacts to it.
 
 It carries:
 
+- `actor` — `String`
 - `reference` — `secrets.custody.Reference`
 
 Emitted by `secrets.custody.DeleteOwnedSecret` on its `deleted` outcome.
@@ -613,6 +614,7 @@ Nothing in this system reacts to it.
 
 It carries:
 
+- `actor` — `String`
 - `reference` — `secrets.custody.Reference`
 - `owner_subject` — `String`
 
@@ -626,6 +628,7 @@ Nothing in this system reacts to it.
 
 It carries:
 
+- `actor` — `String`
 - `reference` — `secrets.custody.Reference`
 
 Emitted by `secrets.custody.RevokeOwnedSecret` on its `revoked` outcome.
@@ -675,6 +678,7 @@ Nothing in this system reacts to it.
 
 It carries:
 
+- `actor` — `String`
 - `tenant` — `String`
 - `transaction` — `Uuid`
 
@@ -867,11 +871,23 @@ It may invoke [`RewrapSecrets`](#rewrapsecrets).
 
 It may invoke [`DeleteOwnedSecret`](#deleteownedsecret) and [`RevokeOwnedSecret`](#revokeownedsecret).
 
+Its credential carries:
+
+- `subject` — `String`
+
+A command it invokes reads these as `{caller: …}` or `caller.…`, never from its input: the credential is their authority, not the caller.
+
 ### `Workload`
 
 `secrets.custody.Workload`.
 
 It may invoke [`AbortTransaction`](#aborttransaction), [`CheckSecretExists`](#checksecretexists), [`CommitTransaction`](#committransaction), [`DeleteSecret`](#deletesecret), [`ListNamespaceSecrets`](#listnamespacesecrets), [`PrepareTransaction`](#preparetransaction), [`PutSecret`](#putsecret) and [`ReadSecretValue`](#readsecretvalue).
+
+Its credential carries:
+
+- `subject` — `String`
+
+A command it invokes reads these as `{caller: …}` or `caller.…`, never from its input: the credential is their authority, not the caller.
 
 ## Type crossings
 
@@ -886,4 +902,4 @@ Every crossing in the system is on one page: [Type crossings](./crossings.md).
 
 ---
 
-Generated from secrets v1 · model digest `dd17f2508caa42bd29317ce40c6fc03bf7285372d2e16efe46064f622dbf90d8` · contract digest `slice-sha256/2:c113b061a7a0ed3a6ce66efa09dc7d90716ed8656b58be83606b677e0f814d0d`. Do not edit this file; change the specification and regenerate it with `task docs-generate`.
+Generated from secrets v1 · model digest `8fc1ce6b8e0119b0901a09c31987df0c481fc68faee8ee0e83c0b71e5f0ff659` · contract digest `slice-sha256/2:64cff9d05c5106c023117e1865494ed1b8e1eded92392f0e3f6e9dc9e3ff7071`. Do not edit this file; change the specification and regenerate it with `task docs-generate`.

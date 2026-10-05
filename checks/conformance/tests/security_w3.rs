@@ -13,7 +13,7 @@ use axum::{
 use http_body_util::BodyExt as _;
 use secrets_auth::{AuthError, Authority, Principal};
 use secrets_core::{
-    Disclosure, Mutation, PutSecret, SecretBytes, SecretMetadata, SecretRef, SecretState,
+    Actor, Disclosure, Mutation, PutSecret, SecretBytes, SecretMetadata, SecretRef, SecretState,
     SecretStore, StoreError, StoredSecret,
 };
 use secrets_http::AppState;
@@ -58,7 +58,7 @@ impl SecretStore for One {
     async fn ready(&self) -> Result<(), StoreError> {
         Ok(())
     }
-    async fn put(&self, _: PutSecret) -> Result<SecretMetadata, StoreError> {
+    async fn put(&self, _: PutSecret, _: &Actor) -> Result<SecretMetadata, StoreError> {
         Err(StoreError::Unavailable)
     }
     async fn get(&self, _: &SecretRef) -> Result<StoredSecret, StoreError> {
@@ -73,10 +73,10 @@ impl SecretStore for One {
     async fn exists(&self, _: &SecretRef) -> Result<bool, StoreError> {
         Ok(self.owner.is_some())
     }
-    async fn delete(&self, _: &SecretRef, _: &str) -> Result<(), StoreError> {
+    async fn delete(&self, _: &SecretRef, _: &Actor) -> Result<(), StoreError> {
         self.owner.map(|_| ()).ok_or(StoreError::NotFound)
     }
-    async fn revoke(&self, _: &SecretRef, _: &str) -> Result<SecretMetadata, StoreError> {
+    async fn revoke(&self, _: &SecretRef, _: &Actor) -> Result<SecretMetadata, StoreError> {
         self.owner.map(metadata).ok_or(StoreError::NotFound)
     }
     async fn list(
@@ -94,7 +94,7 @@ impl SecretStore for One {
     async fn prepare(&self, _: &str, _: Uuid, _: Vec<Mutation>, _: &str) -> Result<(), StoreError> {
         Ok(())
     }
-    async fn commit(&self, _: &str, _: Uuid) -> Result<(), StoreError> {
+    async fn commit(&self, _: &str, _: Uuid, _: &str) -> Result<(), StoreError> {
         Ok(())
     }
     async fn abort(&self, _: &str, _: Uuid) -> Result<(), StoreError> {

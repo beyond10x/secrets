@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use secrets_core::{
-    Disclosure, InvalidInput, Mutation, PutSecret, SecretMetadata, SecretRef, SecretState,
+    Actor, Disclosure, InvalidInput, Mutation, PutSecret, SecretMetadata, SecretRef, SecretState,
     SecretStore, StoreError, StoredSecret,
 };
 use secrets_crypto::{Envelope, Keyring, Zeroizing};
@@ -90,7 +90,14 @@ impl PostgresStore {
             sqlx::query("UPDATE secret_versions SET ciphertext=$3,value_nonce=$4,wrapped_key=$5,wrap_nonce=$6,key_id=$7 WHERE secret_id=$1 AND version=$2")
                 .bind(id).bind(version).bind(new.ciphertext).bind(new.value_nonce.as_slice()).bind(new.wrapped_key).bind(new.wrap_nonce.as_slice()).bind(new.key_id)
                 .execute(&mut *tx).await.map_err(unavailable)?;
-            audit(&mut tx, &reference.tenant, Some(id), actor, "rewrap").await?;
+            audit(
+                &mut tx,
+                &reference.tenant,
+                Some(id),
+                &Actor::verified(actor),
+                "rewrap",
+            )
+            .await?;
         }
         tx.commit().await.map_err(unavailable)?;
         self.reseal_batches().await?;
@@ -124,7 +131,7 @@ impl PostgresStore {
         &self,
         tx: &mut Transaction<'_, Postgres>,
         input: PutSecret,
-        actor: &str,
+        actor: &Actor,
     ) -> Result<SecretMetadata, StoreError> {
         validate_ref(&input.reference)?;
         let existing = sqlx::query("SELECT id, current_version, created_at::text FROM secrets WHERE tenant=$1 AND namespace=$2 AND secret_key=$3 FOR UPDATE")
@@ -172,7 +179,7 @@ impl PostgresStore {
         &self,
         tx: &mut Transaction<'_, Postgres>,
         reference: &SecretRef,
-        actor: &str,
+        actor: &Actor,
     ) -> Result<(), StoreError> {
         let row = sqlx::query(
             "DELETE FROM secrets WHERE tenant=$1 AND namespace=$2 AND secret_key=$3 RETURNING id",
@@ -195,10 +202,9 @@ impl SecretStore for PostgresStore {
         PostgresStore::ready(self).await
     }
 
-    async fn put(&self, input: PutSecret) -> Result<SecretMetadata, StoreError> {
-        let actor = input.owner_subject.clone();
+    async fn put(&self, input: PutSecret, actor: &Actor) -> Result<SecretMetadata, StoreError> {
         let mut tx = self.pool.begin().await.map_err(unavailable)?;
-        let result = self.put_tx(&mut tx, input, &actor).await?;
+        let result = self.put_tx(&mut tx, input, actor).await?;
         tx.commit().await.map_err(unavailable)?;
         Ok(result)
     }
@@ -230,7 +236,7 @@ impl SecretStore for PostgresStore {
         Ok(exists)
     }
 
-    async fn delete(&self, reference: &SecretRef, actor: &str) -> Result<(), StoreError> {
+    async fn delete(&self, reference: &SecretRef, actor: &Actor) -> Result<(), StoreError> {
         let mut tx = self.pool.begin().await.map_err(unavailable)?;
         self.delete_tx(&mut tx, reference, actor).await?;
         tx.commit().await.map_err(unavailable)
@@ -239,7 +245,7 @@ impl SecretStore for PostgresStore {
     async fn revoke(
         &self,
         reference: &SecretRef,
-        actor: &str,
+        actor: &Actor,
     ) -> Result<SecretMetadata, StoreError> {
         let mut tx = self.pool.begin().await.map_err(unavailable)?;
         let row = sqlx::query("UPDATE secrets SET state='revoked',updated_at=now() WHERE tenant=$1 AND namespace=$2 AND secret_key=$3 RETURNING id")
@@ -311,7 +317,7 @@ impl SecretStore for PostgresStore {
         Ok(())
     }
 
-    async fn commit(&self, tenant: &str, transaction: Uuid) -> Result<(), StoreError> {
+    async fn commit(&self, tenant: &str, transaction: Uuid, actor: &str) -> Result<(), StoreError> {
         self.purge_expired(tenant).await?;
         let mut tx = self.pool.begin().await.map_err(unavailable)?;
         let row = sqlx::query(
@@ -323,13 +329,13 @@ impl SecretStore for PostgresStore {
         .await
         .map_err(unavailable)?
         .ok_or(StoreError::NotFound)?;
-        let actor: String = row.try_get("actor").map_err(unavailable)?;
+        let claimed: String = row.try_get("actor").map_err(unavailable)?;
         let batch = self
             .keyring
             .open_batch(
                 tenant,
                 transaction.as_bytes(),
-                &actor,
+                &claimed,
                 &batch_envelope(&row)?,
             )
             .map_err(|_| StoreError::Unavailable)?;
@@ -343,6 +349,7 @@ impl SecretStore for PostgresStore {
         }
         let mutations: Vec<Mutation> =
             serde_json::from_slice(json).map_err(|_| StoreError::Unavailable)?;
+        let actor = Actor::verified(actor).claiming(Some(claimed));
         for mutation in mutations {
             match mutation {
                 Mutation::Put { secret } => {
@@ -385,14 +392,17 @@ async fn audit(
     tx: &mut Transaction<'_, Postgres>,
     tenant: &str,
     id: Option<Uuid>,
-    actor: &str,
+    actor: &Actor,
     action: &str,
 ) -> Result<(), StoreError> {
-    sqlx::query("INSERT INTO audit_events(tenant,secret_id,actor,action) VALUES($1,$2,$3,$4)")
-        .bind(tenant)
-        .bind(id)
-        .bind(actor)
-        .bind(action)
+    sqlx::query(
+        "INSERT INTO audit_events(tenant,secret_id,actor,claimed_actor,action) VALUES($1,$2,$3,$4,$5)",
+    )
+    .bind(tenant)
+    .bind(id)
+    .bind(&actor.verified)
+    .bind(&actor.claimed)
+    .bind(action)
         .execute(&mut **tx)
         .await
         .map_err(unavailable)?;

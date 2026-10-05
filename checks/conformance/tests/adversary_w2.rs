@@ -17,7 +17,7 @@ use axum::{
 use http_body_util::BodyExt as _;
 use secrets_auth::{AuthError, Authority, Principal};
 use secrets_core::{
-    Disclosure, InvalidInput, Mutation, PutSecret, SecretBytes, SecretMetadata, SecretRef,
+    Actor, Disclosure, InvalidInput, Mutation, PutSecret, SecretBytes, SecretMetadata, SecretRef,
     SecretState, SecretStore, StoreError, StoredSecret,
 };
 use secrets_http::AppState;
@@ -75,7 +75,7 @@ impl SecretStore for Yes {
     async fn ready(&self) -> Result<(), StoreError> {
         Ok(())
     }
-    async fn put(&self, _: PutSecret) -> Result<SecretMetadata, StoreError> {
+    async fn put(&self, _: PutSecret, _: &Actor) -> Result<SecretMetadata, StoreError> {
         Ok(metadata())
     }
     async fn get(&self, _: &SecretRef) -> Result<StoredSecret, StoreError> {
@@ -87,10 +87,10 @@ impl SecretStore for Yes {
     async fn exists(&self, _: &SecretRef) -> Result<bool, StoreError> {
         Ok(true)
     }
-    async fn delete(&self, _: &SecretRef, _: &str) -> Result<(), StoreError> {
+    async fn delete(&self, _: &SecretRef, _: &Actor) -> Result<(), StoreError> {
         Ok(())
     }
-    async fn revoke(&self, _: &SecretRef, _: &str) -> Result<SecretMetadata, StoreError> {
+    async fn revoke(&self, _: &SecretRef, _: &Actor) -> Result<SecretMetadata, StoreError> {
         Ok(metadata())
     }
     async fn list(&self, _: &str, _: Option<&str>) -> Result<Vec<SecretMetadata>, StoreError> {
@@ -99,7 +99,7 @@ impl SecretStore for Yes {
     async fn prepare(&self, _: &str, _: Uuid, _: Vec<Mutation>, _: &str) -> Result<(), StoreError> {
         Ok(())
     }
-    async fn commit(&self, _: &str, _: Uuid) -> Result<(), StoreError> {
+    async fn commit(&self, _: &str, _: Uuid, _: &str) -> Result<(), StoreError> {
         Ok(())
     }
     async fn abort(&self, _: &str, _: Uuid) -> Result<(), StoreError> {
@@ -647,7 +647,7 @@ impl SecretStore for Fails {
     async fn ready(&self) -> Result<(), StoreError> {
         Ok(())
     }
-    async fn put(&self, _: PutSecret) -> Result<SecretMetadata, StoreError> {
+    async fn put(&self, _: PutSecret, _: &Actor) -> Result<SecretMetadata, StoreError> {
         Err((self.0)())
     }
     async fn get(&self, _: &SecretRef) -> Result<StoredSecret, StoreError> {
@@ -656,10 +656,10 @@ impl SecretStore for Fails {
     async fn exists(&self, _: &SecretRef) -> Result<bool, StoreError> {
         Err((self.0)())
     }
-    async fn delete(&self, _: &SecretRef, _: &str) -> Result<(), StoreError> {
+    async fn delete(&self, _: &SecretRef, _: &Actor) -> Result<(), StoreError> {
         Err((self.0)())
     }
-    async fn revoke(&self, _: &SecretRef, _: &str) -> Result<SecretMetadata, StoreError> {
+    async fn revoke(&self, _: &SecretRef, _: &Actor) -> Result<SecretMetadata, StoreError> {
         Err((self.0)())
     }
     async fn list(&self, _: &str, _: Option<&str>) -> Result<Vec<SecretMetadata>, StoreError> {
@@ -668,7 +668,7 @@ impl SecretStore for Fails {
     async fn prepare(&self, _: &str, _: Uuid, _: Vec<Mutation>, _: &str) -> Result<(), StoreError> {
         Err((self.0)())
     }
-    async fn commit(&self, _: &str, _: Uuid) -> Result<(), StoreError> {
+    async fn commit(&self, _: &str, _: Uuid, _: &str) -> Result<(), StoreError> {
         Err((self.0)())
     }
     async fn abort(&self, _: &str, _: Uuid) -> Result<(), StoreError> {

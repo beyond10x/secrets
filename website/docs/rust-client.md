@@ -68,4 +68,5 @@ Every method is `async` and returns `Result<_, secrets_client::Error>`:
 
 Errors carry no response body. Paths are joined onto the origin as relative URLs, so an origin with
 a path must end in `/`. `StoredSecret.value` zeroes its buffer when dropped. The `actor` passed to
-`delete` and `prepare` is recorded in the audit log as given.
+`delete` and `prepare` is recorded in the audit log as a claim, beside the principal the token
+verifies as.

@@ -53,6 +53,9 @@ pub struct Context<'a> {
     pub forced: Option<String>,
     /// The actor the scenario sends this command as, when it names one.
     pub actor: Option<String>,
+    /// The `subject` attribute of the caller the scenario sends this command as, when its actor
+    /// declares one (suite/26): the principal the credential must verify as.
+    pub subject: Option<String>,
     /// The credential the request carries.
     pub caller: Caller,
 }
@@ -167,6 +170,14 @@ impl ConformanceTarget for SecretsTarget {
             scenario,
             forced,
             actor: request.actor.as_ref().map(ToString::to_string),
+            subject: match request
+                .caller
+                .as_ref()
+                .and_then(|caller| caller.get("subject"))
+            {
+                Some(Node::Text(subject)) => Some(subject.clone()),
+                _ => None,
+            },
             caller: Caller::Granted,
         };
         let observed = DOMAINS
@@ -238,6 +249,7 @@ impl ConformanceTarget for SecretsTarget {
             scenario,
             forced: None,
             actor: None,
+            subject: None,
             caller: Caller::Granted,
         };
         let rows = DOMAINS

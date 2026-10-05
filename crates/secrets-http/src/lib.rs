@@ -9,7 +9,7 @@ use axum::{
 };
 use secrets_auth::{AuthError, Authority, Principal};
 use secrets_core::{
-    InvalidInput, Mutation, PutSecret, SecretMetadata, SecretRef, SecretStore, StoreError,
+    Actor, InvalidInput, Mutation, PutSecret, SecretMetadata, SecretRef, SecretStore, StoreError,
 };
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -160,7 +160,10 @@ async fn user_revoke(
     .await?;
     assert_owner(&state, &principal, &reference).await?;
     Ok(Json(
-        state.store.revoke(&reference, &principal.subject).await?,
+        state
+            .store
+            .revoke(&reference, &Actor::verified(principal.subject))
+            .await?,
     ))
 }
 async fn user_delete(
@@ -176,7 +179,10 @@ async fn user_delete(
     )
     .await?;
     assert_owner(&state, &principal, &reference).await?;
-    state.store.delete(&reference, &principal.subject).await?;
+    state
+        .store
+        .delete(&reference, &Actor::verified(principal.subject))
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 async fn workload_put(
@@ -191,17 +197,21 @@ async fn workload_put(
         &input.reference,
     )
     .await?;
+    let actor = Actor::verified(principal.subject);
     Ok(Json(
         state
             .store
-            .put(PutSecret {
-                owner_subject: if input.owner_subject.is_empty() {
-                    principal.subject
-                } else {
-                    input.owner_subject
+            .put(
+                PutSecret {
+                    owner_subject: if input.owner_subject.is_empty() {
+                        actor.verified.clone()
+                    } else {
+                        input.owner_subject
+                    },
+                    ..input
                 },
-                ..input
-            })
+                &actor,
+            )
             .await?,
     ))
 }
@@ -267,7 +277,7 @@ async fn workload_delete(
         .store
         .delete(
             &request.reference,
-            request.actor.as_deref().unwrap_or(&principal.subject),
+            &Actor::verified(principal.subject).claiming(request.actor),
         )
         .await?;
     Ok(StatusCode::NO_CONTENT)
@@ -293,7 +303,10 @@ async fn workload_commit(
 ) -> Result<StatusCode, Refusal> {
     let principal = authorize(&headers, &*state.workload_authority, "secret:commit").await?;
     tenant_match(&principal, &tenant)?;
-    state.store.commit(&tenant, transaction).await?;
+    state
+        .store
+        .commit(&tenant, transaction, &principal.subject)
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 async fn workload_abort(

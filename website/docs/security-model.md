@@ -16,7 +16,7 @@ the caller's tenant and action are checked before any storage call. Gaps are lis
 |---|---|
 | PostgreSQL `secret_versions` | per version: ciphertext, value nonce, wrapped data key, wrap nonce, key ID |
 | PostgreSQL `secrets` | tenant, namespace, key, owner subject, disclosure, state, current version, labels, timestamps |
-| PostgreSQL `audit_events` | tenant, secret ID, actor, action, time |
+| PostgreSQL `audit_events` | tenant, secret ID, actor, claimed actor, action, time |
 | PostgreSQL `prepared_transactions` | sealed batches, each expiring 600 seconds after prepare |
 | Keyring file, mounted read-only | the key-encryption keys and the active key ID |
 
@@ -77,6 +77,15 @@ Every route that names a reference or tenant requires the caller's verified tena
 answers `403` otherwise, before storage is called. User routes act only on secrets whose
 `owner_subject` is the caller and answer `404` for anything else, so a person cannot learn whether
 another owner's secret exists. See [Authentication](./authentication.md).
+
+## Audit
+
+Every put, revoke, delete, committed batch and rewrap writes an `audit_events` row in the same
+transaction. Its `actor` is the principal the token verified as: the Identity subject on user routes,
+the service-account username on workload routes. An `actor` a request names itself (the body of
+`secrets:delete`, a prepare request) is stored beside it as `claimed_actor`, never in its place; a
+committed batch carries the committer as `actor` and the prepare request's actor as the claim.
+`secrets rewrap` records its `--actor` flag, since it runs with database access and no token.
 
 ## What never leaves the service
 

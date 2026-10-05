@@ -71,7 +71,7 @@ async fn expired_batch_stays_uncommittable_when_its_expiry_column_is_rewritten()
         .execute(&pool)
         .await
         .unwrap();
-    let result = store.commit(&tenant, transaction).await;
+    let result = store.commit(&tenant, transaction, "workload:test").await;
     let applied = store.exists(&reference(&tenant, "revived")).await.unwrap();
     sqlx::query("DELETE FROM prepared_transactions WHERE tenant=$1")
         .bind(&tenant)
@@ -139,12 +139,12 @@ async fn commit_racing_rewrap_applies_the_batch_exactly_once() {
         .unwrap();
         let (rewrap, commit) = tokio::join!(
             rotated.rewrap_all("operator:test"),
-            old.commit(&tenant, transaction)
+            old.commit(&tenant, transaction, "workload:test")
         );
         rewrap.unwrap();
         commit.unwrap();
         assert!(matches!(
-            old.commit(&tenant, transaction).await,
+            old.commit(&tenant, transaction, "workload:test").await,
             Err(StoreError::NotFound)
         ));
         let stored = old.get(&reference(&tenant, &key)).await.unwrap();
@@ -205,13 +205,16 @@ async fn migration_0002_discards_batches_held_by_an_earlier_release() {
         .fetch_one(&check)
         .await
         .unwrap();
-    let commit_old = upgraded.commit(tenant, held).await;
+    let commit_old = upgraded.commit(tenant, held, "workload:test").await;
     let fresh = Uuid::now_v7();
     upgraded
         .prepare(tenant, fresh, vec![put(tenant, "new")], "workload:test")
         .await
         .unwrap();
-    upgraded.commit(tenant, fresh).await.unwrap();
+    upgraded
+        .commit(tenant, fresh, "workload:test")
+        .await
+        .unwrap();
     let value = upgraded
         .get(&reference(tenant, "new"))
         .await

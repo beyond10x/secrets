@@ -1,7 +1,8 @@
 #![allow(clippy::unwrap_used)]
 
 use secrets_core::{
-    Disclosure, Mutation, PutSecret, SecretBytes, SecretRef, SecretState, SecretStore, StoreError,
+    Actor, Disclosure, Mutation, PutSecret, SecretBytes, SecretRef, SecretState, SecretStore,
+    StoreError,
 };
 use secrets_crypto::{Envelope, Keyring};
 use secrets_postgres::PostgresStore;
@@ -37,11 +38,18 @@ async fn postgres_lifecycle_and_atomic_batch() {
         labels: BTreeMap::new(),
     };
 
-    let metadata = store.put(put(first.clone(), b"alpha")).await.unwrap();
+    let metadata = store
+        .put(put(first.clone(), b"alpha"), &"workload:test".into())
+        .await
+        .unwrap();
     assert_eq!(metadata.version, 1);
     assert_eq!(store.get(&first).await.unwrap().value.0, b"alpha");
     assert_eq!(
-        store.revoke(&first, "user:one").await.unwrap().state,
+        store
+            .revoke(&first, &"user:one".into())
+            .await
+            .unwrap()
+            .state,
         SecretState::Revoked
     );
     assert!(matches!(store.get(&first).await, Err(StoreError::NotFound)));
@@ -64,10 +72,13 @@ async fn postgres_lifecycle_and_atomic_batch() {
         .await
         .unwrap();
     assert!(!store.exists(&second).await.unwrap());
-    store.commit(&tenant, transaction).await.unwrap();
+    store
+        .commit(&tenant, transaction, "workload:test")
+        .await
+        .unwrap();
     assert!(!store.exists(&first).await.unwrap());
     assert_eq!(store.get(&second).await.unwrap().value.0, b"beta");
-    store.delete(&second, "user:one").await.unwrap();
+    store.delete(&second, &"user:one".into()).await.unwrap();
     assert!(store.list(&tenant, None).await.unwrap().is_empty());
 }
 
@@ -141,7 +152,10 @@ async fn prepared_batch_row_holds_no_plaintext_value() {
     assert!(!contains(text.as_bytes(), MARKER), "{text}");
     assert!(!contains(text.as_bytes(), encoded.as_bytes()), "{text}");
     assert!(!contains(text.as_bytes(), hex.as_bytes()), "{text}");
-    store.commit(&tenant, transaction).await.unwrap();
+    store
+        .commit(&tenant, transaction, "workload:test")
+        .await
+        .unwrap();
     let reference = SecretRef {
         tenant: tenant.clone(),
         namespace: "connectors".into(),
@@ -237,7 +251,7 @@ async fn expired_batch_commits_as_not_found_and_is_removed() {
         .await
         .unwrap();
     assert!(matches!(
-        store.commit(&tenant, committed).await,
+        store.commit(&tenant, committed, "workload:test").await,
         Err(StoreError::NotFound)
     ));
     assert_eq!(held(&pool, &tenant, committed).await, 0);
@@ -265,7 +279,7 @@ async fn expired_batch_commits_as_not_found_and_is_removed() {
         .await
         .unwrap();
     assert_eq!(held(&pool, &tenant, purged).await, 0);
-    store.commit(&tenant, fresh).await.unwrap();
+    store.commit(&tenant, fresh, "workload:test").await.unwrap();
     assert_eq!(store.get(&reference).await.unwrap().value.0, MARKER);
 }
 
@@ -304,7 +318,9 @@ async fn moved_batch_fails_to_open_and_applies_nothing() {
             .execute(&pool)
             .await
             .unwrap();
-        let result = store.commit(&to_tenant, to_transaction).await;
+        let result = store
+            .commit(&to_tenant, to_transaction, "workload:test")
+            .await;
         assert!(
             matches!(result, Err(StoreError::Unavailable)),
             "{column}: {result:?}"
@@ -371,7 +387,10 @@ async fn rewrap_keeps_a_held_batch_committable() {
             .await
             .unwrap();
     assert_eq!(key_id, "v2");
-    only_new.commit(&tenant, transaction).await.unwrap();
+    only_new
+        .commit(&tenant, transaction, "workload:test")
+        .await
+        .unwrap();
     let reference = SecretRef {
         tenant: tenant.clone(),
         namespace: "connectors".into(),
@@ -462,13 +481,16 @@ async fn rewrap_reencrypts_every_stored_version() {
     };
     let values: [&[u8]; 3] = [b"first", b"second", b"third"];
     for value in values {
-        old.put(PutSecret {
-            reference: reference.clone(),
-            owner_subject: "user:one".into(),
-            value: SecretBytes(value.to_vec()),
-            disclosure: Disclosure::WorkloadOnly,
-            labels: BTreeMap::new(),
-        })
+        old.put(
+            PutSecret {
+                reference: reference.clone(),
+                owner_subject: "user:one".into(),
+                value: SecretBytes(value.to_vec()),
+                disclosure: Disclosure::WorkloadOnly,
+                labels: BTreeMap::new(),
+            },
+            &"workload:test".into(),
+        )
         .await
         .unwrap();
     }
@@ -498,4 +520,84 @@ async fn rewrap_reencrypts_every_stored_version() {
         assert_eq!(value.0, expected, "version {version}");
     }
     assert_eq!(rotated.rewrap_all("operator:test").await.unwrap(), 0);
+}
+
+#[tokio::test]
+async fn audit_records_the_verified_actor_beside_the_claimed_one() {
+    let Some(database_url) = isolated_database().await else {
+        return;
+    };
+    let store = PostgresStore::connect(&database_url, Arc::new(Keyring::from_json(RING).unwrap()))
+        .await
+        .unwrap();
+    let pool = sqlx::PgPool::connect(&database_url).await.unwrap();
+    let tenant = format!("test-{}", Uuid::now_v7());
+    let reference = SecretRef {
+        tenant: tenant.clone(),
+        namespace: "connectors".into(),
+        key: "audited".into(),
+    };
+    store
+        .put(
+            PutSecret {
+                reference: reference.clone(),
+                owner_subject: "user:owner".into(),
+                value: SecretBytes(b"value".to_vec()),
+                disclosure: Disclosure::WorkloadOnly,
+                labels: BTreeMap::new(),
+            },
+            &"workload:verified".into(),
+        )
+        .await
+        .unwrap();
+    store
+        .delete(
+            &reference,
+            &Actor::verified("workload:verified").claiming(Some("someone-else".into())),
+        )
+        .await
+        .unwrap();
+    let transaction = Uuid::now_v7();
+    store
+        .prepare(
+            &tenant,
+            transaction,
+            vec![batch_put(&tenant, "batched")],
+            "claimed-by-prepare",
+        )
+        .await
+        .unwrap();
+    store
+        .commit(&tenant, transaction, "workload:committer")
+        .await
+        .unwrap();
+
+    let rows: Vec<(String, String, Option<String>)> = sqlx::query_as(
+        "SELECT action, actor, claimed_actor FROM audit_events WHERE tenant=$1 ORDER BY sequence",
+    )
+    .bind(&tenant)
+    .fetch_all(&pool)
+    .await
+    .unwrap();
+    assert_eq!(
+        rows,
+        vec![
+            ("put".into(), "workload:verified".into(), None),
+            (
+                "delete".into(),
+                "workload:verified".into(),
+                Some("someone-else".into())
+            ),
+            (
+                "put".into(),
+                "workload:committer".into(),
+                Some("claimed-by-prepare".into())
+            ),
+            (
+                "commit_batch".into(),
+                "workload:committer".into(),
+                Some("claimed-by-prepare".into())
+            ),
+        ]
+    );
 }

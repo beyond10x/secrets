@@ -526,7 +526,10 @@ fn arrange_secret(context: &mut Context<'_>, reference: &SecretRef) -> R<String>
     let store = context.scenario.store.clone();
     context
         .runtime
-        .block_on(store.put(fixture_put(reference.clone(), FIXTURE_OWNER)))
+        .block_on(store.put(
+            fixture_put(reference.clone(), FIXTURE_OWNER),
+            &WORKLOAD_SUBJECT.into(),
+        ))
         .map_err(|error| unavailable("arranging a stored secret", error))?;
     context.scenario.owners.insert(FIXTURE_OWNER.to_owned());
     Ok(FIXTURE_OWNER.to_owned())
@@ -630,10 +633,11 @@ fn put(context: &mut Context<'_>, input: Value) -> R<Observed> {
             "a secret is already stored at the reference",
         ));
     }
+    let subject = workload_subject(context);
     let token = token(
         context,
         Audience::Workload,
-        WORKLOAD_SUBJECT,
+        &subject,
         &reference.tenant,
         WRITE,
     )?;
@@ -658,12 +662,13 @@ fn put(context: &mut Context<'_>, input: Value) -> R<Observed> {
     let events = audit_since(context, mark)?
         .into_iter()
         .filter(|row| row.action == "put" && row.secret == Some(metadata.id))
-        .map(|_| {
+        .map(|row| {
             (
                 "secrets.custody.SecretPut",
                 BTreeMap::from([
                     ("reference".to_owned(), reference_node(&metadata.reference)),
                     ("owner_subject".to_owned(), text(&metadata.owner_subject)),
+                    ("actor".to_owned(), text(row.actor)),
                 ]),
             )
         })
@@ -682,9 +687,22 @@ fn put(context: &mut Context<'_>, input: Value) -> R<Observed> {
     })
 }
 
-/// The caller of a user route: the stored owner, or another subject when `not-owned` is forced.
-/// A secret is stored first when the scenario has none at the reference.
+/// The subject a workload credential verifies as: the scenario's caller, or the fixture workload.
+fn workload_subject(context: &Context<'_>) -> String {
+    context
+        .subject
+        .clone()
+        .unwrap_or_else(|| WORKLOAD_SUBJECT.to_owned())
+}
+
+/// The caller of a user route: the scenario's caller, whose ownership the scenario arranges
+/// itself, or without one the stored owner, or another subject when `not-owned` is forced, after
+/// storing a secret when the scenario has none at the reference.
 fn owner_caller(context: &mut Context<'_>, reference: &SecretRef) -> R<String> {
+    if let Some(subject) = context.subject.clone() {
+        context.scenario.owners.insert(subject.clone());
+        return Ok(subject);
+    }
     let owner = arrange_secret(context, reference)?;
     context.scenario.owners.insert(owner.clone());
     Ok(if context.forced.as_deref() == Some("not-owned") {
@@ -717,10 +735,13 @@ fn revoke(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     let events = audit_since(context, mark)?
         .into_iter()
         .filter(|row| row.action == "revoke" && row.secret == Some(metadata.id))
-        .map(|_| {
+        .map(|row| {
             (
                 "secrets.custody.SecretRevoked",
-                BTreeMap::from([("reference".to_owned(), reference_node(&metadata.reference))]),
+                BTreeMap::from([
+                    ("reference".to_owned(), reference_node(&metadata.reference)),
+                    ("actor".to_owned(), text(row.actor)),
+                ]),
             )
         })
         .collect();
@@ -741,10 +762,13 @@ fn deleted(
     let events = audit_since(context, mark)?
         .into_iter()
         .filter(|row| row.action == "delete" && row.secret.is_some() && row.secret == before)
-        .map(|_| {
+        .map(|row| {
             (
                 "secrets.custody.SecretDeleted",
-                BTreeMap::from([("reference".to_owned(), reference_node(reference))]),
+                BTreeMap::from([
+                    ("reference".to_owned(), reference_node(reference)),
+                    ("actor".to_owned(), text(row.actor)),
+                ]),
             )
         })
         .collect();
@@ -789,10 +813,11 @@ fn delete(context: &mut Context<'_>, input: Value) -> R<Observed> {
     } else {
         arrange_secret(context, &reference)?;
     }
+    let subject = workload_subject(context);
     let token = token(
         context,
         Audience::Workload,
-        WORKLOAD_SUBJECT,
+        &subject,
         &reference.tenant,
         DELETE,
     )?;
@@ -878,13 +903,8 @@ fn prepare(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     if context.forced.as_deref() == Some("duplicate") && !prepared(context, &tenant, transaction)? {
         arrange_batch(context, &tenant, transaction, mutations.clone())?;
     }
-    let token = token(
-        context,
-        Audience::Workload,
-        WORKLOAD_SUBJECT,
-        &tenant,
-        PREPARE,
-    )?;
+    let subject = workload_subject(context);
+    let token = token(context, Audience::Workload, &subject, &tenant, PREPARE)?;
     let body = body(context, &json!({"actor": actor, "mutations": batch}))?;
     let path = transaction_path(context, &tenant, transaction, "");
     let reply = send(context, true, Method::PUT, &path, &token, Some(body))?;
@@ -952,13 +972,8 @@ fn commit(context: &mut Context<'_>, input: &Value) -> R<Observed> {
                 .map_err(sql("altering a prepared batch"))
         })?;
     }
-    let token = token(
-        context,
-        Audience::Workload,
-        WORKLOAD_SUBJECT,
-        &tenant,
-        COMMIT,
-    )?;
+    let subject = workload_subject(context);
+    let token = token(context, Audience::Workload, &subject, &tenant, COMMIT)?;
     let mark = audit_mark(context)?;
     let path = transaction_path(context, &tenant, transaction, "/commit");
     let reply = send(context, false, Method::POST, &path, &token, None)?;
@@ -984,11 +999,10 @@ fn commit(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     let events = audit_since(context, mark)?
         .into_iter()
         .filter(|row| row.action == "commit_batch" && row.secret.is_none() && row.tenant == tenant)
-        .map(|_| {
-            (
-                "secrets.custody.TransactionCommitted",
-                transaction_payload(&tenant, transaction),
-            )
+        .map(|row| {
+            let mut payload = transaction_payload(&tenant, transaction);
+            payload.insert("actor".to_owned(), text(row.actor));
+            ("secrets.custody.TransactionCommitted", payload)
         })
         .collect();
     Ok(Observed {
@@ -1016,13 +1030,8 @@ fn abort(context: &mut Context<'_>, input: &Value) -> R<Observed> {
             }],
         )?;
     }
-    let token = token(
-        context,
-        Audience::Workload,
-        WORKLOAD_SUBJECT,
-        &tenant,
-        ABORT,
-    )?;
+    let subject = workload_subject(context);
+    let token = token(context, Audience::Workload, &subject, &tenant, ABORT)?;
     let path = transaction_path(context, &tenant, transaction, "/abort");
     let reply = send(context, true, Method::POST, &path, &token, None)?;
     if reply.status != StatusCode::NO_CONTENT {
@@ -1123,10 +1132,11 @@ fn read_value(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     } else {
         arrange_secret(context, &reference)?;
     }
+    let subject = workload_subject(context);
     let token = token(
         context,
         Audience::Workload,
-        WORKLOAD_SUBJECT,
+        &subject,
         &reference.tenant,
         READ_VALUE,
     )?;
@@ -1162,10 +1172,11 @@ fn check_exists(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     let reference: SecretRef = field(input, "reference")?;
     touch(context, &reference);
     arrange_secret(context, &reference)?;
+    let subject = workload_subject(context);
     let token = token(
         context,
         Audience::Workload,
-        WORKLOAD_SUBJECT,
+        &subject,
         &reference.tenant,
         READ_METADATA,
     )?;
@@ -1204,7 +1215,8 @@ fn list_namespace(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     };
     touch(context, &reference);
     arrange_secret(context, &reference)?;
-    let token = token(context, Audience::Workload, WORKLOAD_SUBJECT, &tenant, LIST)?;
+    let subject = workload_subject(context);
+    let token = token(context, Audience::Workload, &subject, &tenant, LIST)?;
     let body = body(context, &input.clone())?;
     let reply = send(
         context,

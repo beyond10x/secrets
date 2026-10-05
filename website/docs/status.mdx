@@ -19,14 +19,6 @@ means specified and on the plan only.
 
 These describe 0.4.1 as it is.
 
-### Audit actors can be caller-chosen
-
-- `POST /v1/workload/secrets:delete` records the body's `actor` when one is given.
-- A prepared batch records the prepare request's `actor` on every event its commit writes.
-- `PUT /v1/workload/secrets` records the `owner_subject` the workload sets.
-
-Treat those actors as claims of an authorized workload, not verified identities. A fix is planned.
-
 ### Other gaps
 
 - No user route returns a value, whatever the disclosure; workload reads ignore disclosure.

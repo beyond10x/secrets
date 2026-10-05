@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- Every audit event records the principal the token verified as its `actor`: the service-account
+  username on workload routes, the Identity subject on user routes. The `actor` a delete or prepare
+  request names is stored beside it in the new `claimed_actor` column, never in its place; a put
+  no longer records `owner_subject` as its actor. Migration `0003` adds the column.
+- `SecretStore` takes the attribution explicitly: `put`, `delete` and `revoke` take an `Actor`,
+  `commit` takes the committing principal.
+- The specification declares the `subject` attribute on the user and workload actors, the `actor`
+  of the put, revoke, delete and commit events as `{caller: subject}`, and `not-owned` as a guard
+  on the stored owner against the caller.
+
 ## 0.4.1 - 2026-10-05
 
 - Documentation moves to its own site, <https://beyond10x.github.io/secrets/>, built from

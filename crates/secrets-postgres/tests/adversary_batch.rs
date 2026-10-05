@@ -80,7 +80,7 @@ async fn rewrap_is_not_blocked_by_an_expired_batch() {
         .await
         .unwrap();
     current
-        .put(put(&tenant, "live", b"live-value"))
+        .put(put(&tenant, "live", b"live-value"), &"workload:test".into())
         .await
         .unwrap();
     // The next rotation: v0 is long retired, v1 -> v2.
@@ -168,7 +168,7 @@ async fn migration_0002_discards_batches_held_by_0001() {
         .unwrap();
     assert_eq!(held, 0);
     assert!(matches!(
-        store.commit(&tenant, old).await,
+        store.commit(&tenant, old, "workload:test").await,
         Err(StoreError::NotFound)
     ));
     let fresh = Uuid::now_v7();
@@ -176,7 +176,7 @@ async fn migration_0002_discards_batches_held_by_0001() {
         .prepare(&tenant, fresh, batch(&tenant, "held"), "workload:a")
         .await
         .unwrap();
-    store.commit(&tenant, fresh).await.unwrap();
+    store.commit(&tenant, fresh, "workload:test").await.unwrap();
 }
 
 /// Rewrap and commit racing on one held batch: rewrap takes the row lock first, commit queues on
@@ -214,7 +214,11 @@ async fn commit_queued_behind_rewrap_opens_the_resealed_batch() {
         .unwrap();
     let committing = only_new.clone();
     let commit_tenant = tenant.clone();
-    let commit = tokio::spawn(async move { committing.commit(&commit_tenant, transaction).await });
+    let commit = tokio::spawn(async move {
+        committing
+            .commit(&commit_tenant, transaction, "workload:test")
+            .await
+    });
     tokio::task::spawn_blocking(|| std::thread::sleep(Duration::from_millis(300)))
         .await
         .unwrap();
@@ -258,11 +262,17 @@ async fn commit_writing_an_old_key_secret_does_not_deadlock_with_rewrap() {
         .unwrap();
     let pool = sqlx::PgPool::connect(&url).await.unwrap();
     let tenant = format!("test-{}", Uuid::now_v7());
-    old.put(put(&tenant, "rotating", b"old-value"))
-        .await
-        .unwrap();
+    old.put(
+        put(&tenant, "rotating", b"old-value"),
+        &"workload:test".into(),
+    )
+    .await
+    .unwrap();
     rotated
-        .put(put(&tenant, "staging", b"new-value"))
+        .put(
+            put(&tenant, "staging", b"new-value"),
+            &"workload:test".into(),
+        )
         .await
         .unwrap();
     let transaction = Uuid::now_v7();
@@ -289,7 +299,11 @@ async fn commit_writing_an_old_key_secret_does_not_deadlock_with_rewrap() {
         .unwrap();
     let committing = rotated.clone();
     let commit_tenant = tenant.clone();
-    let commit = tokio::spawn(async move { committing.commit(&commit_tenant, transaction).await });
+    let commit = tokio::spawn(async move {
+        committing
+            .commit(&commit_tenant, transaction, "workload:test")
+            .await
+    });
     pause().await;
     let rewrapping = rotated.clone();
     let rewrap = tokio::spawn(async move { rewrapping.rewrap_all("operator:test").await });
@@ -332,7 +346,7 @@ async fn abort_follows_the_column_while_commit_follows_the_sealed_expiry() {
     .execute(&pool)
     .await
     .unwrap();
-    let commit = store.commit(&tenant, committed).await;
+    let commit = store.commit(&tenant, committed, "workload:test").await;
     let abort = store.abort(&tenant, aborted).await;
     assert!(matches!(commit, Err(StoreError::NotFound)), "{commit:?}");
     assert!(matches!(abort, Ok(())), "{abort:?}");
@@ -388,7 +402,7 @@ async fn rewrap_keeps_the_sealed_expiry_when_the_column_is_rewritten_forward() {
             .await
             .unwrap();
     assert_eq!(key_id, "v2");
-    let commit = only_new.commit(&tenant, transaction).await;
+    let commit = only_new.commit(&tenant, transaction, "workload:test").await;
     let reference = SecretRef {
         tenant: tenant.clone(),
         namespace: "connectors".into(),
