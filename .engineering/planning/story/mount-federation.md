@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:mount-federation
 kind: story
-status: draft
+status: active
 title: Each namespace routes to exactly one backend, with no fallback
 relations:
 - decomposes: epic:named-federated-storage
@@ -12,10 +12,21 @@ scope:
 - confidence: inferred
   path: checks/conformance/src/federation.rs
 - confidence: cited
+  path: checks/conformance/src/storage.rs
+- confidence: cited
+  path: contracts/ess-inputs.yaml
+- confidence: cited
+  path: contracts/storage-baseline.json
+- confidence: cited
+  path: contracts/storage-suite.json
+- confidence: cited
   path: contracts/storage/scenarios/federation
 - confidence: cited
   path: crates/secrets-federation
-revision: 6
+revision: 9
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T09:57:57Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "proposed", to: "active", at: "2026-10-05T09:57:57Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"review_outcome":1}}}
 ---
 ## Context
 

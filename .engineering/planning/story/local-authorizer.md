@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:local-authorizer
 kind: story
-status: draft
+status: active
 title: Local mode allows tenant and user default and denies every other
 relations:
 - decomposes: epic:named-federated-storage
@@ -10,10 +10,21 @@ relations:
 - depends_on: story:storage-port
 scope:
 - confidence: cited
+  path: checks/conformance/src/storage.rs
+- confidence: cited
+  path: contracts/ess-inputs.yaml
+- confidence: cited
+  path: contracts/storage-baseline.json
+- confidence: cited
+  path: contracts/storage-suite.json
+- confidence: cited
   path: contracts/storage/scenarios/authorize
 - confidence: cited
   path: crates/secrets-core/src/authorize.rs
-revision: 4
+revision: 7
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T09:57:57Z", actor: "human:timo", revision: 6, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "proposed", to: "active", at: "2026-10-05T09:57:57Z", actor: "human:timo", revision: 7, decided_on: {"recorded":{"review_outcome":1}}}
 ---
 ## Context
 

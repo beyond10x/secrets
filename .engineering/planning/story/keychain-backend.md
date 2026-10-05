@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:keychain-backend
 kind: story
-status: draft
+status: active
 title: The OS keychain is a storage backend
 relations:
 - decomposes: epic:named-federated-storage
@@ -12,10 +12,21 @@ scope:
 - confidence: inferred
   path: checks/conformance/src/keychain.rs
 - confidence: cited
+  path: checks/conformance/src/storage.rs
+- confidence: cited
+  path: contracts/ess-inputs.yaml
+- confidence: cited
+  path: contracts/storage-baseline.json
+- confidence: cited
+  path: contracts/storage-suite.json
+- confidence: cited
   path: contracts/storage/scenarios/keychain
 - confidence: cited
   path: crates/secrets-keychain
-revision: 6
+revision: 9
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":2}}}
+- {from: "proposed", to: "active", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"review_outcome":2}}}
 ---
 ## Context
 
