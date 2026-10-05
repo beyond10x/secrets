@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-05T18:32:57Z",
+  "actor": "human:timo",
+  "artifact": "story:readonly-test-backend",
+  "kind": "story",
+  "revision": 5,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check exit 0 (2026-10-05, 6b51b72, ESS 0.52.0): secrets-service 111/111, secrets-library 110/110, secretsctl CLI suite 89/89, 0 unsupported, 0 failed, 0 error, 0 skipped, each x3 with identical counts; 198 Rust tests passed. Story: storage 107->108 answered (SetMount/outcome/set onto onepassword), CLI read-only and 1Password-mount scenarios answered (5). Falsified: secretsctl mounting a read-write fake fails Write/Delete/Rename/ListMetadata outcome/unsupported and a_test_hooks_build_mounts_the_read_only_fake_for_the_onepassword_kind; not mounting the fake in process fails SetMount/outcome/set; both files restored byte for byte (sha256). a_default_build_cannot_mount_the_read_only_fake guards the default build",
+    "reference": "crates/secretsctl/tests/review_default_build.rs"
+  }
+}

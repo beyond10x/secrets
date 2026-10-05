@@ -23,7 +23,7 @@ scope:
   path: contracts/storage/scenarios/federation
 - confidence: cited
   path: crates/secrets-federation
-revision: 11
+revision: 12
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-05T09:57:57Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}}
 - {from: "proposed", to: "active", at: "2026-10-05T09:57:57Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"review_outcome":1}}}
@@ -79,6 +79,12 @@ one backend, or one its namespace was not mounted on when it began, takes no dec
   `taken` (the backend's)
 - `each-namespace-routes-to-its-own-mount`: three namespaces on two keychain mounts, one re-mounted
   with SetMount, each reaching only its own backend
+- that a read routed through a mount returns the bytes written there is primary evidence in ESS
+  (story:read-response-scenarios): `Read.read` declares `returns: true`, and
+  `response/a-value-written-to-a-keychain-mount-reads-back-equal` and
+  `response/a-value-written-to-a-remote-mount-reads-back-equal` assert the returned value literally
+  through `Authorized<FederatedStorage>`, on the default mount and on a namespace mounted on
+  `remote/custody`
 
 Falsification (2026-10-05): resolving every namespace to the default mount in
 `crates/secrets-federation/src/lib.rs` (`mounted`) fails 15 scenarios, among them
@@ -92,8 +98,10 @@ ESS cannot express these, so Rust tests in `crates/secrets-federation/src/tests.
   crate asserts it on the recording fakes,
   `a_name_in_a_namespace_that_does_not_exist_is_not_found_and_no_backend_is_called`,
   `a_mount_naming_an_unregistered_backend_is_not_found_and_no_backend_is_called`
-- an unbound name on a binding-required backend is `not-found`: only the runner's own arrangement
-  mounts one; `an_unbound_name_on_a_binding_backend_is_not_found_and_no_backend_is_called`,
+- an unbound name on a binding-required backend is `not-found`, and a bound name reads its value
+  through the locator, kept beside the ESS response scenarios: only the runner's own arrangement
+  mounts a binding-required backend;
+  `an_unbound_name_on_a_binding_backend_is_not_found_and_no_backend_is_called`,
   `a_bound_name_reads_through_its_locator_and_after_unbind_is_not_found_again`
 - renaming onto a bound name is `conflict`: forcing `bound` binds the source, so the destination
   case cannot be told apart; `renaming_a_bound_name_or_onto_a_bound_name_is_conflict_and_no_backend_renames`
