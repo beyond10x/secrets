@@ -109,7 +109,7 @@
     {
       "kind": "status",
       "eyebrow": "Status",
-      "title": "Version 0.4.0. Here is what exists.",
+      "title": "Version 0.4.1. Here is what exists.",
       "lede": "Shipped means in the released service today. Planned means specified and on the plan only.",
       "items": "data/status.json"
     },

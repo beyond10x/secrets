@@ -2006,7 +2006,7 @@ checksum = "94143f37725109f92c262ed2cf5e59bce7498c01bcc1502d7b9afe439a4e9f49"
 
 [[package]]
 name = "secrets-app"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "axum",
  "clap",
@@ -2022,7 +2022,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-auth"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "async-trait",
  "reqwest",
@@ -2034,7 +2034,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-client"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "reqwest",
  "secrets-core",
@@ -2046,7 +2046,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-conformance"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "async-trait",
  "axum",
@@ -2073,7 +2073,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-core"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "async-trait",
  "base64",
@@ -2085,7 +2085,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-crypto"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "aes-gcm",
  "base64",
@@ -2099,7 +2099,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-docs"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -2108,7 +2108,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-http"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "axum",
  "http",
@@ -2122,7 +2122,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-postgres"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "async-trait",
  "secrets-core",
@@ -2135,7 +2135,7 @@ dependencies = [
 
 [[package]]
 name = "secretsctl"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "base64",
  "clap",
