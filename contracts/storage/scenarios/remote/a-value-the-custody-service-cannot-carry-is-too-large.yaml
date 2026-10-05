@@ -1,0 +1,39 @@
+# `too-large` on a remote mount (spec/domains/storage.yaml, Write, decided 2026-10-05): the
+# runner sends a value of exactly 1 MiB, which the port accepts and the custody service cannot
+# carry base64-encoded in its 1 MiB request body. The remote backend refuses it without a request;
+# the following `not-found` is forced, and the runner refuses to arrange it if custody holds the
+# secret, so a backend that sent the value anyway and stored it fails here.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-value-the-custody-service-cannot-carry-is-too-large
+summary: A 1 MiB value, within the port's bound, is too large for a namespace on the custody service and stores nothing.
+timeline:
+- at: '2026-10-05T14:30:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: vault}
+    mount: {kind: remote, label: custody}
+  outcome: added
+- at: '2026-10-05T14:30:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    value: AA==
+  outcome: too-large
+  error:
+    name: secrets.storage.TooLarge
+  no_events: [secrets.storage.SecretWritten]
+- at: '2026-10-05T14:30:02Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: not-found
+  error:
+    name: secrets.storage.NotFound

@@ -10,8 +10,8 @@ source_url: https://github.com/beyond10x/secrets/blob/main/website/data/status.j
 import status from '@site/data/status.json';
 
 Secrets 0.4.1 is in development: the service and its workload client ship, and the named-storage
-library is specified but not built. **Shipped** means in the released service today, **planned**
-means specified and on the plan only.
+library is built over the OS keychain and this service. **Shipped** means built on `main` and held
+by `task check`, **planned** means specified and on the plan only.
 
 <StatusTable data={status} />
 
@@ -35,39 +35,36 @@ Treat those actors as claims of an authorized workload, not verified identities.
 - Grant and keyring changes need a restart, and a workload subject acts in one tenant.
 - Audit events cannot be read through the API; `/metrics` exposes only `secrets_up`.
 
-## Planned: named secrets over several backends
-
-:::info[Planned]
-Nothing in this section is in a release. It is the `secrets.storage` domain of the
-[specification](./reference/ess/secrets-storage.md); names and limits may change before it ships.
-:::
+## Named secrets over several backends
 
 An in-process Rust library for **named** secrets such as `openai` or `team/openai`, with several
-backends behind one interface.
+backends behind one interface. It is the `secrets.storage` domain of the
+[specification](./reference/ess/secrets-storage.md), and its conformance suite runs on every check.
 
 - **Scope.** Each secret belongs to one tenant, namespace and user, and is unique by scope and
   name. Names are `/`-separated segments of `a-z0-9._-`, at most 128 bytes and 64 per segment.
-  Values are at most 1 MiB.
+  Values are at most 1 MiB, or what the backend accepts.
 - **Backends.** Each namespace is mounted on exactly one backend, with no fallback between them.
-
-  | Backend | Read | Write | Delete | List |
-  |---|---|---|---|---|
-  | OS keychain | yes | yes | yes | yes |
-  | 1Password | yes | no | no | no |
-  | this service | yes | yes | yes | yes |
-
-  An operation the backend cannot perform is `unsupported`. A 1Password name is bound to a locator
-  such as `op://<vault>/<item>/<field>` before it is read. This service as a backend maps a name to
-  `{tenant, namespace, key = name}` with the user as owner.
+  The OS keychain and this service read, write, delete and list. This service as a backend maps a
+  name to `{tenant, namespace, key = "<user>/<name>"}` with the user as owner, and holds values up
+  to about 768 KiB.
 - **Operations.** Add, remove and re-mount a namespace; bind and unbind a name; write, read,
-  delete, rename; list metadata, never a value. An authorizer decides every operation before any
-  backend call. Errors are closed codes: `not-found`, `denied`, `unsupported`, `unavailable`,
-  `invalid-name`, `too-large`, `conflict`.
-- **Local mode and CLI.** One tenant and user, both `default`, and a `default` namespace on the OS
-  keychain. `secretsctl` gains commands for names, namespaces, mounts and bindings, and no command
-  writes secret bytes to its output; a value comes from a hidden prompt, a pipe or a protected
-  file, never an argument.
-- **Also planned.** Rewrap of every version, and the verified principal on every audit event.
+  delete, rename; list metadata, never a value. The local authorizer allows tenant and user
+  `default` and denies every other before any backend call. Errors are closed codes: `not-found`,
+  `denied`, `unsupported`, `unavailable`, `invalid-name`, `too-large`, `conflict`.
+
+## Planned {#planned-named-secrets-over-several-backends}
+
+:::info[Planned]
+Nothing in this section is built; names and limits may change before it ships.
+:::
+
+- **1Password.** A read-only backend; a name is bound to a locator such as
+  `op://<vault>/<item>/<field>` before it is read.
+- **Local CLI.** `secretsctl` gains commands for names, namespaces, mounts and bindings, with a
+  `default` namespace on the OS keychain. No command writes secret bytes to its output; a value
+  comes from a hidden prompt, a pipe or a protected file, never an argument.
+- **Also planned.** The verified principal on every audit event.
 - **Not planned.** HashiCorp Vault as a backend, namespace-wide secrets without an owner, and an
   external authorization service.
 

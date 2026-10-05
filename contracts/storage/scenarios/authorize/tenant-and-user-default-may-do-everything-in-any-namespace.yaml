@@ -1,0 +1,103 @@
+# story:local-authorizer, "every action is allowed for tenant `default` and user `default` in any
+# namespace": every command, so every action the authorizer decides (read, write, delete, list,
+# manage-namespace), succeeds in a namespace other than `default`.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: tenant-and-user-default-may-do-everything-in-any-namespace
+summary: The local user runs every storage command to success in a namespace of its own.
+timeline:
+- at: '2026-10-05T16:00:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: team.a-1}
+  outcome: added
+  events:
+  - event: secrets.storage.NamespaceAdded
+    payload:
+      namespace: {tenant: default, namespace: team.a-1}
+- at: '2026-10-05T16:00:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team.a-1, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T16:00:02Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team.a-1, user: default}
+      name: openai
+  outcome: read
+- at: '2026-10-05T16:00:03Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: default, namespace: team.a-1, user: default}
+  outcome: listed
+- at: '2026-10-05T16:00:04Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team.a-1, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: renamed
+  events:
+  - event: secrets.storage.SecretRenamed
+    payload:
+      address:
+        scope: {tenant: default, namespace: team.a-1, user: default}
+        name: openai
+      new_name: openai-work
+- at: '2026-10-05T16:00:05Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team.a-1, user: default}
+      name: openai-work
+  outcome: deleted
+- at: '2026-10-05T16:00:06Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team.a-1, user: default}
+      name: openai
+    locator: op://Work/OpenAI/credential
+  outcome: bound
+- at: '2026-10-05T16:00:07Z'
+  command: secrets.storage.Unbind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: team.a-1, user: default}
+      name: openai
+  outcome: unbound
+- at: '2026-10-05T16:00:08Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: team.a-1}
+    mount: {kind: keychain, label: team}
+  outcome: set
+- at: '2026-10-05T16:00:09Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: team.a-1}
+  outcome: removed
+  events:
+  - event: secrets.storage.NamespaceRemoved
+    payload:
+      namespace: {tenant: default, namespace: team.a-1}
+assert:
+- view: secrets.storage.Namespaces
+  excludes:
+    namespace: {tenant: default, namespace: team.a-1}
