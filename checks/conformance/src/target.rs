@@ -38,6 +38,10 @@ pub enum Component {
     /// The in-process storage library (`secrets.storage`).
     #[value(name = "secrets-library")]
     Library,
+    /// The storage library behind the `secretsctl` binary (story:local-cli), answering a suite
+    /// synthesized for `secrets-library`.
+    #[value(name = "secretsctl")]
+    Cli,
 }
 
 impl Component {
@@ -45,6 +49,23 @@ impl Component {
         match self {
             Self::Service => "secrets-service",
             Self::Library => "secrets-library",
+            Self::Cli => "secretsctl",
+        }
+    }
+
+    /// The specification component the suite is synthesized for.
+    pub const fn specified(self) -> &'static str {
+        match self {
+            Self::Service => "secrets-service",
+            Self::Library | Self::Cli => "secrets-library",
+        }
+    }
+
+    /// The authored scenarios synthesis compiles beside the generated ones.
+    pub const fn scenarios(self) -> &'static str {
+        match self {
+            Self::Service | Self::Library => "contracts",
+            Self::Cli => "contracts/storage/scenarios/cli",
         }
     }
 }
@@ -137,6 +158,7 @@ fn unsupported(what: &str) -> TargetError {
 enum Open {
     Service(Scenario),
     Library(crate::storage::World),
+    Cli(crate::cli::World),
 }
 
 pub struct SecretsTarget {
@@ -191,6 +213,9 @@ impl SecretsTarget {
             Some(Open::Library(world)) => world
                 .close(&self.runtime, &self.admin)
                 .map_err(|error| unavailable("dropping the scenario's storage world", error))?,
+            Some(Open::Cli(world)) => world
+                .close(&self.runtime, &self.admin)
+                .map_err(|error| unavailable("dropping the scenario's CLI world", error))?,
             None => {}
         }
         Ok(())
@@ -233,6 +258,17 @@ impl SecretsTarget {
                     .find_map(|domain| (domain.command)(&mut context, command, input))
                     .ok_or_else(|| unsupported(command))?
             }
+            Some(Open::Cli(world)) => {
+                let mut context = crate::cli::CliContext {
+                    runtime: &self.runtime,
+                    admin: &self.admin,
+                    world,
+                    forced,
+                    actor,
+                };
+                crate::cli::command(&mut context, command, input)
+                    .ok_or_else(|| unsupported(command))?
+            }
             None => Err(unavailable("executing a command", "no scenario is open")),
         }
     }
@@ -268,6 +304,16 @@ impl SecretsTarget {
                     .find_map(|domain| (domain.view)(&mut context, view))
                     .ok_or_else(|| unsupported(view))?
             }
+            Some(Open::Cli(world)) => {
+                let mut context = crate::cli::CliContext {
+                    runtime: &self.runtime,
+                    admin: &self.admin,
+                    world,
+                    forced: None,
+                    actor: None,
+                };
+                crate::cli::view(&mut context, view).ok_or_else(|| unsupported(view))?
+            }
             None => Err(unavailable("reading a view", "no scenario is open")),
         }
     }
@@ -291,6 +337,10 @@ impl ConformanceTarget for SecretsTarget {
             Component::Library => Open::Library(
                 crate::storage::World::open()
                     .map_err(|error| unavailable("opening the scenario's storage world", error))?,
+            ),
+            Component::Cli => Open::Cli(
+                crate::cli::World::open()
+                    .map_err(|error| unavailable("opening the scenario's CLI world", error))?,
             ),
         };
         self.open.replace(Some(open));

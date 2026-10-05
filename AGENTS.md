@@ -49,8 +49,10 @@ whose port `secrets-core` implements (`secrets_core::storage`), with the local a
 (`secrets-keychain`) and remote (`secrets-remote`) backends. Change the specification first, then
 the code.
 
-- `contracts/suite.json` (`secrets-service`), `contracts/storage-suite.json` (`secrets-library`)
-  and `contracts/schema/` are generated; `task conformance` fails on drift. Regenerate with the
+- `contracts/suite.json` (`secrets-service`), `contracts/storage-suite.json` (`secrets-library`),
+  `contracts/cli-suite.json` (`secrets-library` with the authored scenarios under
+  `contracts/storage/scenarios/cli`) and `contracts/schema/` are generated; `task conformance`
+  fails on drift. Regenerate with the
   exact arguments in `checks/conformance/src/gate.rs`.
 - The runner (`checks/conformance/`) sends every custody command through the real router and
   store, and every storage command through the composed storage stack in process, and reads the
@@ -58,9 +60,19 @@ the code.
   from the suite. The stack is composed in `checks/conformance/src/storage.rs`: keychain on a
   mock store, remote against an in-process custody service, recording fakes for read-only and
   faulting mounts. A 1Password mount is unsupported.
+- The CLI suite runs through the built `secretsctl` (`checks/conformance/src/cli.rs`): the runner
+  builds it with feature `test-hooks` in a target directory of its own (`secretsctl-conformance`),
+  gives each scenario its own `XDG_CONFIG_HOME` under `target/conformance/cli` and a file-backed
+  keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`), and reads the branch from the exit status, the JSON
+  refusal and the world before the command. What ESS cannot state (no value on stdout or stderr,
+  a value in argv refused, `put`'s sources, the configuration file's mode, an inert test hook in
+  a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`, `review_invariants.rs`,
+  `review_default_build.rs`).
 - `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
-  `contracts/storage-baseline.json` holds the library's: 95 answered, at most 1 unsupported (the
-  1Password mount). Every authored scenario must pass. Raise a floor or lower a ceiling when the
+  `contracts/storage-baseline.json` holds the library's: 107 answered, at most 1 unsupported (the
+  1Password mount). `contracts/cli-baseline.json` holds the CLI's: 61 answered, at most 28
+  unsupported (a scope other than tenant and user `default`, `Read`, a read-only or 1Password
+  mount). Every authored scenario must pass. Raise a floor or lower a ceiling when the
   suite grows; never the reverse to pass.
 - Every authored scenario under `contracts/*/scenarios/` is listed in `contracts/ess-inputs.yaml`.
 

@@ -1,0 +1,66 @@
+# story:local-cli, `mount set`. `no-backend` and `in-use` are forced: the runner leaves
+# `keychain/nowhere` unconfigured, and the namespace already holds the secret written after the
+# first mount. Through the CLI target a configured keychain label is a `[backends.keychain.*]`
+# entry of the scenario's `config.toml`.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: mount-set-moves-a-namespace-to-another-backend
+summary: Mount set moves an empty namespace to a configured backend, and refuses an unconfigured one and a namespace that holds secrets.
+timeline:
+- at: '2026-10-05T16:08:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: added
+- at: '2026-10-05T16:08:01Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+    mount: {kind: keychain, label: alt}
+  outcome: set
+  events:
+  - event: secrets.storage.MountSet
+    payload:
+      namespace: {tenant: default, namespace: work}
+      mount: {kind: keychain, label: alt}
+- at: '2026-10-05T16:08:02Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+    mount: {kind: keychain, label: nowhere}
+  outcome: no-backend
+  error:
+    name: secrets.storage.NotFound
+  no_events: [secrets.storage.MountSet]
+- at: '2026-10-05T16:08:03Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T16:08:04Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+    mount: {kind: keychain, label: default}
+  outcome: in-use
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.MountSet]
+assert:
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: work}
+    mount: {kind: keychain, label: alt}
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai

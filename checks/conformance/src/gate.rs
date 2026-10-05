@@ -11,8 +11,9 @@ use std::{
 use crate::target::Component;
 
 /// Every component this runner answers: its suite and the baseline its runs are held to. Each
-/// suite holds only its own component's scenarios; the other's are outside it.
-const SUITES: [(Component, &str, &str); 2] = [
+/// suite holds only its own component's scenarios; the other's are outside it. The CLI suite is
+/// the library's generated scenarios with the authored CLI scenarios, run through `secretsctl`.
+const SUITES: [(Component, &str, &str); 3] = [
     (
         Component::Service,
         "contracts/suite.json",
@@ -22,6 +23,11 @@ const SUITES: [(Component, &str, &str); 2] = [
         Component::Library,
         "contracts/storage-suite.json",
         "contracts/storage-baseline.json",
+    ),
+    (
+        Component::Cli,
+        "contracts/cli-suite.json",
+        "contracts/cli-baseline.json",
     ),
 ];
 
@@ -128,6 +134,12 @@ pub fn check() -> Result<(), Box<dyn Error>> {
     every_authored_scenario_is_declared()?;
     // A unique projection directory keeps stale generated files from masking drift.
     let projection = format!("target/conformance/projection-{}", std::process::id());
+    // A process id repeats across CI runs, and a restored `target/` cache can hold that run's
+    // directory with its ESS ownership state pruned, which ESS refuses to write into.
+    match fs::remove_dir_all(&projection) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
+        _ => {}
+    }
     fs::create_dir_all(&projection)?;
     for (component, committed, _) in SUITES {
         let suite = format!("{projection}/{}.json", component.name());
@@ -190,9 +202,9 @@ fn synthesize(component: Component, out: &str) -> Result<(), Box<dyn Error>> {
         "--target",
         "ir",
         "--component",
-        component.name(),
+        component.specified(),
         "--scenarios",
-        "contracts",
+        component.scenarios(),
         "--out",
         out,
     ])

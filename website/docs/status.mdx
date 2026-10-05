@@ -52,6 +52,8 @@ backends behind one interface. It is the `secrets.storage` domain of the
   delete, rename; list metadata, never a value. The local authorizer allows tenant and user
   `default` and denies every other before any backend call. Errors are closed codes: `not-found`,
   `denied`, `unsupported`, `unavailable`, `invalid-name`, `too-large`, `conflict`.
+- **Local CLI.** `secretsctl` runs these operations on this machine and never prints a value; see
+  [Getting started](./getting-started.md#local-cli).
 
 ## Planned: named secrets over several backends
 
@@ -61,9 +63,6 @@ Nothing in this section is built; names and limits may change before it ships.
 
 - **1Password.** A read-only backend; a name is bound to a locator such as
   `op://<vault>/<item>/<field>` before it is read.
-- **Local CLI.** `secretsctl` gains commands for names, namespaces, mounts and bindings, with a
-  `default` namespace on the OS keychain. No command writes secret bytes to its output; a value
-  comes from a hidden prompt, a pipe or a protected file, never an argument.
 - **Also planned.** The verified principal on every audit event.
 - **Not planned.** HashiCorp Vault as a backend, namespace-wide secrets without an owner, and an
   external authorization service.

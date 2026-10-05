@@ -186,10 +186,10 @@ entities:
               - exists: {in: capabilities, as: c, that: c == write}
               - exists: {in: capabilities, as: c, that: c == delete}
               - exists: {in: capabilities, as: c, that: c == list}
-    # DEFERRED: story:local-cli. How a backend instance is configured (registered under a kind and
-    # label) is its local config file; no command here creates one. Until one does, no synthesized
-    # scenario checks the two invariants above: the mutation audit (2026-09-27) weakened the first
-    # and no scenario changed.
+    # DECIDED by story:local-cli (2026-10-05): a backend instance is configured under its kind and
+    # label in the local CLI's config file (`[backends.<kind>.<label>]`), never by a command, so no
+    # synthesized scenario checks the two invariants above: the mutation audit (2026-09-27) weakened
+    # the first and no scenario changed.
     lifecycle:
       initial: Present
       states: [Present]
@@ -296,8 +296,8 @@ errors:
 # DECIDED 2026-09-27: the authorizer decides first, so a denied caller learns nothing about a
 # name; `name-too-long` (AddNamespace included), `new-name-too-long` and `is-default` conjoin
 # the admitted scope (tenant and user `default`) and no longer overlap a denial.
-# DEFERRED: story:local-cli. It lists a `describe` command; no command or view here describes one
-# secret, and what describe returns is decided with that command.
+# DECIDED by story:local-cli (2026-10-05): `describe` is the SecretMetadata row of one name (name,
+# scope, version) with the backend the namespace is mounted on; it is a reading, not a command.
 commands:
   - name: secrets.storage.AddNamespace
     input:

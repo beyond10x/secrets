@@ -1,0 +1,66 @@
+# story:local-cli, `namespace remove`. `in-use` is forced and holds already: the namespace has the
+# secret written before it. `is-default` is a guard and is not forced. Through the CLI target a
+# `conflict` for namespace `default` is `is-default` and any other is `in-use`.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: namespace-remove-refuses-default-and-a-namespace-in-use
+summary: Namespace remove removes an empty namespace, and refuses namespace default and a namespace that holds a secret.
+timeline:
+- at: '2026-10-05T16:07:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: added
+- at: '2026-10-05T16:07:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T16:07:02Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: in-use
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NamespaceRemoved]
+- at: '2026-10-05T16:07:03Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+  outcome: deleted
+- at: '2026-10-05T16:07:04Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: removed
+  events:
+  - event: secrets.storage.NamespaceRemoved
+    payload:
+      namespace: {tenant: default, namespace: work}
+- at: '2026-10-05T16:07:05Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: default}
+  outcome: is-default
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NamespaceRemoved]
+assert:
+- view: secrets.storage.Namespaces
+  excludes:
+    namespace: {tenant: default, namespace: work}
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: default}
