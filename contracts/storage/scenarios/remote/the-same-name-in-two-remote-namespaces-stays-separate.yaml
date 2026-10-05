@@ -1,0 +1,72 @@
+# story:remote-backend, "two tenants and two users holding the same name stay separate", for two
+# namespaces on the one custody service: each address maps to its own custody reference. The second
+# `created` is forced, and the runner refuses to arrange it while custody already holds the name.
+# Two tenants and two users cannot be claimed through the composed stack, whose local authorizer
+# denies both before custody is reached; `crates/secrets-remote/tests/isolation.rs` guards them.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: the-same-name-in-two-remote-namespaces-stays-separate
+summary: One name written in two namespaces on the custody service is two secrets, and deleting one leaves the other.
+timeline:
+- at: '2026-10-05T14:10:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: vault}
+    mount: {kind: remote, label: custody}
+  outcome: added
+- at: '2026-10-05T14:10:01Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: archive}
+    mount: {kind: remote, label: custody}
+  outcome: added
+- at: '2026-10-05T14:10:02Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    value: dmF1bHQ=
+  outcome: created
+- at: '2026-10-05T14:10:03Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: archive, user: default}
+      name: openai
+    value: YXJjaGl2ZQ==
+  outcome: created
+- at: '2026-10-05T14:10:04Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: deleted
+- at: '2026-10-05T14:10:05Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: not-found
+  error:
+    name: secrets.storage.NotFound
+assert:
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: archive, user: default}
+      name: openai
+    state: Stored
+- view: secrets.storage.SecretMetadata
+  excludes:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai

@@ -284,7 +284,7 @@ errors:
     summary: A name is not a valid SecretName or ScopeName.
   - name: secrets.storage.TooLarge
     naming: {wire: too-large}
-    summary: The secret value exceeds 1 MiB.
+    summary: The secret value exceeds 1 MiB, or what the resolved backend accepts.
   - name: secrets.storage.Conflict
     naming: {wire: conflict}
     summary: The command collides with an existing record.
@@ -489,8 +489,12 @@ commands:
       # Decided by the coordinator 2026-09-27: at most 1 MiB (1048576 bytes).
       # ESS-LIMIT: no `.count` over Bytes; external because `value.count` is refused (`cannot select count from
       # Bytes`, ess 0.35.0 and 0.36.0), so the bound cannot be a guard.
+      # Decided by the coordinator 2026-10-05: a backend may accept less. The remote backend holds
+      # at most about 768 KiB (`secrets_remote::max_value_bytes`): the custody service refuses a
+      # request body over 1 MiB and the value travels base64-encoded inside it, with room left for
+      # the batch a rename sends. It refuses a larger value without a request.
       - name: too-large
-        external: the value is longer than 1048576 bytes
+        external: the value is longer than 1048576 bytes, or than the resolved backend accepts
         error: secrets.storage.TooLarge
       - name: unresolved
         external: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called

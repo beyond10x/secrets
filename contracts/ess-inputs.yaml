@@ -15,3 +15,17 @@ scenarios:
 - storage/scenarios/port/a-new-name-of-129-bytes-is-too-long.yaml
 - storage/scenarios/port/a-segment-of-65-bytes-is-an-invalid-name.yaml
 - storage/scenarios/port/a-value-above-one-mib-is-too-large.yaml
+- storage/scenarios/keychain/a-keychain-fault-is-unavailable.yaml
+- storage/scenarios/keychain/a-keychain-secret-round-trips.yaml
+- storage/scenarios/keychain/the-same-name-in-two-namespaces-stays-separate.yaml
+- storage/scenarios/remote/a-custody-failure-is-unavailable.yaml
+- storage/scenarios/remote/a-remote-secret-round-trips.yaml
+- storage/scenarios/remote/a-value-the-custody-service-cannot-carry-is-too-large.yaml
+- storage/scenarios/remote/the-same-name-in-two-remote-namespaces-stays-separate.yaml
+- storage/scenarios/federation/a-name-in-a-namespace-that-does-not-exist-is-unresolved.yaml
+- storage/scenarios/federation/changes-on-a-read-only-mount-are-unsupported.yaml
+- storage/scenarios/federation/conflicts-the-specification-names.yaml
+- storage/scenarios/federation/each-namespace-routes-to-its-own-mount.yaml
+- storage/scenarios/authorize/a-second-tenant-is-denied-before-any-backend.yaml
+- storage/scenarios/authorize/a-second-user-is-denied-before-any-backend.yaml
+- storage/scenarios/authorize/tenant-and-user-default-may-do-everything-in-any-namespace.yaml

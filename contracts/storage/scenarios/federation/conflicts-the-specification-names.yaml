@@ -1,0 +1,163 @@
+# story:mount-federation, "SetMount, RemoveNamespace, Bind and Rename give `conflict` in the cases
+# the spec names". `exists`, `in-use`, `already-bound`, `bound` and `taken` are external and forced;
+# the runner adds only what each condition names and nothing the scenario already holds. Routing's
+# `bound` is told from the backend's `taken` by whether the rename reached a backend. Renaming onto a
+# bound name cannot be told apart here (forcing `bound` binds the source); the Rust test
+# `renaming_a_bound_name_or_onto_a_bound_name_is_conflict_and_no_backend_renames` guards it.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: conflicts-the-specification-names
+summary: Adding an existing namespace, moving or removing one that holds secrets, binding twice, renaming a bound name and renaming onto a stored name are conflicts.
+timeline:
+- at: '2026-10-05T15:20:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: added
+- at: '2026-10-05T15:20:01Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: exists
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NamespaceAdded]
+- at: '2026-10-05T15:20:02Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T15:20:03Z'
+  command: secrets.storage.SetMount
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+    mount: {kind: keychain, label: other}
+  outcome: in-use
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.MountSet]
+- at: '2026-10-05T15:20:04Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+  outcome: in-use
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NamespaceRemoved]
+- at: '2026-10-05T15:20:05Z'
+  command: secrets.storage.RemoveNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: default}
+  outcome: is-default
+  error:
+    name: secrets.storage.Conflict
+- at: '2026-10-05T15:20:06Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    locator: op://Work/OpenAI/credential
+  outcome: bound
+- at: '2026-10-05T15:20:07Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    locator: op://Work/OpenAI/other
+  outcome: already-bound
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NameBound]
+- at: '2026-10-05T15:20:08Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: bound
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.SecretRenamed]
+- at: '2026-10-05T15:20:09Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: anthropic
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T15:20:10Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: gemini
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T15:20:11Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: anthropic
+    new_name: gemini
+  outcome: taken
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.SecretRenamed]
+- at: '2026-10-05T15:20:12Z'
+  command: secrets.storage.Unbind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+  outcome: unbound
+- at: '2026-10-05T15:20:13Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+  outcome: deleted
+assert:
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: work}
+    state: Present
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: anthropic
+    state: Stored
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: gemini
+    state: Stored
+- view: secrets.storage.SecretMetadata
+  excludes:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai

@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:remote-backend
 kind: story
-status: active
+status: implemented
 title: The custody service is a storage backend
 relations:
 - decomposes: epic:named-federated-storage
@@ -27,10 +27,11 @@ scope:
   path: crates/secrets-remote
 - confidence: cited
   path: spec/domains/storage.yaml
-revision: 11
+revision: 13
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 10, decided_on: {"recorded":{"review_outcome":1}}}
 - {from: "proposed", to: "active", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 11, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "active", to: "implemented", at: "2026-10-05T11:16:37Z", actor: "human:timo", revision: 13, decided_on: {"recorded":{"test_result":1,"review_outcome":1}}}
 ---
 ## Context
 
@@ -80,3 +81,41 @@ reference `{tenant, namespace, key = "<user>/<name>"}`, with the scope's user as
 - This story updates the `BackendKind` comment in `spec/domains/storage.yaml` to this mapping.
 - Tests reach the custody service without network by serving the conformance fixture's router on
   `127.0.0.1:0` and pointing `secrets_client::Client` at it, with tokens from the fixture.
+
+## Guards
+
+Authored `ess-scenario/1` under `contracts/storage/scenarios/remote`, run by `checks/conformance`
+(`secrets-library`) through the composed stack, with a namespace mounted on `remote/custody`: the
+remote backend over `secrets_client::Client` against the shipped router and PostgreSQL store,
+served on `127.0.0.1:0` per scenario, with a workload token of tenant `default`.
+
+- `a-remote-secret-round-trips`: add the namespace, write (created, then replaced), read, list,
+  rename to a `/` name, delete, and the forced `not-found` after each move; Namespaces shows the
+  mount and SecretMetadata what remains
+- `the-same-name-in-two-remote-namespaces-stays-separate`: one name in two namespaces on one
+  custody service is two records
+- `a-custody-failure-is-unavailable`: the custody database refuses connections for one command at a
+  time; write, read, delete and list answer `unavailable`, and the secret survives
+- `a-value-the-custody-service-cannot-carry-is-too-large`: a 1 MiB value, which the port accepts,
+  is `too-large` on the remote mount (`spec/domains/storage.yaml`, Write `too-large`, decided
+  2026-10-05) and stores nothing
+
+Falsification (2026-10-05): bounding `write` in `crates/secrets-remote/src/lib.rs` by the port's
+1 MiB instead of `max_value_bytes()` fails `a-value-the-custody-service-cannot-carry-is-too-large`;
+the file was restored byte for byte (sha256 `b2250aa4…0b662` before and after).
+
+ESS cannot express these, so Rust tests in `crates/secrets-remote` guard them:
+
+- each address maps to `{tenant, namespace, key = "<user>/<name>"}` with the user as owner: a
+  library scenario cannot read the custody component's records;
+  `a_write_lands_on_the_user_prefixed_reference_with_the_user_as_owner`,
+  `a_custody_record_under_the_user_prefix_is_that_user_s_secret`,
+  `an_address_maps_to_the_user_prefixed_key_and_back`
+- two tenants and two users stay separate: the local authorizer denies both before the backend;
+  `two_users_holding_the_same_name_stay_separate`, `two_tenants_holding_the_same_name_stay_separate`,
+  `a_listing_keeps_only_keys_under_the_user_s_prefix`
+- no response text in the error: `a_5xx_answer_is_unavailable_and_repeats_none_of_its_body`,
+  `a_service_nobody_answers_for_is_unavailable`, `an_unreadable_success_body_is_unavailable`
+- a read returns the bytes written, and the largest value round-trips:
+  `write_read_list_and_delete_round_trip`,
+  `the_largest_value_the_service_takes_round_trips_and_one_byte_more_is_too_large`

@@ -1,0 +1,83 @@
+# story:remote-backend, "a service failure surfaces as `unavailable` with no response text". Each
+# forced `unavailable` makes the custody service's database refuse every connection for that one
+# command, so the service answers 503 and the remote backend's own mapping is what answers. The
+# error declares no field, so no response text can be claimed; that none reaches the error is
+# guarded by `crates/secrets-remote/tests/unavailable.rs`.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-custody-failure-is-unavailable
+summary: A custody service that cannot reach its database makes a write, read, delete and listing unavailable, and the secret survives.
+timeline:
+- at: '2026-10-05T14:20:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: vault}
+    mount: {kind: remote, label: custody}
+  outcome: added
+- at: '2026-10-05T14:20:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+  no_events: [secrets.storage.SecretWritten]
+- at: '2026-10-05T14:20:02Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T14:20:03Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+- at: '2026-10-05T14:20:04Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+  no_events: [secrets.storage.SecretDeleted]
+- at: '2026-10-05T14:20:05Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: default, namespace: vault, user: default}
+  outcome: unavailable
+  error:
+    name: secrets.storage.Unavailable
+  no_events: [secrets.storage.MetadataListed]
+- at: '2026-10-05T14:20:06Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+  outcome: read
+assert:
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: vault, user: default}
+      name: openai
+    state: Stored

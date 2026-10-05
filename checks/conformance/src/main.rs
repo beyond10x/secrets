@@ -84,7 +84,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 /// that returned early would print the same exit status as one that ran.
 fn database_url() -> Result<String, Box<dyn Error>> {
     std::env::var("SECRETS_TEST_DATABASE_URL").map_err(|_| {
-        "SECRETS_TEST_DATABASE_URL is unset; the custody suite runs against PostgreSQL and is \
+        "SECRETS_TEST_DATABASE_URL is unset; both suites run against PostgreSQL and are \
          refused rather than skipped"
             .into()
     })
@@ -98,12 +98,9 @@ fn execute(
     revision: &str,
 ) -> Result<(), Box<dyn Error>> {
     let suite = AdmittedSuite::from_json(&fs::read_to_string(suite_path)?)?;
-    // The library runs in this process; only the service needs a database.
-    let database = match component {
-        target::Component::Service => Some(database_url()?),
-        target::Component::Library => None,
-    };
-    let target = target::SecretsTarget::new(component, revision.to_owned(), database.as_deref())?;
+    // Every service scenario gets its own database; a library scenario gets one when it mounts the
+    // remote backend, whose custody service runs over it.
+    let target = target::SecretsTarget::new(component, revision.to_owned(), &database_url()?)?;
     let clock = EvidenceClock {
         epoch_ms: u64::try_from(SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis())?,
         started: Instant::now(),

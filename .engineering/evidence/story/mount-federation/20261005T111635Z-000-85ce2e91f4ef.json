@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-05T11:16:35Z",
+  "actor": "human:timo",
+  "artifact": "story:mount-federation",
+  "kind": "story",
+  "revision": 10,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check exit 0 (2026-10-05, c81627f): secrets-service conformance 111 total, 111 passed x3; secrets-library conformance 96 total, 95 passed, 1 unsupported (SetMount to a 1Password mount), 0 failed, 0 error, 0 skipped x3 against contracts/storage-baseline.json; 146 Rust tests passed; contracts/storage/scenarios/federation 4/4 authored scenarios passed; falsification of mount resolution failed 15 scenarios including each-namespace-routes-to-its-own-mount, source restored byte for byte"
+  }
+}

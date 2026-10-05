@@ -4,8 +4,9 @@
 //! or [`LIBRARY_DOMAINS`], not an edit to a shared function.
 //!
 //! Two components are answered. `secrets-service` runs each scenario in its own PostgreSQL
-//! database behind the shipped router; `secrets-library` runs in this process against
-//! `secrets-core` and needs no database.
+//! database behind the shipped router; `secrets-library` runs in this process against the
+//! composed storage stack ([`crate::storage`]), and opens a scenario database only when a
+//! scenario mounts the remote backend, whose custody service it serves on a loopback port.
 //!
 //! Only returned production facts are retained. This target never reads the suite, its expected
 //! assertions, or a scenario name to determine an answer.
@@ -82,8 +83,12 @@ pub struct Context<'a> {
 }
 
 /// What a library domain module is handed for one command or read. The library runs in this
-/// process, so there is no database and no credential.
-pub struct LibraryContext {
+/// process: the scenario's world is the storage stack and what is mounted in it, and the database
+/// server is there for a custody service a scenario mounts as the remote backend.
+pub struct LibraryContext<'a> {
+    pub runtime: &'a tokio::runtime::Runtime,
+    pub admin: &'a Admin,
+    pub world: &'a mut crate::storage::World,
     /// The outcome the scenario forced for this invocation, when it forced one.
     pub forced: Option<String>,
     /// The actor the scenario sends this command as, when it names one.
@@ -103,11 +108,14 @@ pub struct Domain {
 }
 
 /// A library domain's answer to a command: `None` when the domain does not own it.
-pub type LibraryCommandAnswer =
-    fn(&mut LibraryContext, &str, &BTreeMap<String, Node>) -> Option<Result<Observed, TargetError>>;
+pub type LibraryCommandAnswer = fn(
+    &mut LibraryContext<'_>,
+    &str,
+    &BTreeMap<String, Node>,
+) -> Option<Result<Observed, TargetError>>;
 /// A library domain's answer to a read: `None` when the domain does not own the view.
 pub type LibraryViewAnswer =
-    fn(&mut LibraryContext, &str) -> Option<Result<Vec<ViewRow>, TargetError>>;
+    fn(&mut LibraryContext<'_>, &str) -> Option<Result<Vec<ViewRow>, TargetError>>;
 
 /// One library domain's answers.
 pub struct LibraryDomain {
@@ -125,18 +133,20 @@ fn unsupported(what: &str) -> TargetError {
     TargetError::unsupported(what, "no domain module of this target answers it")
 }
 
-/// The service's database server and the scenario database currently open on it.
-struct Service {
-    admin: Admin,
-    scenario: RefCell<Option<Scenario>>,
+/// What one scenario runs against: its own service database, or its own storage world.
+enum Open {
+    Service(Scenario),
+    Library(crate::storage::World),
 }
 
 pub struct SecretsTarget {
     component: Component,
     version: String,
     runtime: tokio::runtime::Runtime,
-    /// Present for `secrets-service` only.
-    service: Option<Service>,
+    /// The database server: every service scenario's database, and a library scenario's when it
+    /// mounts the remote backend.
+    admin: Admin,
+    open: RefCell<Option<Open>>,
     forced: RefCell<Option<OutcomeRef>>,
     token: RefCell<Option<ConsistencyToken>>,
     sequence: Cell<u64>,
@@ -145,32 +155,23 @@ pub struct SecretsTarget {
 }
 
 impl SecretsTarget {
-    /// A target for `component`. `database_url` is required for `secrets-service` and unused for
-    /// `secrets-library`.
+    /// A target for `component` over the database server at `database_url`.
     pub fn new(
         component: Component,
         version: String,
-        database_url: Option<&str>,
+        database_url: &str,
     ) -> Result<Self, Box<dyn Error>> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
             .enable_all()
             .build()?;
-        let service = match component {
-            Component::Service => {
-                let url = database_url.ok_or("the service component needs a database")?;
-                Some(Service {
-                    admin: runtime.block_on(Admin::connect(url))?,
-                    scenario: RefCell::new(None),
-                })
-            }
-            Component::Library => None,
-        };
+        let admin = runtime.block_on(Admin::connect(database_url))?;
         Ok(Self {
             component,
             version,
             runtime,
-            service,
+            admin,
+            open: RefCell::new(None),
             forced: RefCell::new(None),
             token: RefCell::new(None),
             sequence: Cell::new(0),
@@ -182,12 +183,15 @@ impl SecretsTarget {
         self.forced.replace(None);
         self.token.replace(None);
         self.events.replace(Vec::new());
-        if let Some(service) = &self.service
-            && let Some(scenario) = service.scenario.replace(None)
-        {
-            self.runtime
-                .block_on(service.admin.close(scenario))
-                .map_err(|error| unavailable("dropping the scenario database", error))?;
+        match self.open.replace(None) {
+            Some(Open::Service(scenario)) => self
+                .runtime
+                .block_on(self.admin.close(scenario))
+                .map_err(|error| unavailable("dropping the scenario database", error))?,
+            Some(Open::Library(world)) => world
+                .close(&self.runtime, &self.admin)
+                .map_err(|error| unavailable("dropping the scenario's storage world", error))?,
+            None => {}
         }
         Ok(())
     }
@@ -200,15 +204,12 @@ impl SecretsTarget {
         actor: Option<String>,
         input: &BTreeMap<String, Node>,
     ) -> Result<Observed, TargetError> {
-        match &self.service {
-            Some(service) => {
-                let mut scenario = service.scenario.borrow_mut();
-                let scenario = scenario
-                    .as_mut()
-                    .ok_or_else(|| unavailable("executing a command", "no scenario is open"))?;
+        let mut open = self.open.borrow_mut();
+        match open.as_mut() {
+            Some(Open::Service(scenario)) => {
                 let mut context = Context {
                     runtime: &self.runtime,
-                    admin: &service.admin,
+                    admin: &self.admin,
                     scenario,
                     forced,
                     actor,
@@ -219,27 +220,31 @@ impl SecretsTarget {
                     .find_map(|domain| (domain.command)(&mut context, command, input))
                     .ok_or_else(|| unsupported(command))?
             }
-            None => {
-                let mut context = LibraryContext { forced, actor };
+            Some(Open::Library(world)) => {
+                let mut context = LibraryContext {
+                    runtime: &self.runtime,
+                    admin: &self.admin,
+                    world,
+                    forced,
+                    actor,
+                };
                 LIBRARY_DOMAINS
                     .iter()
                     .find_map(|domain| (domain.command)(&mut context, command, input))
                     .ok_or_else(|| unsupported(command))?
             }
+            None => Err(unavailable("executing a command", "no scenario is open")),
         }
     }
 
     /// The view's rows from the domain module that owns it.
     fn rows(&self, view: &str) -> Result<Vec<ViewRow>, TargetError> {
-        match &self.service {
-            Some(service) => {
-                let mut scenario = service.scenario.borrow_mut();
-                let scenario = scenario
-                    .as_mut()
-                    .ok_or_else(|| unavailable("reading a view", "no scenario is open"))?;
+        let mut open = self.open.borrow_mut();
+        match open.as_mut() {
+            Some(Open::Service(scenario)) => {
                 let mut context = Context {
                     runtime: &self.runtime,
-                    admin: &service.admin,
+                    admin: &self.admin,
                     scenario,
                     forced: None,
                     actor: None,
@@ -250,8 +255,11 @@ impl SecretsTarget {
                     .find_map(|domain| (domain.view)(&mut context, view))
                     .ok_or_else(|| unsupported(view))?
             }
-            None => {
+            Some(Open::Library(world)) => {
                 let mut context = LibraryContext {
+                    runtime: &self.runtime,
+                    admin: &self.admin,
+                    world,
                     forced: None,
                     actor: None,
                 };
@@ -260,6 +268,7 @@ impl SecretsTarget {
                     .find_map(|domain| (domain.view)(&mut context, view))
                     .ok_or_else(|| unsupported(view))?
             }
+            None => Err(unavailable("reading a view", "no scenario is open")),
         }
     }
 }
@@ -273,13 +282,18 @@ impl ConformanceTarget for SecretsTarget {
     }
     fn begin_scenario(&self, _: &ScenarioContext) -> Result<(), TargetError> {
         self.close()?;
-        if let Some(service) = &self.service {
-            let scenario = self
-                .runtime
-                .block_on(service.admin.open())
-                .map_err(|error| unavailable("creating the scenario database", error))?;
-            service.scenario.replace(Some(scenario));
-        }
+        let open = match self.component {
+            Component::Service => Open::Service(
+                self.runtime
+                    .block_on(self.admin.open())
+                    .map_err(|error| unavailable("creating the scenario database", error))?,
+            ),
+            Component::Library => Open::Library(
+                crate::storage::World::open()
+                    .map_err(|error| unavailable("opening the scenario's storage world", error))?,
+            ),
+        };
+        self.open.replace(Some(open));
         Ok(())
     }
     fn end_scenario(&self, _: &ScenarioContext) -> Result<(), TargetError> {

@@ -1,0 +1,53 @@
+# story:mount-federation, "write, delete and rename on a read-only mount are `unsupported`". Each
+# `unsupported` is forced: the runner mounts the namespace on a read-only recording fake (the
+# capability row the specification gives kind `onepassword`). Routing must refuse before calling
+# it; the runner reads `unsupported` only when no backend was reached.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: changes-on-a-read-only-mount-are-unsupported
+summary: A write, a delete, a rename and a listing on a read-only mount are unsupported and reach no backend.
+timeline:
+- at: '2026-10-05T15:10:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: shared, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: unsupported
+  error:
+    name: secrets.storage.Unsupported
+  no_events: [secrets.storage.SecretWritten]
+- at: '2026-10-05T15:10:01Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: shared, user: default}
+      name: openai
+  outcome: unsupported
+  error:
+    name: secrets.storage.Unsupported
+  no_events: [secrets.storage.SecretDeleted]
+- at: '2026-10-05T15:10:02Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: shared, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: unsupported
+  error:
+    name: secrets.storage.Unsupported
+  no_events: [secrets.storage.SecretRenamed]
+- at: '2026-10-05T15:10:03Z'
+  command: secrets.storage.ListMetadata
+  actor: secrets.storage.LocalUser
+  input:
+    scope: {tenant: default, namespace: shared, user: default}
+  outcome: unsupported
+  error:
+    name: secrets.storage.Unsupported
+  no_events: [secrets.storage.MetadataListed]

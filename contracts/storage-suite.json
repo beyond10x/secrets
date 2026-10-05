@@ -1,11 +1,25 @@
 {
   "coverage": {
     "authored": [
+      "secrets.storage/authored/a-custody-failure-is-unavailable",
+      "secrets.storage/authored/a-keychain-fault-is-unavailable",
+      "secrets.storage/authored/a-keychain-secret-round-trips",
+      "secrets.storage/authored/a-name-in-a-namespace-that-does-not-exist-is-unresolved",
       "secrets.storage/authored/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check",
       "secrets.storage/authored/a-name-of-129-bytes-is-too-long",
       "secrets.storage/authored/a-new-name-of-129-bytes-is-too-long",
+      "secrets.storage/authored/a-remote-secret-round-trips",
+      "secrets.storage/authored/a-second-tenant-is-denied-before-any-backend",
+      "secrets.storage/authored/a-second-user-is-denied-before-any-backend",
       "secrets.storage/authored/a-segment-of-65-bytes-is-an-invalid-name",
-      "secrets.storage/authored/a-value-above-one-mib-is-too-large"
+      "secrets.storage/authored/a-value-above-one-mib-is-too-large",
+      "secrets.storage/authored/a-value-the-custody-service-cannot-carry-is-too-large",
+      "secrets.storage/authored/changes-on-a-read-only-mount-are-unsupported",
+      "secrets.storage/authored/conflicts-the-specification-names",
+      "secrets.storage/authored/each-namespace-routes-to-its-own-mount",
+      "secrets.storage/authored/tenant-and-user-default-may-do-everything-in-any-namespace",
+      "secrets.storage/authored/the-same-name-in-two-namespaces-stays-separate",
+      "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate"
     ],
     "authored_sources": {
       "adversary-w2/scenarios/a-put-with-a-255-byte-key-is-created.yaml": {
@@ -48,6 +62,56 @@
         "disposition": "accepted",
         "scenario": "secrets.custody/authored/secret-metadata-carries-its-timestamps"
       },
+      "storage/scenarios/authorize/a-second-tenant-is-denied-before-any-backend.yaml": {
+        "digest": "sha256:bb25cd4604f6c2367cd668bb24160ec0dfc56eb539971428e4b1705a521b0d36",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-second-tenant-is-denied-before-any-backend"
+      },
+      "storage/scenarios/authorize/a-second-user-is-denied-before-any-backend.yaml": {
+        "digest": "sha256:e37214e840c98ef16d1f2016254d1f74c43737956aaa3355fc0529fb0cb13200",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-second-user-is-denied-before-any-backend"
+      },
+      "storage/scenarios/authorize/tenant-and-user-default-may-do-everything-in-any-namespace.yaml": {
+        "digest": "sha256:417cc9256ad43d7ba527fbf488a3c74b096562338aa8b5e0ff137ad954744797",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/tenant-and-user-default-may-do-everything-in-any-namespace"
+      },
+      "storage/scenarios/federation/a-name-in-a-namespace-that-does-not-exist-is-unresolved.yaml": {
+        "digest": "sha256:cec49ce975ea878bc16419ce7f929d0b14112b56b4f523e0cd67a12fe0de53d7",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-name-in-a-namespace-that-does-not-exist-is-unresolved"
+      },
+      "storage/scenarios/federation/changes-on-a-read-only-mount-are-unsupported.yaml": {
+        "digest": "sha256:35f257310919c39b532a418c7af88da8c86bc87c4d041f7518d51ff287b667c7",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/changes-on-a-read-only-mount-are-unsupported"
+      },
+      "storage/scenarios/federation/conflicts-the-specification-names.yaml": {
+        "digest": "sha256:782f1377934908576a2a568b47f7ef6a3cce4edf451f447b516b1f003b2e2f31",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/conflicts-the-specification-names"
+      },
+      "storage/scenarios/federation/each-namespace-routes-to-its-own-mount.yaml": {
+        "digest": "sha256:586f5863002f737888118d69ec6ca51530110ba7bd87c6c17a88fc1c1824327c",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/each-namespace-routes-to-its-own-mount"
+      },
+      "storage/scenarios/keychain/a-keychain-fault-is-unavailable.yaml": {
+        "digest": "sha256:a05d884d319ab42e177e6f7f141048a0c4fa20f73132ec461052dd62df58a39f",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-keychain-fault-is-unavailable"
+      },
+      "storage/scenarios/keychain/a-keychain-secret-round-trips.yaml": {
+        "digest": "sha256:22fcdf6494615ed899aea25c018d65a905855c51c15dd5c9a71b971d9ea9a390",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-keychain-secret-round-trips"
+      },
+      "storage/scenarios/keychain/the-same-name-in-two-namespaces-stays-separate.yaml": {
+        "digest": "sha256:556b785ba98729340911c3bc3ac11c4315266412d4428f8a228faa3d15a3c110",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/the-same-name-in-two-namespaces-stays-separate"
+      },
       "storage/scenarios/port/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check.yaml": {
         "digest": "sha256:46bb0356d65f184220f3e305791283e7eb181f9e64bf6ca6f58378da4925d55c",
         "disposition": "accepted",
@@ -72,10 +136,30 @@
         "digest": "sha256:85f1114e53f0786d066f852654630abab59622321ff3226592f00fad28650847",
         "disposition": "accepted",
         "scenario": "secrets.storage/authored/a-value-above-one-mib-is-too-large"
+      },
+      "storage/scenarios/remote/a-custody-failure-is-unavailable.yaml": {
+        "digest": "sha256:fc01906b087b01f919f1a89d9dec08edbc0b22d09305c64408fdf46ab8bb3355",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-custody-failure-is-unavailable"
+      },
+      "storage/scenarios/remote/a-remote-secret-round-trips.yaml": {
+        "digest": "sha256:849a3dd4f370298c4a9ebb639332f43d3cf5a014c9a4a92039b89ce5f27257a2",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-remote-secret-round-trips"
+      },
+      "storage/scenarios/remote/a-value-the-custody-service-cannot-carry-is-too-large.yaml": {
+        "digest": "sha256:2b6bd9d15a510529fb689280eb7858cdcd13f528f3bb7c759dc744f830a0f79a",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-the-custody-service-cannot-carry-is-too-large"
+      },
+      "storage/scenarios/remote/the-same-name-in-two-remote-namespaces-stays-separate.yaml": {
+        "digest": "sha256:68b951c01ceedd96f76786f636bf1bafa621d2bc9d6ef697f7326b8940afa22c",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate"
       }
     },
     "counts": {
-      "authored": 5,
+      "authored": 19,
       "generated": 77,
       "outside": 111,
       "refused": 0
@@ -1785,8 +1869,8 @@
   },
   "provenance": {
     "component": "secrets-library",
-    "contract_digest": "a83f8b62aebf052ad2122672bb867d983319986c6f33e3db8f0e03759d66a9d8",
-    "spec_digest": "999d48b0e0ae3363cc118cc3bd9e118e93a914d1f7a8a25e25d219ed23d2252b",
+    "contract_digest": "1bff2e6be5082b8e7e5a6d8dc68f0dc2571287e9ed7eebc32f4dd506c49c0e12",
+    "spec_digest": "f42cb38e19d7b7f7825734800b8f329a5b7e3015a526d27b7fded9e9f404a3e4",
     "specification_version": "v1",
     "suite_version": "ess-conformance/23",
     "system": "secrets"
@@ -20727,6 +20811,1683 @@
         }
       ]
     },
+    "secrets.storage/authored/a-custody-failure-is-unavailable": {
+      "purpose": "A custody service that cannot reach its database makes a write, read, delete and listing unavailable, and the secret survives.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.Unavailable"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "remote",
+                "label": "custody"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "vault",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "vault",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "vault",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/a-keychain-fault-is-unavailable": {
+      "purpose": "A keychain that fails a write, a read or a delete answers unavailable, stores nothing and removes nothing.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "unavailable"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.Unavailable"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unavailable"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unavailable"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unavailable",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "default",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/a-keychain-secret-round-trips": {
+      "purpose": "A secret written to the keychain is replaced, read, listed, renamed and deleted, and is gone afterwards.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "renamed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "replaced"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "payload": {
+            "address": {
+              "name": "openai",
+              "scope": {
+                "namespace": "default",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "shape": {
+            "address.name": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.namespace": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.user": {
+              "holds": "primitive",
+              "kind": "string"
+            }
+          },
+          "step": "expect_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0LTI="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "replaced"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "default",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "renamed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai-work",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai-work",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "team/anthropic",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "team/anthropic",
+                  "scope": {
+                    "namespace": "default",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "default",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai-work",
+                  "scope": {
+                    "namespace": "default",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/a-name-in-a-namespace-that-does-not-exist-is-unresolved": {
+      "purpose": "Every secret command in a namespace that does not exist, or no longer does, is unresolved and reaches no backend.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Namespace.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.RemoveNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unresolved"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unresolved"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "unresolved"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "removed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "unresolved"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "unresolved"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.Namespaces"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "unresolved"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "nowhere",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "unresolved"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "unresolved"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "nowhere",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "unresolved"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unresolved"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "nowhere",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unresolved"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Rename",
+            "outcome": "unresolved"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "nowhere",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "unresolved"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unresolved"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "nowhere",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unresolved"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "gone",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.RemoveNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "gone",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "removed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "unresolved"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "gone",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "unresolved"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "gone",
+                  "tenant": "default"
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "nowhere",
+                  "tenant": "default"
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        }
+      ]
+    },
     "secrets.storage/authored/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check": {
       "purpose": "A name of exactly 128 bytes with a 64-byte segment is accepted, so an oversized value is refused as too large rather than the name.",
       "source": [
@@ -20995,6 +22756,1536 @@
         }
       ]
     },
+    "secrets.storage/authored/a-remote-secret-round-trips": {
+      "purpose": "A namespace mounted on the custody service stores, replaces, reads, lists, renames and deletes a secret.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Namespace.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "renamed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "replaced"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.Namespaces"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "remote",
+                "label": "custody"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "vault",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "payload": {
+            "address": {
+              "name": "openai",
+              "scope": {
+                "namespace": "vault",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "shape": {
+            "address.name": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.namespace": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.user": {
+              "holds": "primitive",
+              "kind": "string"
+            }
+          },
+          "step": "expect_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0LTI="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "replaced"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "vault",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "team/openai"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "renamed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "team/openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "team/openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "anthropic",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "mount": {
+                "kind": "literal",
+                "value": {
+                  "kind": "remote",
+                  "label": "custody"
+                }
+              },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "vault",
+                  "tenant": "default"
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Present"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "anthropic",
+                  "scope": {
+                    "namespace": "vault",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "vault",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "team/openai",
+                  "scope": {
+                    "namespace": "vault",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/a-second-tenant-is-denied-before-any-backend": {
+      "purpose": "Every storage command in tenant acme is denied, even with a name the port would refuse, and nothing is stored.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Bind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.RemoveNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.SetMount"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Unbind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Bind",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "denied"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.Denied"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "work",
+                "tenant": "acme"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.SetMount",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "default"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "default",
+                "tenant": "acme"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.RemoveNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "default",
+                "tenant": "acme"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Bind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            },
+            "locator": {
+              "kind": "literal",
+              "value": "op://Work/OpenAI/credential"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Bind",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Unbind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "default",
+                "tenant": "acme",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "-openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "acme",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "denied"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        }
+      ]
+    },
+    "secrets.storage/authored/a-second-user-is-denied-before-any-backend": {
+      "purpose": "Every storage command for user alice in tenant default is denied, even with a name the port would refuse.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Bind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Unbind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Bind",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "denied-user"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameBound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.Denied"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Bind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            },
+            "locator": {
+              "kind": "literal",
+              "value": "op://Work/OpenAI/credential"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Bind",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Unbind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "default",
+                "tenant": "default",
+                "user": "alice"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "alice"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "denied-user"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Denied",
+          "step": "expect_error"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "default",
+                    "tenant": "default",
+                    "user": "alice"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
     "secrets.storage/authored/a-segment-of-65-bytes-is-an-invalid-name": {
       "purpose": "A name with one 65-byte segment is refused as an invalid name although its total is within 128 bytes.",
       "source": [
@@ -21180,6 +24471,2995 @@
         {
           "event": "secrets.storage.SecretWritten",
           "step": "expect_no_event"
+        }
+      ]
+    },
+    "secrets.storage/authored/a-value-the-custody-service-cannot-carry-is-too-large": {
+      "purpose": "A 1 MiB value, within the port's bound, is too large for a namespace on the custody service and stores nothing.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "too-large"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.TooLarge"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "remote",
+                "label": "custody"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "vault",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "too-large"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "AA=="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "too-large"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.TooLarge",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        }
+      ]
+    },
+    "secrets.storage/authored/changes-on-a-read-only-mount-are-unsupported": {
+      "purpose": "A write, a delete, a rename and a listing on a read-only mount are unsupported and reach no backend.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unsupported"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unsupported"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "unsupported"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "unsupported"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MetadataListed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretDeleted"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretWritten"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.Unsupported"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "unsupported"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "shared",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "unsupported"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unsupported",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretWritten",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unsupported"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "shared",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "unsupported"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unsupported",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretDeleted",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Rename",
+            "outcome": "unsupported"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "shared",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "unsupported"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unsupported",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unsupported"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "shared",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "unsupported"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Unsupported",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.MetadataListed",
+          "step": "expect_no_event"
+        }
+      ]
+    },
+    "secrets.storage/authored/conflicts-the-specification-names": {
+      "purpose": "Adding an existing namespace, moving or removing one that holds secrets, binding twice, renaming a bound name and renaming onto a stored name are conflicts.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Namespace.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Bind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.RemoveNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.SetMount"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Unbind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "exists"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Bind",
+            "outcome": "already-bound"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Bind",
+            "outcome": "bound"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "in-use"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "is-default"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "bound"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "taken"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "in-use"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "unbound"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MountSet"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NameBound"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceRemoved"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.Conflict"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.Namespaces"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "work",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "exists"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "work",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "exists"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "in-use"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.SetMount",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "other"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "work",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "in-use"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "in-use"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.RemoveNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "work",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "in-use"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.RemoveNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "default",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "is-default"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Bind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "locator": {
+              "kind": "literal",
+              "value": "op://Work/OpenAI/credential"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Bind",
+            "outcome": "bound"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Bind",
+            "outcome": "already-bound"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Bind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "locator": {
+              "kind": "literal",
+              "value": "op://Work/OpenAI/other"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Bind",
+            "outcome": "already-bound"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.NameBound",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Rename",
+            "outcome": "bound"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "bound"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "anthropic",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "gemini",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Rename",
+            "outcome": "taken"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "anthropic",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "gemini"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "taken"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.Conflict",
+          "step": "expect_error"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "step": "expect_no_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Unbind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "unbound"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "work",
+                  "tenant": "default"
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Present"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "anthropic",
+                  "scope": {
+                    "namespace": "work",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "gemini",
+                  "scope": {
+                    "namespace": "work",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "work",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/each-namespace-routes-to-its-own-mount": {
+      "purpose": "Each namespace reaches only the backend it is mounted on, and after SetMount only the new one.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Namespace.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.SetMount"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "set"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.MountSet"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.Namespaces"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "alpha"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "alpha",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "beta"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "beta",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "gamma",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.SetMount",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "alpha"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "gamma",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "set"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.storage.MountSet",
+          "payload": {
+            "mount": {
+              "kind": "keychain",
+              "label": "alpha"
+            },
+            "namespace": {
+              "namespace": "gamma",
+              "tenant": "default"
+            }
+          },
+          "shape": {
+            "mount.kind": {
+              "holds": "enum",
+              "variants": [
+                "keychain",
+                "onepassword",
+                "remote"
+              ]
+            },
+            "mount.label": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "namespace.namespace": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "namespace.tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            }
+          },
+          "step": "expect_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "alpha",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "YWxwaGE="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "beta",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "YmV0YQ=="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "gamma",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "Z2FtbWE="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "gamma",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "beta",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "mount": {
+                "kind": "literal",
+                "value": {
+                  "kind": "keychain",
+                  "label": "alpha"
+                }
+              },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "alpha",
+                  "tenant": "default"
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "mount": {
+                "kind": "literal",
+                "value": {
+                  "kind": "keychain",
+                  "label": "beta"
+                }
+              },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "beta",
+                  "tenant": "default"
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "mount": {
+                "kind": "literal",
+                "value": {
+                  "kind": "keychain",
+                  "label": "alpha"
+                }
+              },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "gamma",
+                  "tenant": "default"
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "alpha",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "beta",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "gamma",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/tenant-and-user-default-may-do-everything-in-any-namespace": {
+      "purpose": "The local user runs every storage command to success in a namespace of its own.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Namespace.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Bind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.ListMetadata"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.RemoveNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Rename"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.SetMount"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Unbind"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Bind",
+            "outcome": "bound"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "removed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Rename",
+            "outcome": "renamed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "set"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "unbound"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceAdded"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.NamespaceRemoved"
+        },
+        {
+          "kind": "event",
+          "name": "secrets.storage.SecretRenamed"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.Namespaces"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "team.a-1",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.storage.NamespaceAdded",
+          "payload": {
+            "namespace": {
+              "namespace": "team.a-1",
+              "tenant": "default"
+            }
+          },
+          "shape": {
+            "namespace.namespace": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "namespace.tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            }
+          },
+          "step": "expect_event"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "team.a-1",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "team.a-1",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "read"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.ListMetadata",
+          "input": {
+            "scope": {
+              "kind": "literal",
+              "value": {
+                "namespace": "team.a-1",
+                "tenant": "default",
+                "user": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.ListMetadata",
+            "outcome": "listed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Rename",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "team.a-1",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "new_name": {
+              "kind": "literal",
+              "value": "openai-work"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Rename",
+            "outcome": "renamed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.storage.SecretRenamed",
+          "payload": {
+            "address": {
+              "name": "openai",
+              "scope": {
+                "namespace": "team.a-1",
+                "tenant": "default",
+                "user": "default"
+              }
+            },
+            "new_name": "openai-work"
+          },
+          "shape": {
+            "address.name": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.namespace": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "address.scope.user": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "new_name": {
+              "holds": "primitive",
+              "kind": "string"
+            }
+          },
+          "step": "expect_event"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai-work",
+                "scope": {
+                  "namespace": "team.a-1",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Bind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "team.a-1",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "locator": {
+              "kind": "literal",
+              "value": "op://Work/OpenAI/credential"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Bind",
+            "outcome": "bound"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Unbind",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "team.a-1",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Unbind",
+            "outcome": "unbound"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.SetMount",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "team"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "team.a-1",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.SetMount",
+            "outcome": "set"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.RemoveNamespace",
+          "input": {
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "team.a-1",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.RemoveNamespace",
+            "outcome": "removed"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "event": "secrets.storage.NamespaceRemoved",
+          "payload": {
+            "namespace": {
+              "namespace": "team.a-1",
+              "tenant": "default"
+            }
+          },
+          "shape": {
+            "namespace.namespace": {
+              "holds": "primitive",
+              "kind": "string"
+            },
+            "namespace.tenant": {
+              "holds": "primitive",
+              "kind": "string"
+            }
+          },
+          "step": "expect_event"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.Namespaces"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "team.a-1",
+                  "tenant": "default"
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.Namespaces"
+        }
+      ]
+    },
+    "secrets.storage/authored/the-same-name-in-two-namespaces-stays-separate": {
+      "purpose": "One name written in two namespaces on the same keychain is two secrets, and deleting one leaves the other.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "keychain",
+                "label": "default"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "work",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "c2VjcmV0"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "work",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "d29yaw=="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "default",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "work",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "default",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        }
+      ]
+    },
+    "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate": {
+      "purpose": "One name written in two namespaces on the custody service is two secrets, and deleting one leaves the other.",
+      "source": [
+        {
+          "kind": "domain",
+          "name": "secrets.storage"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendKind"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.BackendRef"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Scope"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.ScopeName"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.Secret.State"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.SecretName"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.AddNamespace"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Delete"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Read"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.storage.Write"
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          }
+        },
+        {
+          "kind": "error",
+          "name": "secrets.storage.NotFound"
+        },
+        {
+          "kind": "view",
+          "name": "secrets.storage.SecretMetadata"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.storage.LocalUser"
+        }
+      ],
+      "steps": [
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "remote",
+                "label": "custody"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "vault",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.AddNamespace",
+          "input": {
+            "mount": {
+              "kind": "literal",
+              "value": {
+                "kind": "remote",
+                "label": "custody"
+              }
+            },
+            "namespace": {
+              "kind": "literal",
+              "value": {
+                "namespace": "archive",
+                "tenant": "default"
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.AddNamespace",
+            "outcome": "added"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "dmF1bHQ="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Write",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "archive",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            },
+            "value": {
+              "kind": "literal",
+              "value": "YXJjaGl2ZQ=="
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Write",
+            "outcome": "created"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Delete",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Delete",
+            "outcome": "deleted"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "force": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "configure_external_outcome"
+        },
+        {
+          "actor": "secrets.storage.LocalUser",
+          "command": "secrets.storage.Read",
+          "input": {
+            "address": {
+              "kind": "literal",
+              "value": {
+                "name": "openai",
+                "scope": {
+                  "namespace": "vault",
+                  "tenant": "default",
+                  "user": "default"
+                }
+              }
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.storage.Read",
+            "outcome": "not-found"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "error": "secrets.storage.NotFound",
+          "step": "expect_error"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "contains",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "archive",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              },
+              "state": {
+                "kind": "literal",
+                "value": "Stored"
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "step": "query_view",
+          "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "expectation": {
+            "expect": "excludes",
+            "fields": {
+              "address": {
+                "kind": "literal",
+                "value": {
+                  "name": "openai",
+                  "scope": {
+                    "namespace": "vault",
+                    "tenant": "default",
+                    "user": "default"
+                  }
+                }
+              }
+            }
+          },
+          "step": "expect_view",
+          "view": "secrets.storage.SecretMetadata"
         }
       ]
     }

@@ -1,0 +1,66 @@
+# story:keychain-backend, "two tenants, two namespaces and two users holding the same name stay
+# separate", for two namespaces: both are mounted on the one default keychain backend. The second
+# `created` is forced, and the runner refuses to arrange it while the keychain already holds the
+# name, so a keychain that ignored the namespace fails here. Two tenants and two users cannot be
+# claimed through the composed stack: the local authorizer denies both before the keychain is
+# reached; the Rust test `the_same_name_in_different_scopes_stays_separate` guards them.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: the-same-name-in-two-namespaces-stays-separate
+summary: One name written in two namespaces on the same keychain is two secrets, and deleting one leaves the other.
+timeline:
+- at: '2026-10-05T13:10:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: work}
+    mount: {kind: keychain, label: default}
+  outcome: added
+- at: '2026-10-05T13:10:01Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    value: c2VjcmV0
+  outcome: created
+- at: '2026-10-05T13:10:02Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    value: d29yaw==
+  outcome: created
+- at: '2026-10-05T13:10:03Z'
+  command: secrets.storage.Delete
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+  outcome: deleted
+- at: '2026-10-05T13:10:04Z'
+  command: secrets.storage.Read
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+  outcome: not-found
+  error:
+    name: secrets.storage.NotFound
+assert:
+- view: secrets.storage.SecretMetadata
+  contains:
+    address:
+      scope: {tenant: default, namespace: work, user: default}
+      name: openai
+    state: Stored
+- view: secrets.storage.SecretMetadata
+  excludes:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
