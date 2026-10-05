@@ -2187,10 +2187,11 @@
   },
   "provenance": {
     "component": "secrets-service",
-    "contract_digest": "4fb86c240210cc16843496f058bc8ebd5717b7eac5945d61e1c35af230dc9a6b",
-    "spec_digest": "37ba1fe600584f7f0130f6792a2d178ab8e84d6c2af89d257959cd55e9568578",
+    "contract_digest": "344f6b6f0f6962de850814bc29912109be0979cc9c7f2b588b685298ace353e5",
+    "scenario_initial_state": "empty",
+    "spec_digest": "a400890747eb193dcba0b845cca169bfb1ded00af40933596fb0f3cfe7dd593b",
     "specification_version": "v1",
-    "suite_version": "ess-conformance/27",
+    "suite_version": "ess-conformance/35",
     "system": "secrets"
   },
   "scenarios": {
@@ -2584,7 +2585,14 @@
         {
           "event": "secrets.custody.TransactionAborted",
           "payload": {
-            "tenant": "tenant"
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction",
+              "kind": "instance"
+            }
           },
           "shape": {
             "tenant": {
@@ -2596,7 +2604,7 @@
               "kind": "uuid"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -6098,7 +6106,14 @@
         {
           "event": "secrets.custody.TransactionCommitted",
           "payload": {
-            "tenant": "tenant"
+            "tenant": {
+              "kind": "literal",
+              "value": "tenant"
+            },
+            "transaction": {
+              "instance": "prepared-transaction",
+              "kind": "instance"
+            }
           },
           "shape": {
             "tenant": {
@@ -6110,7 +6125,7 @@
               "kind": "uuid"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -8533,6 +8548,10 @@
         {
           "kind": "actor",
           "name": "secrets.custody.User"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
         }
       ],
       "steps": [
@@ -8610,6 +8629,12 @@
         },
         {
           "event": "secrets.custody.SecretDeleted",
+          "payload": {
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "reference.key": {
               "holds": "primitive",
@@ -8624,7 +8649,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -10792,6 +10817,12 @@
         },
         {
           "event": "secrets.custody.SecretDeleted",
+          "payload": {
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "reference.key": {
               "holds": "primitive",
@@ -10806,7 +10837,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -19531,7 +19562,14 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "owner_subject": "owner_subject-1"
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject-1"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "owner_subject": {
@@ -19551,7 +19589,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -23700,6 +23738,10 @@
         {
           "kind": "actor",
           "name": "secrets.custody.User"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
         }
       ],
       "steps": [
@@ -23777,6 +23819,12 @@
         },
         {
           "event": "secrets.custody.SecretRevoked",
+          "payload": {
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "reference.key": {
               "holds": "primitive",
@@ -23791,7 +23839,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -25856,6 +25904,10 @@
         {
           "kind": "actor",
           "name": "secrets.custody.User"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
         }
       ],
       "steps": [
@@ -26115,6 +26167,10 @@
         },
         {
           "kind": "actor",
+          "name": "secrets.custody.User"
+        },
+        {
+          "kind": "actor",
           "name": "secrets.custody.Workload"
         }
       ],
@@ -26212,7 +26268,14 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "owner_subject": "owner_subject-1"
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject-1"
+            },
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
           },
           "shape": {
             "owner_subject": {
@@ -26232,7 +26295,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -26550,7 +26613,14 @@
         {
           "event": "secrets.custody.SecretPut",
           "payload": {
-            "owner_subject": "owner_subject"
+            "owner_subject": {
+              "kind": "literal",
+              "value": "owner_subject"
+            },
+            "reference": {
+              "instance": "secret-2",
+              "kind": "instance"
+            }
           },
           "shape": {
             "owner_subject": {
@@ -26570,7 +26640,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "step": "query_view",
@@ -26839,6 +26909,10 @@
         {
           "kind": "actor",
           "name": "secrets.custody.User"
+        },
+        {
+          "kind": "actor",
+          "name": "secrets.custody.Workload"
         }
       ],
       "steps": [
@@ -26916,6 +26990,12 @@
         },
         {
           "event": "secrets.custody.SecretRevoked",
+          "payload": {
+            "reference": {
+              "instance": "secret",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "reference.key": {
               "holds": "primitive",
@@ -26930,7 +27010,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -27221,6 +27301,12 @@
         },
         {
           "event": "secrets.custody.SecretRevoked",
+          "payload": {
+            "reference": {
+              "instance": "secret-2",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "reference.key": {
               "holds": "primitive",
@@ -27235,7 +27321,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "step": "query_view",

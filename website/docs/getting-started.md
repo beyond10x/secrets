@@ -12,7 +12,7 @@ From a checkout to a migrated database. Serving needs a Kubernetes cluster; this
 
 - Rust 1.97
 - PostgreSQL 16 or later (CI runs 17)
-- [`task`](https://taskfile.dev) and the [`ess`](https://beyond10x.github.io/docs/ess/) CLI 0.52.0
+- [`task`](https://taskfile.dev) and the [`ess`](https://beyond10x.github.io/docs/ess/) CLI 0.53.0
   for `task check`
 
 ## Build

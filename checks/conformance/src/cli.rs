@@ -1451,9 +1451,15 @@ fn secret_metadata(world: &World) -> R<Vec<ViewRow>> {
                 ));
             }
             let address = serde_json::json!({"scope": row["scope"], "name": row["name"]});
+            // The namespace secretsctl listed the row under, not the one the scenario asked for.
+            let namespace = serde_json::json!({
+                "tenant": row["scope"]["tenant"],
+                "namespace": row["scope"]["namespace"],
+            });
             rows.push(BTreeMap::from([
                 ("address".to_owned(), node(&address)?),
                 ("version".to_owned(), node(&row["version"])?),
+                ("namespace".to_owned(), node(&namespace)?),
                 ("state".to_owned(), Node::Text("Stored".to_owned())),
             ]));
         }
@@ -1470,6 +1476,7 @@ fn namespaces(world: &World) -> R<Vec<ViewRow>> {
             Ok(BTreeMap::from([
                 ("namespace".to_owned(), node(&row["namespace"])?),
                 ("mount".to_owned(), node(&row["mount"])?),
+                ("tenant".to_owned(), node(&row["namespace"]["tenant"])?),
                 ("state".to_owned(), Node::Text("Present".to_owned())),
             ]))
         })

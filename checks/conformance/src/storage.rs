@@ -1647,9 +1647,15 @@ fn secret_metadata(context: &mut LibraryContext<'_>) -> R<Vec<ViewRow>> {
     }
     rows.iter()
         .map(|row| {
+            // The namespace the stack answered the row under, not the one the scenario asked for.
+            let namespace = NamespaceKey {
+                tenant: row.address.scope.tenant.clone(),
+                namespace: row.address.scope.namespace.clone(),
+            };
             Ok(BTreeMap::from([
                 ("address".to_owned(), node(&row.address)?),
                 ("version".to_owned(), node(&row.version)?),
+                ("namespace".to_owned(), node(&namespace)?),
                 ("state".to_owned(), Node::Text("Stored".to_owned())),
             ]))
         })
@@ -1667,6 +1673,7 @@ fn namespaces(context: &mut LibraryContext<'_>) -> R<Vec<ViewRow>> {
             Ok(BTreeMap::from([
                 ("namespace".to_owned(), node(&namespace.key)?),
                 ("mount".to_owned(), node(&namespace.mount)?),
+                ("tenant".to_owned(), node(&namespace.key.tenant)?),
                 ("state".to_owned(), Node::Text("Present".to_owned())),
             ]))
         })
