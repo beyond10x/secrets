@@ -34,6 +34,9 @@ tokio.workspace = true
 toml.workspace = true
 zeroize.workspace = true
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [[test]]
 name = "cli"
 required-features = ["test-hooks"]

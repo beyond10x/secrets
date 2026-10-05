@@ -9,6 +9,8 @@ tasks:
       - cargo test --workspace --doc --all-features
       # Without native-keychain, so the keychain-unavailable guard runs too.
       - cargo test -p secretsctl --features test-hooks --test cli
+      # The default build, where the test keychain variable must be inert.
+      - cargo test -p secretsctl --test review_default_build
   clippy:
     cmds: [cargo clippy --workspace --all-targets --all-features -- -D warnings]
   docs:

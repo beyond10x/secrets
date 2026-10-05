@@ -15,7 +15,7 @@ scope:
   path: contracts/storage/scenarios/cli
 - confidence: cited
   path: crates/secretsctl
-revision: 10
+revision: 11
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-05T11:50:40Z", actor: "human:timo", revision: 7, decided_on: {"recorded":{"review_outcome":1}}}
 - {from: "proposed", to: "active", at: "2026-10-05T11:50:40Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}}
@@ -48,8 +48,9 @@ byte for byte. No network, no credential and no paid call in the default gate.
 
 - one scenario per command: put, describe, list, delete, rename, namespace add|list|remove,
   mount set, bind, unbind
-- put refuses a value passed in argv and accepts only a hidden prompt, a stdin FIFO or a
-  protected file
+- put refuses a value passed in argv and accepts only a hidden prompt, a pipe, FIFO or socket on
+  stdin (process spawners such as libuv hand stdio over socketpairs), or a protected file; a
+  `--file` naming anything but a regular file is refused without waiting on it
 - no command, under any flag, writes secret bytes to stdout or stderr
 
 ## Guards

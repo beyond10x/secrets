@@ -61,11 +61,13 @@ the code.
   mock store, remote against an in-process custody service, recording fakes for read-only and
   faulting mounts. A 1Password mount is unsupported.
 - The CLI suite runs through the built `secretsctl` (`checks/conformance/src/cli.rs`): the runner
-  builds it with feature `test-hooks`, gives each scenario its own `XDG_CONFIG_HOME` under
-  `target/conformance/cli` and a file-backed keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`), and reads
-  the branch from the exit status, the JSON refusal and the world before the command. What ESS
-  cannot state (no value on stdout or stderr, a value in argv refused, `put`'s sources, the
-  configuration file's mode) is guarded by `crates/secretsctl/tests/cli.rs`.
+  builds it with feature `test-hooks` in a target directory of its own (`secretsctl-conformance`),
+  gives each scenario its own `XDG_CONFIG_HOME` under `target/conformance/cli` and a file-backed
+  keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`), and reads the branch from the exit status, the JSON
+  refusal and the world before the command. What ESS cannot state (no value on stdout or stderr,
+  a value in argv refused, `put`'s sources, the configuration file's mode, an inert test hook in
+  a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`, `review_invariants.rs`,
+  `review_default_build.rs`).
 - `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
   `contracts/storage-baseline.json` holds the library's: 107 answered, at most 1 unsupported (the
   1Password mount). `contracts/cli-baseline.json` holds the CLI's: 61 answered, at most 28

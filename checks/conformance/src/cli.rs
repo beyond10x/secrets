@@ -99,6 +99,12 @@ fn binary() -> Result<PathBuf, String> {
     BINARY
         .get_or_init(|| {
             let cargo = std::env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+            // A target directory of its own: `target/debug/secretsctl` is rewritten by any build
+            // of the package with other features (a default build in `task test` runs beside this
+            // runner), and the suite must run the build it asked for.
+            let target = std::env::var_os("CARGO_TARGET_DIR")
+                .map_or_else(|| PathBuf::from("target"), PathBuf::from)
+                .join("secretsctl-conformance");
             let output = Command::new(cargo)
                 .args([
                     "build",
@@ -109,6 +115,8 @@ fn binary() -> Result<PathBuf, String> {
                     "test-hooks",
                     "--message-format=json-render-diagnostics",
                 ])
+                .arg("--target-dir")
+                .arg(&target)
                 .stderr(Stdio::inherit())
                 .output()
                 .map_err(|error| format!("running cargo: {error}"))?;

@@ -173,6 +173,30 @@ fn token(label: &str, entry: &RemoteEntry) -> Result<Zeroizing<String>, String> 
     }
 }
 
+/// Whether the bearer token may be sent to `origin`: https, or http to a loopback host only, so a
+/// token never crosses a network in cleartext. A refused origin leaves the backend `unavailable`.
+fn admitted(label: &str, origin: &str) -> Result<(), String> {
+    let url = reqwest::Url::parse(origin)
+        .map_err(|_| format!("remote/{label}: `origin` is not a URL"))?;
+    let loopback = || {
+        url.host_str().is_some_and(|host| {
+            let host = host.trim_start_matches('[').trim_end_matches(']');
+            host.parse::<std::net::IpAddr>()
+                .map_or(host.eq_ignore_ascii_case("localhost"), |ip| {
+                    ip.is_loopback()
+                })
+        })
+    };
+    match url.scheme() {
+        "https" => Ok(()),
+        "http" if loopback() => Ok(()),
+        _ => Err(format!(
+            "remote/{label}: `origin` must be https, or http to a loopback host; \
+             the token is not sent in cleartext"
+        )),
+    }
+}
+
 /// Every backend the configuration file at `path` names, with `keychain/default` always among
 /// them.
 pub fn load(path: &std::path::Path) -> Backends {
@@ -220,10 +244,12 @@ pub fn load(path: &std::path::Path) -> Backends {
             notes.push("config: a remote label is not a valid name".to_owned());
             continue;
         };
-        let storage: Arc<dyn SecretStorage> = match token(&label, &entry).and_then(|token| {
-            secrets_client::Client::new(&entry.origin, token.as_str())
-                .map_err(|_| format!("remote/{label}: `origin` is not a URL"))
-        }) {
+        let storage: Arc<dyn SecretStorage> = match admitted(&label, &entry.origin)
+            .and_then(|()| token(&label, &entry))
+            .and_then(|token| {
+                secrets_client::Client::new(&entry.origin, token.as_str())
+                    .map_err(|_| format!("remote/{label}: `origin` is not a URL"))
+            }) {
             Ok(client) => Arc::new(RemoteBackend::new(client)),
             Err(note) => {
                 notes.push(note);

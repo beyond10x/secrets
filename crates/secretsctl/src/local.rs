@@ -464,7 +464,14 @@ impl Local {
 
     pub async fn namespace_list(&self) -> Outcome {
         self.manage(Resource::Namespace { tenant: LOCAL })?;
-        let namespaces = self.routing()?.namespaces().await?;
+        // Authorized for the local tenant, so only its namespaces are shown.
+        let namespaces: Vec<Namespace> = self
+            .routing()?
+            .namespaces()
+            .await?
+            .into_iter()
+            .filter(|namespace| namespace.key.tenant.as_str() == LOCAL)
+            .collect();
         let mut lines = vec!["NAMESPACE\tTENANT\tBACKEND".to_owned()];
         let json = namespaces
             .iter()

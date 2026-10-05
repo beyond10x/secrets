@@ -428,3 +428,47 @@ fn each_storage_refusal_has_its_own_exit_code() {
     assert_eq!(refusal["part"], "name");
     assert_eq!(refusal["reason"], "too-long");
 }
+
+#[test]
+fn a_remote_origin_must_be_https_unless_its_host_is_loopback() {
+    let sandbox = Sandbox::new();
+    let origins = [
+        ("plain", "http://secrets.example/", false),
+        ("private", "http://10.0.0.1:9/", false),
+        ("other", "ftp://127.0.0.1:9/", false),
+        ("tls", "https://127.0.0.1:9/", true),
+        ("loopback4", "http://127.0.0.1:9/", true),
+        ("loopback6", "http://[::1]:9/", true),
+        ("localhost", "http://localhost:9/", true),
+    ];
+    let mut config = String::new();
+    for (label, origin, _) in origins {
+        config.push_str(&format!(
+            "[backends.remote.{label}]\norigin = {origin:?}\ntoken_env = \"SECRETSCTL_TEST_TOKEN\"\n"
+        ));
+    }
+    let path = sandbox.config_file();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, config).unwrap();
+    for (label, _, admitted) in origins {
+        let mount = format!("remote/{label}");
+        let output = sandbox.run(&["namespace", "add", label, "--mount", &mount]);
+        assert!(output.status.success(), "{}", text(&output.stderr));
+        // Nothing listens on these origins, so every listing is unavailable; what differs is
+        // whether the origin was refused before any request carried the token.
+        let output = sandbox
+            .command(&["list", "-n", label])
+            .env("SECRETSCTL_TEST_TOKEN", MARKER)
+            .output()
+            .unwrap();
+        assert_eq!(code(&output), 6, "{label}: {}", text(&output.stderr));
+        let note = format!("remote/{label}: `origin` must be https");
+        assert_eq!(
+            !text(&output.stderr).contains(&note),
+            admitted,
+            "{label}: {}",
+            text(&output.stderr)
+        );
+        assert_clean(&output, label);
+    }
+}

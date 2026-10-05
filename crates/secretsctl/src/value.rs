@@ -55,7 +55,17 @@ fn bounded(reader: impl io::Read, limit: usize) -> Result<Zeroizing<Vec<u8>>, Re
 
 /// The contents of a regular file accessible to its owner only, at most `limit` bytes plus one.
 pub fn read_protected(path: &Path, limit: usize) -> Result<Zeroizing<Vec<u8>>, Refusal> {
-    let file = File::open(path).map_err(|_| Refusal::Unreadable)?;
+    #[allow(unused_mut)]
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        // A FIFO would otherwise block the open until a writer appears, before the regular-file
+        // check below can refuse it; on a regular file the flag changes nothing.
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.custom_flags(libc::O_NONBLOCK);
+    }
+    let file = options.open(path).map_err(|_| Refusal::Unreadable)?;
     let metadata = file.metadata().map_err(|_| Refusal::Unreadable)?;
     if !metadata.is_file() {
         return Err(Refusal::NotAFile);
