@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:readonly-test-backend
 kind: story
-status: draft
+status: active
 title: Conformance mounts a read-only 1Password-kind backend played by the recording fake
 relations:
 - decomposes: epic:named-federated-storage
@@ -18,7 +18,10 @@ scope:
   path: contracts/storage-baseline.json
 - confidence: inferred
   path: crates/secretsctl
-revision: 3
+revision: 5
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T16:14:38Z", actor: "human:timo", revision: 4}
+- {from: "proposed", to: "active", at: "2026-10-05T16:14:39Z", actor: "human:timo", revision: 5}
 ---
 ## Outcome
 

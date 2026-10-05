@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:cli-scope-flags
 kind: story
-status: draft
+status: active
 title: secretsctl names a tenant and user, and every non-default scope is denied
 relations:
 - decomposes: epic:named-federated-storage
@@ -16,7 +16,10 @@ scope:
   path: contracts/cli-suite.json
 - confidence: cited
   path: crates/secretsctl
-revision: 3
+revision: 5
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T16:14:39Z", actor: "human:timo", revision: 4}
+- {from: "proposed", to: "active", at: "2026-10-05T16:14:39Z", actor: "human:timo", revision: 5}
 ---
 ## Outcome
 

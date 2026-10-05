@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:read-response-scenarios
 kind: story
-status: draft
+status: active
 title: Read's returned value is asserted by ESS scenarios
 relations:
 - decomposes: epic:named-federated-storage
@@ -24,7 +24,10 @@ scope:
   path: contracts/storage/scenarios/response
 - confidence: cited
   path: spec/domains/storage.yaml
-revision: 3
+revision: 5
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T16:14:40Z", actor: "human:timo", revision: 4}
+- {from: "proposed", to: "active", at: "2026-10-05T16:14:40Z", actor: "human:timo", revision: 5}
 ---
 ## Outcome
 
