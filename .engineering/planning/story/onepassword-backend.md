@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:onepassword-backend
 kind: story
-status: draft
+status: archived
 title: 1Password is a read-only storage backend
 relations:
 - decomposes: epic:named-federated-storage
@@ -15,7 +15,9 @@ scope:
   path: contracts/storage/scenarios/onepassword
 - confidence: cited
   path: crates/secrets-onepassword
-revision: 6
+revision: 8
+transitions:
+- {from: "draft", to: "archived", at: "2026-10-05T09:30:40Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}}
 ---
 ## Context
 
@@ -49,3 +51,11 @@ byte for byte. No network, no credential and no paid call in the default gate.
 - Registration with the conformance runner is `checks/conformance/src/target.rs`, which is
 coordinator-owned and pre-wired with this backend's hook when the wave opens; this story
 writes only its own module.
+
+## Deferred
+
+Archived 2026-10-05 by operator decision: "onepassword is out of scope for now". The scope and
+scenarios above stay as the record to restart from; a later round recreates the story from this
+one. Scoping found it shares `Cargo.toml` members, `Cargo.lock`, `checks/conformance/{Cargo.toml,
+src/main.rs}` and `contracts/{ess-inputs.yaml,suite.json,baseline.json}` with every other backend
+story, and that `llm-credentials` has no 1Password code to port.
