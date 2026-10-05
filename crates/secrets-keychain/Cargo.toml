@@ -1,0 +1,15 @@
+[package]
+name = "secrets-keychain"
+description = "The OS keychain as a secrets.storage backend (story:keychain-backend)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+secrets-core = { path = "../secrets-core" }
+keyring-core.workspace = true
+
+[lints]
+workspace = true

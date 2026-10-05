@@ -1278,6 +1278,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "keyring-core"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fb1e621458ca9c51aa110bd0339d4751a056b9576bf1253aee1aa560dda0fc9d"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2108,6 +2117,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "secrets-federation"
+version = "0.4.1"
+dependencies = [
+ "secrets-core",
+]
+
+[[package]]
 name = "secrets-http"
 version = "0.4.1"
 dependencies = [
@@ -2122,6 +2138,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "secrets-keychain"
+version = "0.4.1"
+dependencies = [
+ "keyring-core",
+ "secrets-core",
+]
+
+[[package]]
 name = "secrets-postgres"
 version = "0.4.1"
 dependencies = [
@@ -2132,6 +2156,14 @@ dependencies = [
  "sqlx",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "secrets-remote"
+version = "0.4.1"
+dependencies = [
+ "secrets-client",
+ "secrets-core",
 ]
 
 [[package]]

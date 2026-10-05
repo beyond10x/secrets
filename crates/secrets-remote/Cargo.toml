@@ -1,0 +1,15 @@
+[package]
+name = "secrets-remote"
+description = "The custody service as a secrets.storage backend (story:remote-backend)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+secrets-client = { path = "../secrets-client" }
+secrets-core = { path = "../secrets-core" }
+
+[lints]
+workspace = true

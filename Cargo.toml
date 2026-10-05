@@ -9,6 +9,9 @@ members = [
   "crates/secrets-postgres",
   "crates/secretsctl",
   "crates/secrets-docs",
+  "crates/secrets-federation",
+  "crates/secrets-keychain",
+  "crates/secrets-remote",
   "checks/conformance",
 ]
 resolver = "2"
@@ -28,6 +31,7 @@ base64 = "0.22"
 clap = { version = "4.6", features = ["derive", "env"] }
 getrandom = "0.3"
 http = "1"
+keyring-core = "1.0"
 reqwest = { version = "0.13", default-features = false, features = ["json", "rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
