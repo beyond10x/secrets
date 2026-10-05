@@ -11,11 +11,15 @@
 //!
 //! # How an outcome is reached
 //!
-//! The raw input becomes the binary's argv (`--json`, names after `--`) and, for `Write`, the
-//! value on a pipe. The declared branch is read off what the binary answered: its exit status, the
+//! The raw input becomes the binary's argv (`--json`, `--tenant` and `--user` from the input's
+//! scope, names after `--`) and, for `Write`, the value on a pipe. The declared branch is read off what the binary answered: its exit status, the
 //! closed code and name rule in its JSON refusal, the `created`/`replaced` it printed, and what
 //! the world held when the command began:
 //!
+//! * a `denied` refusal is `denied` when it names the tenant and `denied-user` when it names the
+//!   user; one that changed the configuration file, its lock or the keychain file takes no
+//!   declared branch, since a denial is decided before either is opened. A denied command is
+//!   arranged nothing;
 //! * a `not-found` from `Delete` or `Rename` is `not-found` when the namespace existed, and
 //!   resolution's `unresolved` when it did not; from `Write` or `ListMetadata` it is `unresolved`;
 //! * a `conflict` from `Rename` is `bound` when either name was bound, otherwise `taken`;
@@ -38,9 +42,7 @@
 //!
 //! # What stays unsupported
 //!
-//! * a scope other than tenant and user `default`: the CLI acts on the local scope only, so every
-//!   `denied` and `denied-user` scenario;
-//! * `Read`: the CLI has no command that prints a value.
+//! `Read`: the CLI has no command that prints a value.
 //!
 //! # The 1Password kind
 //!
@@ -72,9 +74,12 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use ess_conformance::target::{TargetError, ViewRow};
 use ess_primitives::node::Node;
 use keyring_core::CredentialStore;
-use secrets_core::storage::{
-    Address, BackendKind, BackendRef, NameError, NamespaceKey, Scope, ScopeName, SecretName,
-    SecretStorage, SecretValue, StorageError, Target, testing::RecordingBackend,
+use secrets_core::{
+    authorize::{Authorizer as _, LocalAuthorizer, Resource},
+    storage::{
+        Action, Address, BackendKind, BackendRef, NameError, NamespaceKey, Scope, ScopeName,
+        SecretName, SecretStorage, SecretValue, StorageError, Target, testing::RecordingBackend,
+    },
 };
 use secrets_federation::{FileConfig, Namespace, NamespaceConfig};
 use secrets_keychain::{DEFAULT_SERVICE, KeychainBackend};
@@ -442,6 +447,21 @@ impl World {
         }
     }
 
+    /// What the configuration file, its lock and the keychain file hold now, with their
+    /// modification times: a denied command must leave all of them as they were.
+    fn files(&self) -> Vec<Option<(Vec<u8>, Option<std::time::SystemTime>)>> {
+        let config = self.config_path();
+        let lock = config.with_extension("toml.lock");
+        [config, lock, self.keychain_path()]
+            .iter()
+            .map(|path| {
+                let bytes = fs::read(path).ok()?;
+                let modified = fs::metadata(path).and_then(|meta| meta.modified()).ok();
+                Some((bytes, modified))
+            })
+            .collect()
+    }
+
     fn corrupt(path: PathBuf) -> Switch {
         let original = fs::read(&path).ok();
         Switch::Corrupt { path, original }
@@ -458,13 +478,6 @@ fn write_private(path: &Path, bytes: &[u8]) -> R<()> {
         .open(path)
         .map_err(cannot_arrange)?;
     file.write_all(bytes).map_err(cannot_arrange)
-}
-
-fn local_only() -> TargetError {
-    TargetError::unsupported(
-        "a scope other than tenant and user `default`",
-        "secretsctl acts on the local scope only",
-    )
 }
 
 // ---- input ----------------------------------------------------------------------------------
@@ -586,6 +599,12 @@ fn argv(command: &str, input: &Value) -> R<(Vec<String>, Option<Vec<u8>>)> {
     let name = || -> R<String> { Ok(text(input, &["address", "name"])?.to_owned()) };
     let address_ns = || ns(&["address", "scope", "namespace"]);
     let mut args: Vec<String> = vec!["--json".to_owned()];
+    // The scope as the input names it; the binary's authorizer decides it.
+    let (tenant, user) = scope_fields(command);
+    args.push(format!("--tenant={}", text(input, tenant)?));
+    if let Some(user) = user {
+        args.push(format!("--user={}", text(input, user)?));
+    }
     let mut value = None;
     match command {
         "Write" => {
@@ -994,19 +1013,32 @@ fn answer(
     }
     let mut input =
         serde_json::to_value(input).map_err(|error| unavailable("encoding the input", error))?;
-    let (tenant, user) = scope_fields(command);
-    if text(&input, tenant)? != ScopeName::DEFAULT
-        || user.is_some_and(|user| text(&input, user).ok() != Some(ScopeName::DEFAULT))
-    {
-        return Err(local_only());
-    }
+    // Whether the local authorizer admits the raw scope: a denied command is sent as it is, with
+    // nothing arranged, and must leave the scenario's files as they were.
+    let admitted = {
+        let (tenant, user) = scope_fields(command);
+        let tenant = text(&input, tenant)?;
+        let resource = match user {
+            None => Resource::Namespace { tenant },
+            Some(user) => Resource::Scope {
+                tenant,
+                user: text(&input, user)?,
+            },
+        };
+        // The local authorizer answers every action alike (storage.yaml, `Action`).
+        LocalAuthorizer
+            .decide(resource, Action::ManageNamespace)
+            .is_ok()
+    };
     let forced = context.forced.clone();
     let forced = forced.as_deref();
-    let refusal = forced.filter(|outcome| matches!(*outcome, "invalid-name" | "too-large"));
+    let refusal = forced
+        .filter(|outcome| matches!(*outcome, "invalid-name" | "too-large"))
+        .filter(|_| admitted);
     if let Some(outcome) = refusal {
         let remote = command == "Write" && outcome == "too-large" && on_remote(context, &input)?;
         arrange_refusal(command, outcome, &mut input, remote)?;
-    } else if forced.is_none() {
+    } else if forced.is_none() && admitted {
         // Unforced: the external segment rule is made false at the same length (ESS-LIMIT #1).
         for path in [&["address", "name"][..], &["new_name"][..]] {
             if let Ok(name) = text(&input, path)
@@ -1017,7 +1049,8 @@ fn answer(
             }
         }
     }
-    let parsed = parse(command, &input);
+    // A denied command addresses no scope the views read and is arranged nothing.
+    let parsed = parse(command, &input).filter(|_| admitted);
     if let Some(parsed) = &parsed {
         let key = parsed.namespace();
         context.world.scopes.insert(Scope {
@@ -1078,7 +1111,9 @@ fn answer(
     for switch in &switches {
         world.flip(runtime, admin, switch)?;
     }
+    let files = world.files();
     let output = world.run(&args, value.as_deref());
+    let changed = world.files() != files;
     for switch in &switches {
         world.unflip(runtime, admin, switch)?;
     }
@@ -1087,7 +1122,18 @@ fn answer(
         .get("namespace")
         .and_then(|key| key.get("namespace"))
         .and_then(Value::as_str);
-    interpret(command, &input, &output, existed, bound, namespace)
+    let observed = interpret(command, &input, &output, existed, bound, namespace)?;
+    // A denial is decided before the configuration or a backend is touched: one that changed
+    // either file takes no declared branch.
+    if changed
+        && observed
+            .outcome
+            .as_deref()
+            .is_some_and(|outcome| matches!(outcome, "denied" | "denied-user"))
+    {
+        return Ok(undeclared());
+    }
+    Ok(observed)
 }
 
 /// Whether the raw input's namespace is mounted on the remote backend now.
@@ -1147,6 +1193,12 @@ fn interpret(
     }
     let names = matches!(command, "Bind" | "Write" | "Delete" | "Rename");
     let outcome = match (command, error) {
+        // The binary names the flag its authorizer refused.
+        (_, StorageError::Denied) => match refusal["part"].as_str() {
+            Some("tenant") => Some("denied"),
+            Some("user") => Some("denied-user"),
+            _ => None,
+        },
         (_, StorageError::InvalidName) => {
             let detail = (refusal["part"].as_str(), refusal["reason"].as_str());
             match detail {

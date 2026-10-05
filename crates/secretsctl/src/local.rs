@@ -7,7 +7,7 @@ use std::{
 };
 
 use secrets_core::{
-    authorize::{Authorized, Authorizer as _, LocalAuthorizer, Resource},
+    authorize::{Authorized, Authorizer as _, Denial, LocalAuthorizer, Resource},
     storage::{
         Action, Address, AddressError, BackendKind, BackendRef, Locator, MAX_VALUE_BYTES,
         NameError, NamespaceKey, Part, Scope, ScopeName, SecretMetadata, SecretStorage as _,
@@ -30,6 +30,8 @@ pub enum Failure {
     },
     /// The command line or the input was refused before anything was stored.
     Refused(String),
+    /// The local authorizer refused `--tenant` or `--user`, before anything was opened.
+    Denied(Denial),
 }
 
 impl From<StorageError> for Failure {
@@ -240,6 +242,15 @@ fn exit_code(error: StorageError) -> u8 {
 
 impl Local {
     /// The stack over the configuration file and every backend it configures.
+    /// Nothing opened: no configuration read and no backend built, for a command refused before.
+    pub fn unopened(json: bool) -> Self {
+        Self {
+            json,
+            stack: None,
+            trouble: Vec::new(),
+        }
+    }
+
     pub fn open(json: bool) -> Self {
         let Some(path) = config_path() else {
             return Self {
@@ -569,6 +580,29 @@ impl Local {
                     println!("{}", report.text);
                 }
                 ExitCode::SUCCESS
+            }
+            Err(Failure::Denied(denial)) => {
+                // Which flag was refused, never its value.
+                let part = match denial {
+                    Denial::Tenant => "tenant",
+                    Denial::User => "user",
+                };
+                let message = meaning(command, StorageError::Denied);
+                if json {
+                    eprintln!(
+                        "{}",
+                        json!({
+                            "error": StorageError::Denied.code(),
+                            "part": part,
+                            "reason": null,
+                            "message": message,
+                            "notes": [],
+                        })
+                    );
+                } else {
+                    eprintln!("secretsctl: denied ({part}): {message}");
+                }
+                ExitCode::from(exit_code(StorageError::Denied))
             }
             Err(Failure::Refused(reason)) => {
                 if json {

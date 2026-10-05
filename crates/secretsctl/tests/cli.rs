@@ -452,6 +452,95 @@ fn a_test_hooks_build_mounts_the_read_only_fake_for_the_onepassword_kind() {
     }
 }
 
+/// Runs `args` and kills it after five seconds; answers whether it finished, and its output.
+fn bounded(mut command: Command) -> (bool, Output) {
+    let mut child = command
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .unwrap();
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while std::time::Instant::now() < deadline && child.try_wait().unwrap().is_none() {
+        std::thread::sleep(std::time::Duration::from_millis(50));
+    }
+    let finished = child.try_wait().unwrap().is_some();
+    if !finished {
+        let _ = child.kill();
+    }
+    (finished, child.wait_with_output().unwrap())
+}
+
+/// story:cli-scope-flags: any `--tenant` or `--user` other than `default` is `denied` (4), naming
+/// the flag, before the configuration file or the keychain is opened. Both are FIFOs here, so a
+/// command that opened either would wait for a writer and be killed.
+#[test]
+fn a_second_tenant_or_user_is_denied_before_the_configuration_or_keychain_is_opened() {
+    let sandbox = Sandbox::new();
+    let config = sandbox.config_file();
+    fs::create_dir_all(config.parent().unwrap()).unwrap();
+    let keychain = sandbox.root.join("keychain.ron");
+    for fifo in [&config, &keychain] {
+        let made = Command::new("mkfifo")
+            .arg("-m")
+            .arg("600")
+            .arg(fifo)
+            .status()
+            .unwrap();
+        assert!(made.success());
+    }
+    let commands: [&[&str]; 11] = [
+        &["put", "openai"],
+        &["describe", "openai"],
+        &["list"],
+        &["list", "--all"],
+        &["delete", "openai"],
+        &["rename", "openai", "openai-work"],
+        &["namespace", "add", "work"],
+        &["namespace", "list"],
+        &["namespace", "remove", "work"],
+        &["mount", "set", "default", "remote/prod"],
+        &["bind", "openai", "op://Work/OpenAI/credential"],
+    ];
+    for (flags, part) in [
+        (&["--tenant", "other"][..], "tenant"),
+        (&["--tenant=-x", "--user", "other"][..], "tenant"),
+        (&["--user", "other"][..], "user"),
+        (&["--tenant", "default", "--user", "Bad"][..], "user"),
+    ] {
+        for command in commands {
+            let mut args = vec!["--json"];
+            args.extend_from_slice(flags);
+            args.extend_from_slice(command);
+            let (finished, output) = bounded(sandbox.command(&args));
+            assert!(
+                finished,
+                "{args:?} opened the configuration or the keychain"
+            );
+            assert_eq!(code(&output), 4, "{args:?}: {}", text(&output.stderr));
+            let refusal: serde_json::Value = serde_json::from_slice(&output.stderr).unwrap();
+            assert_eq!(refusal["error"], "denied", "{args:?}");
+            assert_eq!(refusal["part"], part, "{args:?}");
+            assert!(output.stdout.is_empty(), "{args:?}");
+        }
+    }
+    for fifo in [&config, &keychain] {
+        let kind = fs::symlink_metadata(fifo).unwrap().file_type();
+        assert!(std::os::unix::fs::FileTypeExt::is_fifo(&kind));
+    }
+}
+
+/// story:cli-scope-flags: `--tenant default --user default` is the default scope, spelled out.
+#[test]
+fn the_default_tenant_and_user_may_be_named() {
+    let sandbox = Sandbox::new();
+    let stored = sandbox.piped(
+        &["--tenant", "default", "--user", "default", "put", "openai"],
+        MARKER.as_bytes(),
+    );
+    assert!(stored.status.success(), "{}", text(&stored.stderr));
+    assert_eq!(sandbox.names("default"), ["openai"]);
+}
+
 #[test]
 fn a_remote_origin_must_be_https_unless_its_host_is_loopback() {
     let sandbox = Sandbox::new();

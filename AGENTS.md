@@ -66,15 +66,17 @@ the code.
   gives each scenario its own `XDG_CONFIG_HOME` under `target/conformance/cli` and a file-backed
   keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`); a `test-hooks` build also mounts the read-only fake
   for `[backends.onepassword.<label>]`. It reads the branch from the exit status, the JSON
-  refusal and the world before the command. What ESS cannot state (no value on stdout or stderr,
-  a value in argv refused, `put`'s sources, the configuration file's mode, an inert test hook and
+  refusal (with the flag a denial names) and the world before the command, and holds a denial to
+  leaving the configuration, its lock and the keychain file unchanged. What ESS cannot state (no
+  value on stdout or stderr, a value in argv refused, `put`'s sources, the configuration file's
+  mode, a denial decided before the configuration or keychain is opened, an inert test hook and
   an unmountable fake in a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`,
   `review_invariants.rs`, `review_default_build.rs`).
 - `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
   `contracts/storage-baseline.json` holds the library's: 108 answered, 0 unsupported.
-  `contracts/cli-baseline.json` holds the CLI's: 66 answered, at most 23 unsupported (a scope
-  other than tenant and user `default`, `Read`). Every authored scenario must pass. Raise a floor
-  or lower a ceiling when the suite grows; never the reverse to pass.
+  `contracts/cli-baseline.json` holds the CLI's: 81 answered, at most 8 unsupported (`Read`).
+  Every authored scenario must pass. Raise a floor or lower a ceiling when the suite grows; never
+  the reverse to pass.
 - Every authored scenario under `contracts/*/scenarios/` is listed in `contracts/ess-inputs.yaml`.
 
 ## Plan

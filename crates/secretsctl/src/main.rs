@@ -2,7 +2,9 @@
 //! named-storage library (story:local-cli).
 //!
 //! The local commands act on the local scope: tenant `default`, user `default`, namespace
-//! `default` unless `--namespace` names another. Their configuration is
+//! `default` unless `--namespace` names another. `--tenant` and `--user` name the scope; any
+//! value other than `default` is denied by the local authorizer before the configuration is read
+//! or any backend is opened (story:cli-scope-flags). Their configuration is
 //! `$XDG_CONFIG_HOME/b10x-secrets/config.toml` (`~/.config` when the variable is unset) and holds
 //! no secret.
 //!
@@ -13,6 +15,10 @@ use std::{ffi::OsString, path::PathBuf, process::ExitCode};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
 use clap::{Args, Parser, Subcommand, error::ContextKind, error::ErrorKind};
+use secrets_core::{
+    authorize::{Authorizer as _, LocalAuthorizer, Resource},
+    storage::Action,
+};
 
 mod backends;
 mod local;
@@ -27,6 +33,24 @@ struct Cli {
     /// Print results and refusals as JSON.
     #[arg(long, global = true)]
     json: bool,
+    /// The tenant a local command acts in. Local mode serves tenant `default` only; any other is
+    /// denied before the configuration or any backend is opened.
+    #[arg(
+        long,
+        global = true,
+        default_value = "default",
+        allow_hyphen_values = true
+    )]
+    tenant: String,
+    /// The user a local command acts as. Local mode serves user `default` only; any other is
+    /// denied before the configuration or any backend is opened.
+    #[arg(
+        long,
+        global = true,
+        default_value = "default",
+        allow_hyphen_values = true
+    )]
+    user: String,
     #[command(subcommand)]
     command: Command,
 }
@@ -206,7 +230,20 @@ async fn run(cli: Cli) -> ExitCode {
         Command::Health { origin } => return health(&origin).await,
         local => local,
     };
-    // Only a local command reads the configuration and opens the keychain.
+    // The scope is decided first: a denied command reads no configuration and opens no backend.
+    let (name, actions) = decision(&command);
+    if let Err(denial) = actions.iter().try_for_each(|action| {
+        LocalAuthorizer.decide(
+            Resource::Scope {
+                tenant: &cli.tenant,
+                user: &cli.user,
+            },
+            *action,
+        )
+    }) {
+        return local::Local::unopened(cli.json).finish(name, Err(local::Failure::Denied(denial)));
+    }
+    // Only an admitted local command reads the configuration and opens the keychain.
     let local = local::Local::open(cli.json);
     let (name, outcome) = match command {
         Command::GenerateKeyring { .. } | Command::Health { .. } => return ExitCode::FAILURE,
@@ -253,6 +290,34 @@ async fn run(cli: Cli) -> ExitCode {
         }
     };
     local.finish(name, outcome)
+}
+
+/// A local command's name in messages, and the actions the authorizer decides for it
+/// (`spec/domains/storage.yaml`, `Action`). Every local command is decided on the tenant and the
+/// user: the namespace commands' specification reads the tenant only, and the CLI also refuses a
+/// user it does not serve rather than act for one silently.
+fn decision(command: &Command) -> (&'static str, &'static [Action]) {
+    match command {
+        Command::GenerateKeyring { .. } => ("generate-keyring", &[]),
+        Command::Health { .. } => ("health", &[]),
+        Command::Put(_) => ("put", &[Action::Write]),
+        Command::Describe { .. } => ("describe", &[Action::List]),
+        Command::List { .. } => ("list", &[Action::List]),
+        Command::Delete { .. } => ("delete", &[Action::Delete]),
+        Command::Rename { .. } => ("rename", &[Action::Write, Action::Delete]),
+        Command::Namespace(NamespaceCommand::Add { .. }) => {
+            ("namespace add", &[Action::ManageNamespace])
+        }
+        Command::Namespace(NamespaceCommand::List) => {
+            ("namespace list", &[Action::ManageNamespace])
+        }
+        Command::Namespace(NamespaceCommand::Remove { .. }) => {
+            ("namespace remove", &[Action::ManageNamespace])
+        }
+        Command::Mount(MountCommand::Set { .. }) => ("mount set", &[Action::ManageNamespace]),
+        Command::Bind { .. } => ("bind", &[Action::ManageNamespace]),
+        Command::Unbind { .. } => ("unbind", &[Action::ManageNamespace]),
+    }
 }
 
 fn generate_keyring(key_id: &str) -> ExitCode {

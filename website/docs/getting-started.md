@@ -59,6 +59,9 @@ The commands are `put`, `describe`, `list`, `delete`, `rename`, `namespace add|l
 - **No value is printed.** No command reads a value back; `describe` and `list` show name, scope,
   backend and version. `put` reads from a hidden prompt, a pipe or `--file`, refuses a value on
   the command line, and refuses a file its group or others can access.
+- **Scope.** `--tenant` and `--user` name the scope a command acts in; both default to `default`,
+  the only tenant and user local mode serves. Any other value is refused as `denied`, naming the
+  flag, before the configuration file is read or any backend is opened.
 - **Configuration.** `$XDG_CONFIG_HOME/b10x-secrets/config.toml` (`~/.config/...` when unset)
   holds namespaces, mounts, bindings and backends, and no secret. Each change replaces it
   atomically with mode 0600.

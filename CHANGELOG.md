@@ -7,6 +7,10 @@
   with `test-hooks`; a default build refuses that table and cannot mount it. The library suite
   answers 108 of 108; the CLI suite answers its read-only and 1Password-mount scenarios. No
   1Password backend exists yet.
+- `secretsctl` takes `--tenant` and `--user`, both `default` by default. Any other value is
+  `denied` (exit 4, the JSON refusal naming the flag) by the local authorizer before the
+  configuration file is read or any backend is opened. The CLI suite answers its 15 `denied` and
+  `denied-user` scenarios.
 
 ## 0.5.0 - 2026-10-05
 
