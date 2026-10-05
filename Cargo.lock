@@ -2583,7 +2583,9 @@ dependencies = [
 name = "secrets-federation"
 version = "0.4.1"
 dependencies = [
+ "async-trait",
  "secrets-core",
+ "tokio",
 ]
 
 [[package]]
