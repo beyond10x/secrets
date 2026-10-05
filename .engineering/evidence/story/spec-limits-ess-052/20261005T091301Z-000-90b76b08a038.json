@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-05T09:13:01Z",
+  "actor": "human:timo",
+  "artifact": "story:spec-limits-ess-052",
+  "kind": "story",
+  "revision": 4,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check with PostgreSQL 16 and ESS 0.52.0: exit 0; conformance 111/111 in 3 identical runs; secrets-library synthesizes 77 scenarios, 0 refusals",
+    "reference": "Taskfile.yml"
+  }
+}

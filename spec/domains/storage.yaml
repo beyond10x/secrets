@@ -2,7 +2,7 @@
 # operator-approved storage model (2026-09-26/27) or from the coordinator's decisions (2026-09-27),
 # and nothing else. Every open question of the first drafts was resolved 2026-09-27 and is marked
 # DECIDED (the coordinator's default, fail closed), DEFERRED (to the named story) or ESS-LIMIT (the
-# missing ESS 0.36 construct). Markers keep the number they had in the first draft's report, (#N).
+# missing ESS construct, checked against ESS 0.52.0). Markers keep the number they had in the first draft's report, (#N).
 #
 # Secret bytes: no entity field, view field, event field or error field in this domain is a secret
 # value. The value exists only as `Write.value` (input) and `Read.value` (response). That is the
@@ -114,9 +114,10 @@ entities:
     fields: []
     # "Namespace belongs to a Tenant"; many, because namespaces are authored inside the one local
     # tenant `default`.
-    # ESS-LIMIT: the `owns` entry is not writable. Its `via` must be a Namespace field typed as the
-    # tenant, and the tenant is part of the Namespace's composite identity; `sets:` cannot fill a
-    # field from part of an input (`input.namespace.tenant` is refused as undeclared input).
+    # ESS-LIMIT (beyond10x/ess#233): the `owns` entry is not writable. Its `via` must be a
+    # Namespace field typed as the tenant, and the tenant is part of the Namespace's composite
+    # identity; `sets:` cannot fill a field from part of an input (`input.namespace.tenant` is
+    # refused as undeclared input).
     # DECIDED 2026-09-27 (#5): only tenant `default` exists and no command creates a tenant; tenant
     # provisioning belongs with the external authorizer, out of scope of epic:named-federated-storage.
     lifecycle:
@@ -226,7 +227,7 @@ entities:
     # "every secret belongs to exactly one scope": the scope is part of the identity.
     # Decided by the coordinator 2026-09-27: a Secret references its Namespace (not ownership:
     # RemoveNamespace is refused while secrets remain).
-    # ESS-LIMIT (#17): the `references` entry is not writable; its `via` would be a Secret field typed
+    # ESS-LIMIT (#17, beyond10x/ess#233): the `references` entry is not writable; its `via` would be a Secret field typed
     # as the NamespaceKey, which is part of the address and which `sets:` cannot fill from part of
     # an input (the ESS limit given at Tenant).
     # DECIDED 2026-09-27 (#19): every Secret has an owning user in its scope; namespace-shared secrets
@@ -329,7 +330,6 @@ commands:
             namespace: input.namespace
         summary: The namespace exists in the tenant, with the given mount or the default keychain one.
 
-  # ESS-LIMIT (#23): no removal effect, so `removed` cannot say the namespace stops existing.
   - name: secrets.storage.RemoveNamespace
     input:
       - name: namespace
@@ -350,6 +350,8 @@ commands:
         external: secrets or bindings remain in the namespace
         error: secrets.storage.Conflict
       - name: removed
+        deletes: secrets.storage.Namespace
+        instance: namespace
         emits: [secrets.storage.NamespaceRemoved]
         payload:
           secrets.storage.NamespaceRemoved:
@@ -426,7 +428,6 @@ commands:
             address: input.address
         summary: The address resolves to the locator in the namespace's backend.
 
-  # ESS-LIMIT (#26): no removal effect, so `unbound` cannot say the binding stops existing.
   - name: secrets.storage.Unbind
     input:
       - name: address
@@ -442,6 +443,8 @@ commands:
         external: the address has no binding
         error: secrets.storage.NotFound
       - name: unbound
+        deletes: secrets.storage.Binding
+        instance: address
         emits: [secrets.storage.NameUnbound]
         payload:
           secrets.storage.NameUnbound:
@@ -452,7 +455,7 @@ commands:
   # mount, the mount exactly one backend, and a Binding (where one exists) the locator. A name with
   # no mount, or with no binding on a backend that requires one, is `unresolved` (NotFound) and no
   # backend is called.
-  # ESS-LIMIT (#27): no assertion that an outcome calls no dependency, and a `when` cannot read
+  # ESS-LIMIT (#27, beyond10x/ess#229): no assertion that an outcome calls no dependency, and a `when` cannot read
   # other entities; "no backend is called" is stated in the outcome text only.
   # An absent Namespace.mount means the default keychain mount (coordinator, 2026-09-27;
   # Namespace.mount above), so an existing namespace always has one.
@@ -489,7 +492,7 @@ commands:
         external: the namespace has no mount, or the backend requires a binding and the name has none; no backend is called
         error: secrets.storage.NotFound
       # A write to a read-only mount (onepassword) is refused here.
-      # ESS-LIMIT (#29): a guard cannot read another entity (the mount's backend); declared external.
+      # ESS-LIMIT (#29, beyond10x/ess#229): a guard cannot read another entity (the mount's backend); declared external.
       - name: unsupported
         external: the resolved backend lacks the write capability (onepassword)
         error: secrets.storage.Unsupported
@@ -558,7 +561,6 @@ commands:
 
   # Decided by the coordinator 2026-09-27: Delete never removes a Binding, and is unsupported on a
   # read-only mount.
-  # ESS-LIMIT (#31): no removal effect, so `deleted` cannot say the secret stops existing.
   - name: secrets.storage.Delete
     input:
       - name: address
@@ -588,6 +590,8 @@ commands:
         external: the backend holds no secret at the address
         error: secrets.storage.NotFound
       - name: deleted
+        deletes: secrets.storage.Secret
+        instance: address
         emits: [secrets.storage.SecretDeleted]
         payload:
           secrets.storage.SecretDeleted:
@@ -597,7 +601,7 @@ commands:
   # Within one scope. Decided by the coordinator 2026-09-27: needs write and delete, and is
   # unsupported on a read-only mount.
   # Decided by the coordinator 2026-09-27: Bindings never move; renaming a bound name is conflict.
-  # ESS-LIMIT (#35): no identity-changing effect, so `renamed` cannot say the secret now answers to
+  # ESS-LIMIT (#35, beyond10x/ess#429): no identity-changing effect, so `renamed` cannot say the secret now answers to
   # new_name.
   - name: secrets.storage.Rename
     input:
@@ -649,7 +653,7 @@ commands:
         summary: The value is held under new_name and no longer under the address's name.
 
   # Metadata only, never a value: name, scope and version (the SecretMetadata view).
-  # ESS-LIMIT (#36): a command outcome cannot restrict a view to its input; see the
+  # ESS-LIMIT (#36, beyond10x/ess#428): a command outcome cannot restrict a view to its input; see the
   # SecretMetadata view (#40).
   - name: secrets.storage.ListMetadata
     input:
@@ -670,7 +674,7 @@ commands:
       - name: unsupported
         external: the resolved backend lacks the list capability (onepassword)
         error: secrets.storage.Unsupported
-      # ESS-LIMIT (#37): no success outcome without an event; a listing changes nothing, and the event
+      # ESS-LIMIT (#37): no success outcome without an event (ESS-COMMAND-007, ESS 0.52.0); a listing changes nothing, and the event
       # is declared only for that reason.
       - name: listed
         emits: [secrets.storage.MetadataListed]
@@ -743,8 +747,9 @@ outcome_groups:
 views:
   # ListMetadata's rows: name and scope (the address) and version. `state` is here only so the view
   # covers every Secret field for Read's unchanged-subject check.
-  # ESS-LIMIT (#40): a `params` filter validates but ess 0.36.0 synthesis cannot bind a param
-  # (ESS-SYNTH-005, seen on the custody NamespaceSecrets view 2026-09-27), so the view holds every
+  # ESS-LIMIT (#40, beyond10x/ess#428): a `params` filter validates but synthesis binds a param
+  # only to a stored field of the same name, never to a member of the struct identity
+  # (ESS-SYNTH-005, seen on the custody NamespaceSecrets view, ESS 0.52.0), so the view holds every
   # stored secret.
   - name: secrets.storage.SecretMetadata
     source: secrets.storage.Secret

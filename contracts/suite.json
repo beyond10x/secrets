@@ -349,8 +349,20 @@
             "name": "secrets.storage.Delete"
           },
           {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
             "kind": "event",
             "name": "secrets.storage.SecretDeleted"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretWritten"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
           }
         ],
         "origin": "generated",
@@ -663,11 +675,23 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
             "name": "secrets.storage.RemoveNamespace"
           },
           {
             "kind": "event",
+            "name": "secrets.storage.NamespaceAdded"
+          },
+          {
+            "kind": "event",
             "name": "secrets.storage.NamespaceRemoved"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
           }
         ],
         "origin": "generated",
@@ -951,7 +975,15 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
             "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NameBound"
           },
           {
             "kind": "event",
@@ -1103,8 +1135,8 @@
   },
   "provenance": {
     "component": "secrets-service",
-    "contract_digest": "e19dc13c32e51ca7b0ace77f2ffa348e511f2de876bf2684b613449ab620b0e7",
-    "spec_digest": "dd17f2508caa42bd29317ce40c6fc03bf7285372d2e16efe46064f622dbf90d8",
+    "contract_digest": "a83f8b62aebf052ad2122672bb867d983319986c6f33e3db8f0e03759d66a9d8",
+    "spec_digest": "999d48b0e0ae3363cc118cc3bd9e118e93a914d1f7a8a25e25d219ed23d2252b",
     "specification_version": "v1",
     "suite_version": "ess-conformance/27",
     "system": "secrets"
@@ -4628,14 +4660,29 @@
       "purpose": "`secrets.custody.CommitTransaction` sent as `secrets.custody.Operator`, which the specification does not grant it, is refused before it runs",
       "source": [
         {
+          "kind": "entity",
+          "name": "secrets.custody.PreparedTransaction"
+        },
+        {
           "kind": "command",
           "name": "secrets.custody.CommitTransaction"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.custody.PrepareTransaction"
         },
         {
           "kind": "outcome",
           "name": {
             "command": "secrets.custody.CommitTransaction",
             "outcome": "committed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
           }
         },
         {
@@ -4729,6 +4776,50 @@
       ],
       "steps": [
         {
+          "actor": "secrets.custody.Workload",
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction",
+          "step": "capture_instance"
+        },
+        {
           "actor": "secrets.custody.Operator",
           "command": "secrets.custody.CommitTransaction",
           "input": {
@@ -4737,8 +4828,8 @@
               "value": "tenant"
             },
             "transaction": {
-              "kind": "literal",
-              "value": "00000000-0000-4000-8000-d624f5690fe3"
+              "instance": "prepared-transaction",
+              "kind": "instance"
             }
           },
           "step": "execute_command"
@@ -4775,14 +4866,29 @@
       "purpose": "`secrets.custody.CommitTransaction` answers `committed` for an input no other branch's guard claims",
       "source": [
         {
+          "kind": "entity",
+          "name": "secrets.custody.PreparedTransaction"
+        },
+        {
           "kind": "command",
           "name": "secrets.custody.CommitTransaction"
+        },
+        {
+          "kind": "command",
+          "name": "secrets.custody.PrepareTransaction"
         },
         {
           "kind": "outcome",
           "name": {
             "command": "secrets.custody.CommitTransaction",
             "outcome": "committed"
+          }
+        },
+        {
+          "kind": "outcome",
+          "name": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
           }
         },
         {
@@ -4873,6 +4979,50 @@
       "steps": [
         {
           "actor": "secrets.custody.Workload",
+          "command": "secrets.custody.PrepareTransaction",
+          "input": {
+            "actor": {
+              "kind": "literal",
+              "value": "actor"
+            },
+            "mutations": {
+              "kind": "literal",
+              "value": [
+                {
+                  "op": "delete",
+                  "value": {
+                    "reference": {
+                      "key": "mutations.0.reference.key",
+                      "namespace": "mutations.0.reference.namespace",
+                      "tenant": "mutations.0.reference.tenant"
+                    }
+                  }
+                }
+              ]
+            },
+            "transaction": {
+              "kind": "literal",
+              "value": "00000000-0000-4000-8000-d624f5690fe3"
+            }
+          },
+          "step": "execute_command"
+        },
+        {
+          "outcome": {
+            "command": "secrets.custody.PrepareTransaction",
+            "outcome": "prepared"
+          },
+          "step": "expect_outcome"
+        },
+        {
+          "entity": "secrets.custody.PreparedTransaction",
+          "event": "secrets.custody.TransactionPrepared",
+          "field": "transaction",
+          "instance": "prepared-transaction",
+          "step": "capture_instance"
+        },
+        {
+          "actor": "secrets.custody.Workload",
           "command": "secrets.custody.CommitTransaction",
           "input": {
             "tenant": {
@@ -4880,8 +5030,8 @@
               "value": "tenant"
             },
             "transaction": {
-              "kind": "literal",
-              "value": "00000000-0000-4000-8000-d624f5690fe3"
+              "instance": "prepared-transaction",
+              "kind": "instance"
             }
           },
           "step": "execute_command"
@@ -4896,8 +5046,7 @@
         {
           "event": "secrets.custody.TransactionCommitted",
           "payload": {
-            "tenant": "tenant",
-            "transaction": "00000000-0000-4000-8000-d624f5690fe3"
+            "tenant": "tenant"
           },
           "shape": {
             "tenant": {
