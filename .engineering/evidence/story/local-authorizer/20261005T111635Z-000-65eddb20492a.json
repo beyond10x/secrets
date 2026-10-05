@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-05T11:16:35Z",
+  "actor": "human:timo",
+  "artifact": "story:local-authorizer",
+  "kind": "story",
+  "revision": 8,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check exit 0 (2026-10-05, c81627f): secrets-service conformance 111 total, 111 passed x3; secrets-library conformance 96 total, 95 passed, 1 unsupported (SetMount to a 1Password mount), 0 failed, 0 error, 0 skipped x3 against contracts/storage-baseline.json; 146 Rust tests passed; contracts/storage/scenarios/authorize 3/3 authored scenarios and the 17 synthesized denied and denied-user scenarios passed; falsification of the user check failed a-second-user-is-denied-before-any-backend and 7 denied-user scenarios, source restored byte for byte"
+  }
+}
