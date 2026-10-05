@@ -68,13 +68,14 @@ the code.
   for `[backends.onepassword.<label>]`. It reads the branch from the exit status, the JSON
   refusal (with the flag a denial names) and the world before the command, and holds a denial to
   leaving the configuration, its lock and the keychain file unchanged. What ESS cannot state (no
-  value on stdout or stderr, a value in argv refused, `put`'s sources, the configuration file's
-  mode, a denial decided before the configuration or keychain is opened, an inert test hook and
-  an unmountable fake in a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`,
+  value on stdout or stderr, `read --out` creating only a new mode-0600 file and refusing a
+  symlink, a value in argv refused, `put`'s sources, the configuration file's mode, a denial
+  decided before the configuration or keychain is opened, an inert test hook and an unmountable
+  fake in a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`,
   `review_invariants.rs`, `review_default_build.rs`).
 - `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
   `contracts/storage-baseline.json` holds the library's: 108 answered, 0 unsupported.
-  `contracts/cli-baseline.json` holds the CLI's: 81 answered, at most 8 unsupported (`Read`).
+  `contracts/cli-baseline.json` holds the CLI's: 89 answered, 0 unsupported.
   Every authored scenario must pass. Raise a floor or lower a ceiling when the suite grows; never
   the reverse to pass.
 - Every authored scenario under `contracts/*/scenarios/` is listed in `contracts/ess-inputs.yaml`.

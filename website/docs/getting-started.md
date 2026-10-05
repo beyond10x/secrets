@@ -48,17 +48,23 @@ names another.
 printf '%s' "$API_KEY" | secretsctl put openai   # or a hidden prompt, or --file
 secretsctl list --all
 secretsctl describe openai
+secretsctl read openai --out ./openai.key   # a new mode-0600 file; never stdout
 secretsctl rename openai openai-work
 secretsctl namespace add work --mount remote/prod
 secretsctl bind openai op://Work/OpenAI/credential --namespace work
 ```
 
-The commands are `put`, `describe`, `list`, `delete`, `rename`, `namespace add|list|remove`,
+The commands are `put`, `read`, `describe`, `list`, `delete`, `rename`, `namespace add|list|remove`,
 `mount set`, `bind` and `unbind`; `--json` prints results and refusals as JSON.
 
-- **No value is printed.** No command reads a value back; `describe` and `list` show name, scope,
-  backend and version. `put` reads from a hidden prompt, a pipe or `--file`, refuses a value on
-  the command line, and refuses a file its group or others can access.
+- **No value is printed.** `describe` and `list` show name, scope, backend and version. `put` reads
+  from a hidden prompt, a pipe or `--file`, refuses a value on the command line, and refuses a
+  file its group or others can access.
+- **Reading a value.** `read <name> --out <file>` writes the value, byte for byte, into a new file
+  of mode 0600 and prints only where it went. It refuses a path that exists, a symlink (dangling
+  or not) and a directory before any backend is asked, and the file appears whole or not at all:
+  the value goes into a temporary file beside it, which is then linked into place without
+  replacing anything that appeared there meanwhile.
 - **Scope.** `--tenant` and `--user` name the scope a command acts in; both default to `default`,
   the only tenant and user local mode serves. Any other value is refused as `denied`, naming the
   flag, before the configuration file is read or any backend is opened.

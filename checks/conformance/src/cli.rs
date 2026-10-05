@@ -40,9 +40,12 @@
 //! the configuration file, or the keychain file, unreadable for that one command, or takes the
 //! custody database down; the file is restored byte for byte afterwards.
 //!
-//! # What stays unsupported
+//! # Read
 //!
-//! `Read`: the CLI has no command that prints a value.
+//! `Read` is `read --out` into a new path in the scenario's directory. It took `read` only when the
+//! binary printed that outcome, wrote nothing to stderr and left a regular file of mode 0600 there;
+//! a refusal that left anything at the path takes no declared branch. The file is removed once
+//! read.
 //!
 //! # The 1Password kind
 //!
@@ -223,6 +226,13 @@ impl World {
 
     fn config_path(&self) -> PathBuf {
         self.root.join("config/b10x-secrets/config.toml")
+    }
+
+    /// A new path in the scenario's directory, for one `read --out`.
+    fn out_path(&self) -> PathBuf {
+        static NEXT: AtomicU64 = AtomicU64::new(0);
+        self.root
+            .join(format!("read-{}", NEXT.fetch_add(1, Ordering::SeqCst)))
     }
 
     fn keychain_path(&self) -> PathBuf {
@@ -490,6 +500,7 @@ enum Parsed {
     Bind(Address),
     Unbind(Address),
     Write(Address),
+    Read(Address),
     Delete(Address),
     Rename(Address, SecretName),
     ListMetadata(Scope),
@@ -505,6 +516,7 @@ impl Parsed {
             Self::Bind(_) => "Bind",
             Self::Unbind(_) => "Unbind",
             Self::Write(_) => "Write",
+            Self::Read(_) => "Read",
             Self::Delete(_) => "Delete",
             Self::Rename(..) => "Rename",
             Self::ListMetadata(_) => "ListMetadata",
@@ -519,6 +531,7 @@ impl Parsed {
             Self::Bind(address)
             | Self::Unbind(address)
             | Self::Write(address)
+            | Self::Read(address)
             | Self::Delete(address)
             | Self::Rename(address, _) => namespace_key(&address.scope),
             Self::ListMetadata(scope) => namespace_key(scope),
@@ -559,6 +572,7 @@ fn parse(command: &str, input: &Value) -> Option<Parsed> {
         "Bind" => Parsed::Bind(address(input)?),
         "Unbind" => Parsed::Unbind(address(input)?),
         "Write" => Parsed::Write(address(input)?),
+        "Read" => Parsed::Read(address(input)?),
         "Delete" => Parsed::Delete(address(input)?),
         "Rename" => Parsed::Rename(
             address(input)?,
@@ -594,7 +608,7 @@ fn mount_arg(mount: &Value) -> R<String> {
 }
 
 /// The binary's argv for a command, from the raw input, and the value it reads from a pipe.
-fn argv(command: &str, input: &Value) -> R<(Vec<String>, Option<Vec<u8>>)> {
+fn argv(command: &str, input: &Value, out: &Path) -> R<(Vec<String>, Option<Vec<u8>>)> {
     let ns = |path: &[&str]| -> R<String> { Ok(format!("--namespace={}", text(input, path)?)) };
     let name = || -> R<String> { Ok(text(input, &["address", "name"])?.to_owned()) };
     let address_ns = || ns(&["address", "scope", "namespace"]);
@@ -616,6 +630,13 @@ fn argv(command: &str, input: &Value) -> R<(Vec<String>, Option<Vec<u8>>)> {
                     .map_err(|error| unavailable("decoding the value", error))?,
             );
         }
+        "Read" => args.extend([
+            "read".to_owned(),
+            address_ns()?,
+            format!("--out={}", out.display()),
+            "--".to_owned(),
+            name()?,
+        ]),
         "Delete" => args.extend(["delete".to_owned(), address_ns()?, "--".to_owned(), name()?]),
         "Rename" => args.extend([
             "rename".to_owned(),
@@ -882,11 +903,14 @@ impl Arranging<'_> {
         let mount = namespace.effective_mount();
         match (parsed, forced) {
             (Parsed::Write(address), Some("created")) => self.refuse_secret(&mount, address)?,
-            (Parsed::Write(address) | Parsed::Delete(address), Some("not-found"))
+            (
+                Parsed::Write(address) | Parsed::Read(address) | Parsed::Delete(address),
+                Some("not-found"),
+            )
             | (Parsed::Rename(address, _), Some("not-found")) => {
                 self.refuse_secret(&mount, address)?;
             }
-            (Parsed::Write(address) | Parsed::Delete(address), None) => {
+            (Parsed::Write(address) | Parsed::Read(address) | Parsed::Delete(address), None) => {
                 self.ensure_secret(&mount, address)?;
             }
             (Parsed::Rename(address, new_name), None | Some("taken" | "bound")) => {
@@ -1005,12 +1029,6 @@ fn answer(
             "the specification declares the local user only",
         ));
     }
-    if command == "Read" {
-        return Err(TargetError::unsupported(
-            "reading a value",
-            "secretsctl has no command that prints a secret value",
-        ));
-    }
     let mut input =
         serde_json::to_value(input).map_err(|error| unavailable("encoding the input", error))?;
     // Whether the local authorizer admits the raw scope: a denied command is sent as it is, with
@@ -1069,6 +1087,7 @@ fn answer(
             };
             match parsed {
                 Parsed::Write(_)
+                | Parsed::Read(_)
                 | Parsed::Delete(_)
                 | Parsed::Rename(..)
                 | Parsed::ListMetadata(_) => arranging.secret(forced, parsed)?,
@@ -1107,7 +1126,9 @@ fn answer(
         }
         None => (false, false),
     };
-    let (args, value) = argv(command, &input)?;
+    // Where `read --out` is to create its file: a path nothing is at.
+    let out = world.out_path();
+    let (args, value) = argv(command, &input, &out)?;
     for switch in &switches {
         world.flip(runtime, admin, switch)?;
     }
@@ -1122,7 +1143,7 @@ fn answer(
         .get("namespace")
         .and_then(|key| key.get("namespace"))
         .and_then(Value::as_str);
-    let observed = interpret(command, &input, &output, existed, bound, namespace)?;
+    let observed = interpret(command, &input, &output, existed, bound, namespace, &out)?;
     // A denial is decided before the configuration or a backend is touched: one that changed
     // either file takes no declared branch.
     if changed
@@ -1161,13 +1182,18 @@ fn interpret(
     existed: bool,
     bound: bool,
     namespace: Option<&str>,
+    out: &Path,
 ) -> R<Observed> {
     let status = output
         .status
         .code()
         .ok_or_else(|| unavailable("running secretsctl", "killed by a signal"))?;
     if status == 0 {
-        return succeeded(command, input, output);
+        return succeeded(command, input, output, out);
+    }
+    // A refused `read` writes nothing.
+    if command == "Read" && fs::symlink_metadata(out).is_ok() {
+        return Ok(undeclared());
     }
     let Some(index) = status
         .checked_sub(3)
@@ -1191,7 +1217,7 @@ fn interpret(
     if refusal["error"].as_str() != Some(error.code()) {
         return Ok(undeclared());
     }
-    let names = matches!(command, "Bind" | "Write" | "Delete" | "Rename");
+    let names = matches!(command, "Bind" | "Write" | "Read" | "Delete" | "Rename");
     let outcome = match (command, error) {
         // The binary names the flag its authorizer refused.
         (_, StorageError::Denied) => match refusal["part"].as_str() {
@@ -1234,7 +1260,7 @@ fn interpret(
         ("Bind", StorageError::NotFound) => Some("no-namespace"),
         ("Bind", StorageError::Conflict) => Some("already-bound"),
         ("Write", StorageError::TooLarge) => Some("too-large"),
-        ("Delete" | "Rename", StorageError::NotFound) => {
+        ("Read" | "Delete" | "Rename", StorageError::NotFound) => {
             Some(if existed { "not-found" } else { "unresolved" })
         }
         ("Write" | "ListMetadata", StorageError::NotFound) if !existed => Some("unresolved"),
@@ -1254,9 +1280,31 @@ fn interpret(
     })
 }
 
+/// What a successful `read --out` produced: the value in the file it created and the version it
+/// printed, or `None` when it printed another outcome, wrote anything to stderr, or left anything
+/// but a regular file of mode 0600 at the path. The file is removed once read.
+fn read_back(output: &Output, out: &Path) -> R<Option<(Vec<u8>, Value)>> {
+    use std::os::unix::fs::PermissionsExt as _;
+    let printed: Value = serde_json::from_slice(&output.stdout)
+        .map_err(|error| unavailable("reading secretsctl's answer", error))?;
+    let Ok(metadata) = fs::symlink_metadata(out) else {
+        return Ok(None);
+    };
+    let bytes = fs::read(out).map_err(|error| unavailable("reading read's file", error))?;
+    fs::remove_file(out).map_err(|error| unavailable("removing read's file", error))?;
+    if printed["outcome"] != "read"
+        || !output.stderr.is_empty()
+        || !metadata.file_type().is_file()
+        || metadata.permissions().mode() & 0o777 != 0o600
+    {
+        return Ok(None);
+    }
+    Ok(Some((bytes, printed["version"].clone())))
+}
+
 /// A success branch and the event the command declares for it, from the input the binary
 /// accepted.
-fn succeeded(command: &str, input: &Value, output: &Output) -> R<Observed> {
+fn succeeded(command: &str, input: &Value, output: &Output, out: &Path) -> R<Observed> {
     let field = |name: &str| -> R<Node> {
         node(
             input
@@ -1264,6 +1312,16 @@ fn succeeded(command: &str, input: &Value, output: &Output) -> R<Observed> {
                 .ok_or_else(|| unavailable("reading the command input", name))?,
         )
     };
+    if command == "Read" {
+        return read_back(output, out).map(|read| match read {
+            Some(_) => Observed {
+                outcome: Some("read".to_owned()),
+                error: None,
+                events: Vec::new(),
+            },
+            None => undeclared(),
+        });
+    }
     let (outcome, event) = match command {
         "AddNamespace" => (
             "added",
@@ -1423,7 +1481,7 @@ mod tests {
         let input = serde_json::json!({
             "address": {"scope": {"tenant": "default", "namespace": "-ns", "user": "default"}, "name": "-x"},
         });
-        let (args, _) = argv("Delete", &input).unwrap();
+        let (args, _) = argv("Delete", &input, Path::new("out")).unwrap();
         assert_eq!(args, ["--json", "delete", "--namespace=-ns", "--", "-x"]);
     }
 }

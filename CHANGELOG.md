@@ -11,6 +11,10 @@
   `denied` (exit 4, the JSON refusal naming the flag) by the local authorizer before the
   configuration file is read or any backend is opened. The CLI suite answers its 15 `denied` and
   `denied-user` scenarios.
+- `secretsctl read <name> --out <file>` writes a value into a new file of mode 0600 and never to
+  stdout or stderr. It refuses an existing path, a symlink and a directory before any backend is
+  asked, writes a temporary file beside the path and links it into place without replacing
+  anything. The CLI suite answers its 8 `Read` scenarios: 89 of 89.
 
 ## 0.5.0 - 2026-10-05
 

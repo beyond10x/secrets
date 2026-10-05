@@ -127,6 +127,20 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
     let exposed = exposed.to_str().unwrap();
     let protected = sandbox.file("protected", MARKER.as_bytes(), 0o600);
     let protected = protected.to_str().unwrap();
+    // `read --out` targets: new files, a symlink to a file, a dangling symlink and a directory.
+    let path = |name: &str| sandbox.root.join(name).to_str().unwrap().to_owned();
+    let (fresh, fresh_work, linked, dangling) = (
+        path("read-fresh"),
+        path("read-fresh-work"),
+        path("read-linked"),
+        path("read-dangling"),
+    );
+    std::os::unix::fs::symlink(protected, &linked).unwrap();
+    std::os::unix::fs::symlink(path("nowhere"), &dangling).unwrap();
+    let home = path("home");
+    let (missing, bad) = (path("read-missing"), path("read-bad"));
+    // The --json pass reads into files of its own, so its result rows are checked too.
+    let (fresh_json, fresh_work_json) = (path("read-fresh-json"), path("read-fresh-work-json"));
     let mut runs: Vec<(Vec<&str>, Option<&[u8]>)> = vec![
         (vec!["namespace", "add", "work"], None),
         (
@@ -145,6 +159,20 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
         (vec!["describe", "openai", MARKER], None),
         (vec!["describe", "openai"], None),
         (vec!["describe", "missing"], None),
+        // The first run of each writes the file; a later one is refused, the path existing.
+        (vec!["read", "openai", "--out", &fresh], None),
+        (
+            vec!["read", "team/openai", "-n", "work", "--out", &fresh_work],
+            None,
+        ),
+        (vec!["read", "openai", "--out", protected], None),
+        (vec!["read", "openai", "--out", &linked], None),
+        (vec!["read", "openai", "--out", &dangling], None),
+        (vec!["read", "openai", "--out", &home], None),
+        (vec!["read", "openai"], None),
+        (vec!["read", "openai", MARKER], None),
+        (vec!["read", "missing", "--out", &missing], None),
+        (vec!["read", "Bad", "--out", &bad], None),
         (vec!["list"], None),
         (vec!["list", "--all"], None),
         (vec!["list", "-n", "work"], None),
@@ -162,7 +190,14 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
     let json: Vec<_> = runs
         .iter()
         .map(|(args, input)| {
-            let mut args = args.clone();
+            let mut args: Vec<&str> = args
+                .iter()
+                .map(|arg| match *arg {
+                    arg if arg == fresh => fresh_json.as_str(),
+                    arg if arg == fresh_work => fresh_work_json.as_str(),
+                    arg => arg,
+                })
+                .collect();
             args.insert(0, "--json");
             (args, *input)
         })
@@ -180,6 +215,88 @@ fn no_command_writes_secret_bytes_to_stdout_or_stderr() {
         !config.contains(MARKER),
         "the configuration holds the secret"
     );
+    // The value went into the files `read` created, and nowhere a refusal pointed.
+    assert_eq!(fs::read(&fresh).unwrap(), MARKER.as_bytes());
+    assert_eq!(fs::read(&fresh_work).unwrap(), MARKER.as_bytes());
+    assert_eq!(fs::read(&fresh_json).unwrap(), MARKER.as_bytes());
+    assert_eq!(fs::read(&fresh_work_json).unwrap(), MARKER.as_bytes());
+    assert!(fs::symlink_metadata(&dangling).unwrap().is_symlink());
+    assert!(!sandbox.root.join("nowhere").exists());
+    assert!(!PathBuf::from(&missing).exists());
+}
+
+/// story:cli-read-out-file: a value written by `put` reads back byte for byte into a new file of
+/// mode 0600; an existing file and a symlink are refused (2) and left as they were; nothing but
+/// the result row reaches stdout, and no temporary file stays behind.
+#[test]
+fn read_writes_a_value_into_a_new_0600_file_only() {
+    use std::os::unix::fs::PermissionsExt as _;
+    let sandbox = Sandbox::new();
+    let value = b"line one\nline two\n\x00\xff";
+    let stored = sandbox.piped(&["put", "openai", "--raw"], value);
+    assert!(stored.status.success(), "{}", text(&stored.stderr));
+    let out = sandbox.root.join("out");
+    fs::create_dir_all(&out).unwrap();
+    let target = out.join("openai.key");
+    let read = sandbox.run(&[
+        "--json",
+        "read",
+        "openai",
+        "--out",
+        target.to_str().unwrap(),
+    ]);
+    assert!(read.status.success(), "{}", text(&read.stderr));
+    assert_eq!(fs::read(&target).unwrap(), value);
+    let mode = fs::metadata(&target).unwrap().permissions().mode() & 0o777;
+    assert_eq!(mode, 0o600);
+    let printed: serde_json::Value = serde_json::from_slice(&read.stdout).unwrap();
+    assert_eq!(printed["outcome"], "read");
+    assert_eq!(printed["name"], "openai");
+    assert!(read.stderr.is_empty(), "{}", text(&read.stderr));
+
+    let existing = out.join("existing");
+    fs::write(&existing, b"keep").unwrap();
+    let linked = out.join("linked");
+    std::os::unix::fs::symlink(&existing, &linked).unwrap();
+    let dangling = out.join("dangling");
+    std::os::unix::fs::symlink(out.join("absent"), &dangling).unwrap();
+    for (path, message) in [
+        (&target, "exists"),
+        (&existing, "exists"),
+        (&linked, "symlink"),
+        (&dangling, "symlink"),
+        (&out, "exists"),
+    ] {
+        let refused = sandbox.run(&["read", "openai", "--out", path.to_str().unwrap()]);
+        assert_eq!(
+            code(&refused),
+            2,
+            "{}: {}",
+            path.display(),
+            text(&refused.stderr)
+        );
+        assert!(
+            text(&refused.stderr).contains(message),
+            "{}",
+            text(&refused.stderr)
+        );
+        assert!(refused.stdout.is_empty());
+    }
+    assert_eq!(fs::read(&target).unwrap(), value);
+    assert_eq!(fs::read(&existing).unwrap(), b"keep");
+    assert!(!out.join("absent").exists());
+
+    // A name nothing is stored under is `not-found` (3) and creates no file.
+    let missing = out.join("missing");
+    let refused = sandbox.run(&["read", "missing", "--out", missing.to_str().unwrap()]);
+    assert_eq!(code(&refused), 3, "{}", text(&refused.stderr));
+    assert!(!missing.exists());
+    let mut left: Vec<_> = fs::read_dir(&out)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
+    left.sort();
+    assert_eq!(left, ["dangling", "existing", "linked", "openai.key"]);
 }
 
 #[test]

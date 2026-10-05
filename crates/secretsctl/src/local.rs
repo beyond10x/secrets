@@ -1,5 +1,6 @@
 //! The local commands: the storage stack over the configuration file, and what each command
-//! prints. Every result is a name, a scope, a backend or a version; no command reads a value back.
+//! prints. Every result is a name, a scope, a backend or a version; `read` writes a value only into
+//! a new mode-0600 file and prints where it went.
 use std::{
     path::{Path, PathBuf},
     process::ExitCode,
@@ -357,6 +358,42 @@ impl Local {
             text: format!(
                 "{outcome} {} (scope {}, backend {}, version {})",
                 address.name,
+                scope_text(&address.scope),
+                backend_text(&backend),
+                version_text(version.as_ref()),
+            ),
+        })
+    }
+
+    /// Writes the value into a new mode-0600 file at `out`; prints only where it went. The path is
+    /// checked, and its temporary file created, before any backend is asked.
+    pub async fn read(&self, namespace: &str, name: &str, out: &Path) -> Outcome {
+        let address = address(namespace, name)?;
+        let stack = self.stack()?;
+        let pending =
+            crate::out::prepare(out).map_err(|refusal| Failure::Refused(refusal.to_string()))?;
+        let revealed = stack
+            .storage
+            .read(&Target::unbound(address.clone()))
+            .await?;
+        pending
+            .commit(revealed.value.expose())
+            .map_err(|refusal| Failure::Refused(refusal.to_string()))?;
+        let backend = self.mount_of(&address.scope).await?;
+        let version = revealed.version;
+        Ok(Report {
+            json: json!({
+                "outcome": "read",
+                "name": address.name,
+                "scope": address.scope,
+                "backend": backend,
+                "version": version,
+                "out": out.to_string_lossy(),
+            }),
+            text: format!(
+                "read {} into {} (scope {}, backend {}, version {})",
+                address.name,
+                out.display(),
                 scope_text(&address.scope),
                 backend_text(&backend),
                 version_text(version.as_ref()),

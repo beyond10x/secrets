@@ -52,7 +52,8 @@ backends behind one interface. It is the `secrets.storage` domain of the
   delete, rename; list metadata, never a value. The local authorizer allows tenant and user
   `default` and denies every other before any backend call. Errors are closed codes: `not-found`,
   `denied`, `unsupported`, `unavailable`, `invalid-name`, `too-large`, `conflict`.
-- **Local CLI.** `secretsctl` runs these operations on this machine and never prints a value; see
+- **Local CLI.** `secretsctl` runs these operations on this machine and never prints a value; it
+  hands one over only as a new mode-0600 file (`read --out`). See
   [Getting started](./getting-started.md#local-cli).
 
 ## Planned: named secrets over several backends

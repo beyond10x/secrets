@@ -8,9 +8,10 @@
 //! `$XDG_CONFIG_HOME/b10x-secrets/config.toml` (`~/.config` when the variable is unset) and holds
 //! no secret.
 //!
-//! No command writes a secret value to stdout or stderr: there is no command that reads one back,
-//! `put` takes its value only from a hidden prompt, a pipe or a protected file, and a command line
-//! that clap refuses is reported without repeating what was typed.
+//! No command writes a secret value to stdout or stderr: `read` writes it only into a new mode-0600
+//! file named by `--out` (story:cli-read-out-file), `put` takes it only from a hidden prompt, a
+//! pipe or a protected file, and a command line that clap refuses is reported without repeating
+//! what was typed.
 use std::{ffi::OsString, path::PathBuf, process::ExitCode};
 
 use base64::{Engine as _, engine::general_purpose::STANDARD};
@@ -22,6 +23,7 @@ use secrets_core::{
 
 mod backends;
 mod local;
+mod out;
 mod value;
 
 #[derive(Parser)]
@@ -67,6 +69,16 @@ enum Command {
     /// Store a secret under a name. The value comes from a hidden prompt, a pipe on stdin, or
     /// --file; never from the command line.
     Put(PutArgs),
+    /// Write one secret's value into a new file, readable by its owner only; never to stdout.
+    Read {
+        name: String,
+        #[command(flatten)]
+        namespace: NamespaceArg,
+        /// The file to create, with mode 0600. An existing path or a symlink is refused, and the
+        /// file appears whole or not at all.
+        #[arg(long)]
+        out: PathBuf,
+    },
     /// Show one secret's name, scope, backend and version.
     Describe {
         name: String,
@@ -248,6 +260,11 @@ async fn run(cli: Cli) -> ExitCode {
     let (name, outcome) = match command {
         Command::GenerateKeyring { .. } | Command::Health { .. } => return ExitCode::FAILURE,
         Command::Put(args) => ("put", local.put(args).await),
+        Command::Read {
+            name,
+            namespace,
+            out,
+        } => ("read", local.read(&namespace.namespace, &name, &out).await),
         Command::Describe { name, namespace } => (
             "describe",
             local.describe(&namespace.namespace, &name).await,
@@ -301,6 +318,7 @@ fn decision(command: &Command) -> (&'static str, &'static [Action]) {
         Command::GenerateKeyring { .. } => ("generate-keyring", &[]),
         Command::Health { .. } => ("health", &[]),
         Command::Put(_) => ("put", &[Action::Write]),
+        Command::Read { .. } => ("read", &[Action::Read]),
         Command::Describe { .. } => ("describe", &[Action::List]),
         Command::List { .. } => ("list", &[Action::List]),
         Command::Delete { .. } => ("delete", &[Action::Delete]),

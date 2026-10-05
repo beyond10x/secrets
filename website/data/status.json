@@ -15,6 +15,6 @@
     {"label": "Verified principal as every audit actor", "status": "planned", "area": "Security", "href": "/docs/status#audit-actors-can-be-caller-chosen"},
     {"label": "Named, scoped secrets over several backends", "status": "shipped", "area": "Library", "detail": "The secrets.storage library: OS keychain and this service behind one interface, one backend per namespace, the local authorizer first.", "href": "/docs/status#named-secrets-over-several-backends"},
     {"label": "Read-only 1Password backend", "status": "planned", "area": "Library", "href": "/docs/status#planned-named-secrets-over-several-backends"},
-    {"label": "Local CLI that never prints a secret", "status": "shipped", "area": "Library", "detail": "secretsctl put, describe, list, delete, rename, namespace, mount set, bind and unbind in the local scope; a value only from a hidden prompt, a pipe or a mode-0600 file.", "href": "/docs/getting-started#local-cli"}
+    {"label": "Local CLI that never prints a secret", "status": "shipped", "area": "Library", "detail": "secretsctl put, read --out, describe, list, delete, rename, namespace, mount set, bind and unbind in the local scope; --tenant and --user other than default are denied; a value only from a hidden prompt, a pipe or a mode-0600 file, and back only into a new mode-0600 file.", "href": "/docs/getting-started#local-cli"}
   ]
 }
