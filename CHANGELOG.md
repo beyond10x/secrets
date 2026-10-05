@@ -1,11 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 - 2026-10-06
 
+- `secretsctl` manages named secrets locally: `put`, `describe`, `list`, `delete`, `rename`,
+  `namespace add|list|remove`, `mount set`, `bind` and `unbind`, over the OS keychain and this
+  service. Configuration lives in `$XDG_CONFIG_HOME/b10x-secrets/config.toml`, written atomically
+  with mode 0600 and holding no secret. `put` takes a value only from a hidden prompt, a pipe, FIFO
+  or socket on stdin, or a file no group or other user can access; a value in argv is refused. No
+  command writes secret bytes to stdout or stderr. A remote origin must be https, or http to a
+  loopback host. The CLI conformance suite runs the built binary.
 - Conformance mounts the read-only, binding-required recording fake for every mount of kind
   `onepassword`, in process and, through `[backends.onepassword.<label>]`, in a `secretsctl` built
   with `test-hooks`; a default build refuses that table and cannot mount it. The library suite
-  answers 108 of 108; the CLI suite answers its read-only and 1Password-mount scenarios. No
+  answers every scenario; the CLI suite answers its read-only and 1Password-mount scenarios. No
   1Password backend exists yet.
 - `secretsctl` takes `--tenant` and `--user`, both `default` by default. Any other value is
   `denied` (exit 4, the JSON refusal naming the flag) by the local authorizer before the

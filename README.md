@@ -9,7 +9,7 @@ value.
 
 **Documentation: <https://beyond10x.github.io/secrets/>**
 
-Version 0.5.0, in development. HTTP contract: [OpenAPI 3.1](docs/openapi.json).
+Version 0.6.0, in development. HTTP contract: [OpenAPI 3.1](docs/openapi.json).
 
 ## Why
 
