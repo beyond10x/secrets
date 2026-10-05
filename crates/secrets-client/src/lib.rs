@@ -50,9 +50,17 @@ struct ListResponse {
 
 impl Client {
     pub fn new(origin: &str, token: impl Into<String>) -> Result<Self, Error> {
+        Self::with_http(HttpClient::new(), origin, token)
+    }
+    /// A client over an HTTP client the caller configured, such as one that bypasses a proxy.
+    pub fn with_http(
+        http: HttpClient,
+        origin: &str,
+        token: impl Into<String>,
+    ) -> Result<Self, Error> {
         let origin = Url::parse(origin).map_err(|_| Error::Transport)?;
         Ok(Self {
-            http: HttpClient::new(),
+            http,
             origin,
             token: token.into(),
         })

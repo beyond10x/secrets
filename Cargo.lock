@@ -2634,8 +2634,19 @@ dependencies = [
 name = "secrets-remote"
 version = "0.4.1"
 dependencies = [
+ "async-trait",
+ "axum",
+ "reqwest",
+ "secrets-auth",
  "secrets-client",
  "secrets-core",
+ "secrets-crypto",
+ "secrets-http",
+ "secrets-postgres",
+ "serde_json",
+ "sqlx",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
