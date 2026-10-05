@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:remote-backend
 kind: story
-status: draft
+status: active
 title: The custody service is a storage backend
 relations:
 - decomposes: epic:named-federated-storage
@@ -12,6 +12,14 @@ scope:
 - confidence: inferred
   path: checks/conformance/src/remote.rs
 - confidence: cited
+  path: checks/conformance/src/storage.rs
+- confidence: cited
+  path: contracts/ess-inputs.yaml
+- confidence: cited
+  path: contracts/storage-baseline.json
+- confidence: cited
+  path: contracts/storage-suite.json
+- confidence: cited
   path: contracts/storage/scenarios/remote
 - confidence: inferred
   path: crates/secrets-client
@@ -19,7 +27,10 @@ scope:
   path: crates/secrets-remote
 - confidence: cited
   path: spec/domains/storage.yaml
-revision: 8
+revision: 11
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 10, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "proposed", to: "active", at: "2026-10-05T09:57:56Z", actor: "human:timo", revision: 11, decided_on: {"recorded":{"review_outcome":1}}}
 ---
 ## Context
 
