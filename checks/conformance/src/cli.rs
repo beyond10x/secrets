@@ -1482,6 +1482,17 @@ mod tests {
             "address": {"scope": {"tenant": "default", "namespace": "-ns", "user": "default"}, "name": "-x"},
         });
         let (args, _) = argv("Delete", &input, Path::new("out")).unwrap();
-        assert_eq!(args, ["--json", "delete", "--namespace=-ns", "--", "-x"]);
+        assert_eq!(
+            args,
+            [
+                "--json",
+                "--tenant=default",
+                "--user=default",
+                "delete",
+                "--namespace=-ns",
+                "--",
+                "-x"
+            ]
+        );
     }
 }
