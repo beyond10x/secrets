@@ -1,5 +1,5 @@
 ---
-format: aep.planning-md/2
+format: aep.planning-md/3
 id: story:ess-custody-retrofit
 kind: story
 status: implemented
@@ -25,6 +25,10 @@ scope:
 - confidence: inferred
   path: contracts/suite.json
 revision: 10
+transitions:
+- {from: "draft", to: "proposed", at: "2026-09-27T12:38:45Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}, imported: true}
+- {from: "proposed", to: "active", at: "2026-09-27T12:38:48Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"review_outcome":1}}, imported: true}
+- {from: "active", to: "implemented", at: "2026-09-27T18:27:56Z", actor: "human:timo", revision: 10, decided_on: {"recorded":{"test_result":1,"review_outcome":1}}, imported: true}
 ---
 ## Context
 

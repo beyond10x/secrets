@@ -1,0 +1,88 @@
+---
+title: Status
+sidebar_position: 3
+description: What Secrets 0.4.0 ships, what it does not do, and what is planned.
+lede: Every capability below carries its status; the landing page's status strip reads the same file, so the two cannot disagree.
+source: website/data/status.json, a b10x-status/1 document
+source_url: https://github.com/beyond10x/secrets/blob/main/website/data/status.json
+---
+
+import status from '@site/data/status.json';
+
+Secrets 0.4.0 is in development: the service and its workload client ship, and the named-storage
+library is specified but not built. **Shipped** means in the released service today, **planned**
+means specified and on the plan only.
+
+<StatusTable data={status} />
+
+## Known limitations
+
+These describe 0.4.0 as it is.
+
+### Rewrap covers only current versions
+
+`secrets rewrap` re-encrypts the current version of each secret. Older versions stay wrapped by
+the key they were written with, so every old key must stay in the keyring. No route reads an older
+version. A fix is planned.
+
+### Audit actors can be caller-chosen
+
+- `POST /v1/workload/secrets:delete` records the body's `actor` when one is given.
+- A prepared batch records the prepare request's `actor` on every event its commit writes.
+- `PUT /v1/workload/secrets` records the `owner_subject` the workload sets.
+
+Treat those actors as claims of an authorized workload, not verified identities. A fix is planned.
+
+### Other gaps
+
+- No user route returns a value, whatever the disclosure; workload reads ignore disclosure.
+- Serving requires Kubernetes: there is no local or development authority.
+- Delete is not cryptographic erasure; backups stay decryptable with the keyring.
+- Grant and keyring changes need a restart, and a workload subject acts in one tenant.
+- Audit events cannot be read through the API; `/metrics` exposes only `secrets_up`.
+
+## Planned: named secrets over several backends
+
+:::info[Planned]
+Nothing in this section is in a release. It is the `secrets.storage` domain of the
+[specification](./reference/ess/secrets-storage.md); names and limits may change before it ships.
+:::
+
+An in-process Rust library for **named** secrets such as `openai` or `team/openai`, with several
+backends behind one interface.
+
+- **Scope.** Each secret belongs to one tenant, namespace and user, and is unique by scope and
+  name. Names are `/`-separated segments of `a-z0-9._-`, at most 128 bytes and 64 per segment.
+  Values are at most 1 MiB.
+- **Backends.** Each namespace is mounted on exactly one backend, with no fallback between them.
+
+  | Backend | Read | Write | Delete | List |
+  |---|---|---|---|---|
+  | OS keychain | yes | yes | yes | yes |
+  | 1Password | yes | no | no | no |
+  | this service | yes | yes | yes | yes |
+
+  An operation the backend cannot perform is `unsupported`. A 1Password name is bound to a locator
+  such as `op://<vault>/<item>/<field>` before it is read. This service as a backend maps a name to
+  `{tenant, namespace, key = name}` with the user as owner.
+- **Operations.** Add, remove and re-mount a namespace; bind and unbind a name; write, read,
+  delete, rename; list metadata, never a value. An authorizer decides every operation before any
+  backend call. Errors are closed codes: `not-found`, `denied`, `unsupported`, `unavailable`,
+  `invalid-name`, `too-large`, `conflict`.
+- **Local mode and CLI.** One tenant and user, both `default`, and a `default` namespace on the OS
+  keychain. `secretsctl` gains commands for names, namespaces, mounts and bindings, and no command
+  writes secret bytes to its output; a value comes from a hidden prompt, a pipe or a protected
+  file, never an argument.
+- **Also planned.** Rewrap of every version, and the verified principal on every audit event.
+- **Not planned.** HashiCorp Vault as a backend, namespace-wide secrets without an owner, and an
+  external authorization service.
+
+## Build from source
+
+```bash
+git clone https://github.com/beyond10x/secrets.git
+cd secrets
+task check
+```
+
+See [Getting started](./getting-started.md) for the tools and the database `task check` needs.

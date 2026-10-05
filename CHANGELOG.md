@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- Documentation moves to its own site, <https://beyond10x.github.io/secrets/>, built from
+  `website/`. The pages under `docs/` other than `openapi.json` and `index.html` are removed;
+  `/docs/secrets/` on the organization site is to redirect to the new pages.
+- The specification is `ess/20` and its suite `ess-conformance/27` under ESS 0.52.0: 111
+  scenarios, adding one per command sent as an actor that is not granted it. The delete and abort
+  outcomes declare `deletes:`, so the suite checks the row is gone.
+- `secrets-docs` generates the site's specification pages; `task check` fails when they drift.
+
 ## 0.4.0 - 2026-09-27
 
 - Every refusal body is `{"error": "<reason phrase>", "code": "<code>"}`, with a stable

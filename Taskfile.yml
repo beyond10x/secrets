@@ -20,5 +20,17 @@ tasks:
       - test "$(git grep -I -E '[/]home/[^/]+/|[g]itlab\\.' -- ':!Cargo.lock' || true)" = ""
   conformance:
     cmds: [cargo run --locked -p secrets-conformance -- check]
+  docs-generate:
+    desc: Regenerate the derived pages under website/docs/reference/ and website/data/ess/.
+    cmds: [cargo run --locked -p secrets-docs -- generate]
+  docs-check:
+    desc: Fail when the generated pages are missing, stale or edited by hand.
+    cmds: [cargo run --locked -p secrets-docs -- generate --check]
+  website:
+    desc: Build the documentation site, as the Documentation validation workflow does.
+    dir: website
+    cmds:
+      - npm ci
+      - npm run build
   check:
-    deps: [fmt, test, clippy, docs, plan, spec, provenance, conformance]
+    deps: [fmt, test, clippy, docs, plan, spec, provenance, conformance, docs-check]

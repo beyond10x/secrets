@@ -1,0 +1,128 @@
+{
+  "format": "b10x-product-landing/1",
+  "product": {
+    "name": "Secrets",
+    "mark": "S",
+    "eyebrow": "Credential custody · service",
+    "promise": [
+      "Credentials held for people.",
+      "Read only by the workload that may."
+    ],
+    "lede": "Secrets keeps the tokens and keys a workload holds on a person's behalf. A workload hands it a value; Secrets encrypts it in the application, stores only ciphertext in PostgreSQL, and gives it back only to a workload granted that exact tenant and action. The person who owns it can see its metadata, revoke it or delete it, and nobody reads a value back through a user route.",
+    "actions": [
+      {
+        "label": "Read the documentation",
+        "href": "/docs/",
+        "kind": "primary"
+      },
+      {
+        "label": "What exists today",
+        "href": "/docs/status"
+      }
+    ],
+    "meta": "Rust service and client · PostgreSQL · specified in ESS · Apache-2.0",
+    "art": {
+      "kind": "domain-graph",
+      "data": "data/ess/secrets-custody.domain-graph.json",
+      "caption": "The secrets.custody domain, generated from spec/ by secrets-docs."
+    },
+    "kpis": [
+      "entities",
+      "relations",
+      "shipped",
+      "planned"
+    ]
+  },
+  "sections": [
+    {
+      "kind": "features",
+      "eyebrow": "What it does",
+      "title": "Custody, not provider logic.",
+      "lede": "Secrets holds bytes, versions, ownership and audit records. OAuth exchange, refresh and upstream revocation stay in the service that integrates the provider.",
+      "items": [
+        {
+          "title": "Encrypted before storage",
+          "description": "Every version gets its own data key, wrapped by a versioned key-encryption key that PostgreSQL never sees. The ciphertext is bound to its tenant, reference, version and disclosure.",
+          "status": "shipped",
+          "href": "/docs/security-model"
+        },
+        {
+          "title": "Tenant-bound, least privilege",
+          "description": "Workloads are Kubernetes service accounts granted explicit actions in one tenant; people are verified by Identity and act only on what they own.",
+          "status": "shipped",
+          "href": "/docs/authentication"
+        },
+        {
+          "title": "Atomic prepared batches",
+          "description": "A workload stages puts and deletes in one tenant and commits them in one PostgreSQL transaction, or aborts them.",
+          "status": "shipped",
+          "href": "/docs/http-api#prepared-batches"
+        },
+        {
+          "title": "Named secrets over several backends",
+          "description": "An in-process library with named, scoped secrets over the OS keychain, read-only 1Password and this service, and a CLI that never prints a secret.",
+          "status": "planned",
+          "href": "/docs/status#planned-named-secrets-over-several-backends"
+        }
+      ]
+    },
+    {
+      "kind": "flow",
+      "eyebrow": "One write",
+      "title": "From request to ciphertext.",
+      "lede": "Every route follows the same order: the caller is verified before storage is touched, and the value is encrypted before it reaches the database.",
+      "steps": [
+        {
+          "label": "HTTP",
+          "title": "Bounded request",
+          "description": "A JSON body of at most 1 MiB and a bearer token. Values travel only in bodies."
+        },
+        {
+          "label": "Authority",
+          "title": "Verify the caller",
+          "description": "Kubernetes TokenReview for workloads, Identity for people: subject, tenant and actions."
+        },
+        {
+          "label": "Policy",
+          "title": "Check tenant and action",
+          "description": "The route's action and the request's tenant must match the principal, or it is refused."
+        },
+        {
+          "label": "Crypto",
+          "title": "Seal the value",
+          "description": "A fresh data key, AES-256-GCM, wrapped by the active key with the reference as associated data."
+        },
+        {
+          "label": "PostgreSQL",
+          "title": "Commit with its audit row",
+          "description": "Ciphertext, wrapped key, metadata and one audit event in one transaction."
+        }
+      ]
+    },
+    {
+      "kind": "domain-graph",
+      "eyebrow": "Specification",
+      "title": "What Secrets is specified in.",
+      "lede": "The secrets.custody domain of the ESS specification, retrofitted from the shipped service. A conformance suite of 111 scenarios runs it against the real router and store on every check. Generated from spec/ by secrets-docs.",
+      "data": "data/ess/secrets-custody.domain-graph.json"
+    },
+    {
+      "kind": "status",
+      "eyebrow": "Status",
+      "title": "Version 0.4.0. Here is what exists.",
+      "lede": "Shipped means in the released service today. Planned means specified and on the plan only.",
+      "items": "data/status.json"
+    },
+    {
+      "kind": "related",
+      "eyebrow": "Related tools",
+      "title": "Where Secrets sits.",
+      "tools": [
+        {
+          "id": "ess",
+          "relation": "specifies"
+        }
+      ]
+    }
+  ]
+}

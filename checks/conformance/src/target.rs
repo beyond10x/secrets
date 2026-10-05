@@ -32,6 +32,18 @@ pub struct Observed {
     pub events: Vec<(&'static str, BTreeMap<String, Node>)>,
 }
 
+/// The credential a command is sent with, decided by the domain module from the actor the scenario
+/// names and the surface that serves the command.
+#[derive(Clone, Copy)]
+pub enum Caller {
+    /// The credential the serving surface accepts, holding what the scenario arranges.
+    Granted,
+    /// No bearer token at all: the actor holds no credential for the serving surface.
+    Bearerless,
+    /// A token registered with the other authority, which the serving surface does not consult.
+    Holding(crate::fixture::Audience),
+}
+
 /// What a domain module is handed for one command or read.
 pub struct Context<'a> {
     pub runtime: &'a tokio::runtime::Runtime,
@@ -39,6 +51,10 @@ pub struct Context<'a> {
     pub scenario: &'a mut Scenario,
     /// The outcome the scenario forced for this invocation, when it forced one.
     pub forced: Option<String>,
+    /// The actor the scenario sends this command as, when it names one.
+    pub actor: Option<String>,
+    /// The credential the request carries.
+    pub caller: Caller,
 }
 
 /// A domain's answer to a command: `None` when the domain does not own it.
@@ -70,6 +86,8 @@ pub struct SecretsTarget {
     forced: RefCell<Option<OutcomeRef>>,
     token: RefCell<Option<ConsistencyToken>>,
     sequence: Cell<u64>,
+    /// Every event this scenario's commands produced, read from their durable records.
+    events: RefCell<Vec<ObservedEvent>>,
 }
 
 impl SecretsTarget {
@@ -87,12 +105,14 @@ impl SecretsTarget {
             forced: RefCell::new(None),
             token: RefCell::new(None),
             sequence: Cell::new(0),
+            events: RefCell::new(Vec::new()),
         })
     }
 
     fn close(&self) -> Result<(), TargetError> {
         self.forced.replace(None);
         self.token.replace(None);
+        self.events.replace(Vec::new());
         if let Some(scenario) = self.scenario.replace(None) {
             self.runtime
                 .block_on(self.admin.close(scenario))
@@ -146,6 +166,8 @@ impl ConformanceTarget for SecretsTarget {
             admin: &self.admin,
             scenario,
             forced,
+            actor: request.actor.as_ref().map(ToString::to_string),
+            caller: Caller::Granted,
         };
         let observed = DOMAINS
             .iter()
@@ -175,6 +197,7 @@ impl ConformanceTarget for SecretsTarget {
             )
             .in_activity(request.correlation.clone());
             occurrence.payload = payload;
+            self.events.borrow_mut().push(occurrence.clone());
             result = result.emitting(occurrence);
         }
         let sequence = self
@@ -214,6 +237,8 @@ impl ConformanceTarget for SecretsTarget {
             admin: &self.admin,
             scenario,
             forced: None,
+            actor: None,
+            caller: Caller::Granted,
         };
         let rows = DOMAINS
             .iter()
@@ -221,14 +246,20 @@ impl ConformanceTarget for SecretsTarget {
             .ok_or_else(|| unsupported(&view))??;
         Ok(SemanticViewResult::of(rows))
     }
+    /// The service publishes nothing, so every occurrence is one a command of this scenario
+    /// produced, read from its durable record when the command returned. There is nothing to wait
+    /// for: a command that wrote no record produced no occurrence.
     fn observe_events(
         &self,
-        _: EventObservationRequest,
+        request: EventObservationRequest,
     ) -> Result<Vec<ObservedEvent>, TargetError> {
-        Err(TargetError::unsupported(
-            "asynchronous events",
-            "the service publishes no events; every event is its command's own durable record",
-        ))
+        Ok(self
+            .events
+            .borrow()
+            .iter()
+            .filter(|occurrence| occurrence.event == request.event)
+            .cloned()
+            .collect())
     }
     fn configure_external_outcome(
         &self,

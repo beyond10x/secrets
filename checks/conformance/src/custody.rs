@@ -53,7 +53,7 @@ use tower::ServiceExt as _;
 use uuid::Uuid;
 
 use crate::fixture::{Audience, FOREIGN_RING, ROTATED_RING};
-use crate::target::{Context, Domain, Observed, unavailable};
+use crate::target::{Caller, Context, Domain, Observed, unavailable};
 
 pub const DOMAIN: Domain = Domain { command, view };
 
@@ -114,7 +114,18 @@ fn command(
         Ok(input) => input,
         Err(error) => return Some(Err(error)),
     };
-    Some(match command {
+    let surface = match command {
+        "secrets.custody.RevokeOwnedSecret" | "secrets.custody.DeleteOwnedSecret" => {
+            Surface::Http(Audience::User)
+        }
+        "secrets.custody.RewrapSecrets" => Surface::Rewrap,
+        _ => Surface::Http(Audience::Workload),
+    };
+    context.caller = match caller(context.actor.as_deref(), surface) {
+        Ok(caller) => caller,
+        Err(error) => return Some(Err(error)),
+    };
+    let observed = match command {
         "secrets.custody.PutSecret" => put(context, input),
         "secrets.custody.RevokeOwnedSecret" => revoke(context, &input),
         "secrets.custody.DeleteOwnedSecret" => delete_owned(context, &input),
@@ -127,6 +138,56 @@ fn command(
         "secrets.custody.CheckSecretExists" => check_exists(context, &input),
         "secrets.custody.ListNamespaceSecrets" => list_namespace(context, &input),
         _ => return None,
+    };
+    Some(match (context.caller, observed) {
+        (Caller::Granted, observed) => observed,
+        // Sent with a credential the serving surface does not accept: the authority refused it
+        // before the command ran, which is the refusal for an actor no grant admits.
+        (
+            _,
+            Ok(Observed {
+                error: Some("secrets.custody.Unauthorized" | "secrets.custody.Forbidden"),
+                ..
+            }),
+        ) => Err(TargetError::not_granted(context.actor.clone())),
+        (_, observed) => observed,
+    })
+}
+
+/// Where a command is served: an HTTP route behind one authority, or the `secrets rewrap` binary.
+#[derive(Clone, Copy)]
+enum Surface {
+    Http(Audience),
+    Rewrap,
+}
+
+/// The credential `actor` holds for `surface`. A user holds an Identity token, a workload a
+/// Kubernetes service-account token, and the operator the database URL and keyring file
+/// (`crates/secrets-app/src/main.rs`), which no HTTP route accepts.
+fn caller(actor: Option<&str>, surface: Surface) -> R<Caller> {
+    let held = match actor {
+        None => return Ok(Caller::Granted),
+        Some("secrets.custody.User") => Some(Audience::User),
+        Some("secrets.custody.Workload") => Some(Audience::Workload),
+        Some("secrets.custody.Operator") => None,
+        Some(other) => {
+            return Err(TargetError::unsupported(
+                format!("sending a command as `{other}`"),
+                "the service knows users, workloads and the operator only",
+            ));
+        }
+    };
+    Ok(match (surface, held) {
+        (Surface::Http(Audience::User), Some(Audience::User))
+        | (Surface::Http(Audience::Workload), Some(Audience::Workload))
+        | (Surface::Rewrap, None) => Caller::Granted,
+        (Surface::Http(_), None) => Caller::Bearerless,
+        (Surface::Http(_), Some(audience)) => Caller::Holding(audience),
+        // No route runs a rewrap (crates/secrets-http/src/lib.rs `router`); it needs the database
+        // URL and the keyring file, which neither token carries.
+        (Surface::Rewrap, Some(_)) => {
+            return Err(TargetError::not_granted(actor.map(ToOwned::to_owned)));
+        }
     })
 }
 
@@ -196,6 +257,10 @@ fn call(
     body: Option<Vec<u8>>,
 ) -> R<Reply> {
     let router = context.scenario.router.clone();
+    let token = match context.caller {
+        Caller::Bearerless => None,
+        Caller::Granted | Caller::Holding(_) => token,
+    };
     context.runtime.block_on(async move {
         let mut request = Request::builder().method(method).uri(path);
         if let Some(token) = token {
@@ -255,6 +320,10 @@ fn token(
     action: &str,
 ) -> R<String> {
     let actions = &[action];
+    let audience = match context.caller {
+        Caller::Holding(held) => held,
+        Caller::Granted | Caller::Bearerless => audience,
+    };
     match context.forced.as_deref() {
         Some("unauthorized") => Ok(UNREGISTERED_TOKEN.to_owned()),
         Some("missing-action") => {
@@ -805,7 +874,8 @@ fn prepare(context: &mut Context<'_>, input: &Value) -> R<Observed> {
             context.scenario.owners.insert(secret.owner_subject.clone());
         }
     }
-    if context.forced.as_deref() == Some("duplicate") {
+    // A batch an earlier step of the scenario prepared already makes the condition true.
+    if context.forced.as_deref() == Some("duplicate") && !prepared(context, &tenant, transaction)? {
         arrange_batch(context, &tenant, transaction, mutations.clone())?;
     }
     let token = token(

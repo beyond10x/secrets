@@ -1,4 +1,7 @@
-# Repository guidance
+# AGENTS.md — secrets
+
+What Secrets is and how to build it is in [README.md](README.md); this file is what an agent changing
+it must know. The cross-repository decision is Atlas ADR 0023 (Secrets is the shared custody service).
 
 ## Serves
 
@@ -8,45 +11,66 @@
 
 ## Boundaries
 
-- Secrets owns encrypted byte custody, local lifecycle, bindings, and audit records.
-- Provider integrations own OAuth exchange, refresh, and upstream revocation.
-- Identity verifies users but does not know product resources, connector kinds, or secret semantics.
-- Values never belong in URLs, logs, metrics, errors, labels, or planning artifacts.
-- The deployment chart belongs to the composing product; this repository does not own a Helm chart.
+- Secrets owns encrypted byte custody, versions, ownership, disclosure, local revocation and
+  deletion, workload grants, prepared batches and audit records.
+- Provider integrations own OAuth exchange, refresh and upstream revocation.
+- Identity verifies users but knows no product resource, connector kind or secret semantics.
+- The deployment chart belongs to the composing product (the Devcenter chart); this repository has
+  no Helm chart.
 
-## Specification and plan
+## Rules
 
-ESS drives this repository. `spec/` holds the system: `secrets.custody` is retrofitted from the
-shipped service and cites its sources; `secrets.storage` is the named, scoped, federated storage
-model. A new noun gets its ESS declaration before an AEP story is written around it, and each
-story's acceptance is a set of named conformance scenarios. The planning store under
-`.engineering/planning` is the plan; `aep` is its only writer.
+- A value never appears in a URL, log, metric, error, label or planning artifact, and a refusal
+  never repeats the request.
+- Every route checks its authority, its action and the request's tenant before storage is called.
+- Do not weaken tenant, audience or associated-data checks to simplify an integration.
+- Anything that runs is Rust; command lines use clap derive.
 
-## Gate
+## Commands
 
-Run `task check` before publishing. Do not weaken tenant, audience, or associated-data checks to simplify an integration.
+| Command | What it does |
+|---|---|
+| `task check` | the gate: fmt, tests, clippy, `cargo doc`, plan and spec validation, provenance, conformance, `docs-check` |
+| `task conformance` | `secrets-conformance check`: suite and schema drift, then the suite three times against PostgreSQL |
+| `task docs-generate` | rewrite `website/docs/reference/` and `website/data/ess/` from `spec/` |
+| `task docs-check` | fail on a missing, stale or hand-edited generated page |
+| `task website` | `npm ci && npm run build` in `website/` |
 
-The default `check` workflow runs `task check` against a disposable PostgreSQL service and exports `SECRETS_TEST_DATABASE_URL` to it, so `crates/secrets-postgres/tests/lifecycle.rs` exercises real persistence on every pull request instead of returning early.
+`task check` and `task conformance` need `SECRETS_TEST_DATABASE_URL` pointing at a disposable
+PostgreSQL database; conformance refuses to run without it. CI provides one. Tool versions:
+`ess` 0.52.0 (`contracts/ess-inputs.yaml` `requires`), `aep` 0.68.0, Rust 1.97.
 
-<!-- b10x-docs-operations:start -->
-## Public documentation operations
+## Specification
 
-This repository owns the public source and presentation allowlist in `b10x.docs.yaml`. The generated credential-free `.github/workflows/b10x-docs-bundle.yml` passively packages only those declared files for the exact successful `main` commit; it must never run repository code. The generated `.github/workflows/b10x-docs-check.yml` runs the publisher's per-source checks on every pull request and main push, with read-only contents and no credentials; it is deliberately separate from the shared gate, which runs on `pull_request_target` with a secret and never reads candidate source. Atlas selects the latest successful bundle with every other catalog source, and Website plus Docs System own rendering, shared components, search, and feeds. Do not add a standalone docs deployer or put App credentials in this public repository. If Atlas catalogs a former Pages workflow, that file remains repository-owned validation: preserve its bespoke checks while keeping exact read-only permissions, an unconditional pull-request trigger, and no deployment primitives. Project Pages at `/secrets/` is only the generated stable redirect façade in `.github/workflows/b10x-docs-pages.yml`; content-only publication never rebuilds it.
+ESS drives this repository. `spec/domains/custody.yaml` is retrofitted from the shipped service and
+cites a source for every declaration; `spec/domains/storage.yaml` is the planned named-storage
+model, which no code implements. Change the specification first, then the code.
 
-From the complete organization workspace, verify the contract with a clean Atlas checkout at the current remote `main`. Set `B10X_ATLAS_CHECKOUT` to a managed Atlas worktree when the primary checkout is dirty or stale; never infer command availability from the primary alone.
+- `contracts/suite.json` and `contracts/schema/` are generated; `task conformance` fails on drift.
+  Regenerate with the exact arguments in `checks/conformance/src/gate.rs`.
+- The runner (`checks/conformance/`) sends every command through the real router and store and
+  reads the branch from the response; it never decides a branch from the suite.
+- `contracts/baseline.json` holds the floor: 111 answered, 0 skipped. Raise it when the suite
+  grows; never lower it to pass.
+- Every authored scenario under `contracts/*/scenarios/` is listed in `contracts/ess-inputs.yaml`.
 
-```bash
-atlas_checkout="${B10X_ATLAS_CHECKOUT:-atlas}"
-atlas_head="$(git -C "$atlas_checkout" rev-parse HEAD)"
-atlas_main="$(git -C "$atlas_checkout" ls-remote origin refs/heads/main | awk '{print $1}')"
-test -z "$(git -C "$atlas_checkout" status --porcelain)"
-test "$atlas_head" = "$atlas_main"
-cargo run --manifest-path "$atlas_checkout/Cargo.toml" --locked -q -- \
-  --store "$atlas_checkout/catalog/store" docs reconcile --workspace . --check
-```
+## Plan
 
-Keep internal plans, stories, ADRs, decisions, worklogs, security material, and research out of the public allowlist unless a repository authority explicitly declares them public.
-<!-- b10x-docs-operations:end -->
+The AEP store under `.engineering/planning` (`aep.project/5`, Git-native) is the plan, written only through `aep`. A new noun gets
+its ESS declaration before a story is written around it, and each story's acceptance names its
+conformance scenarios.
+
+## Documentation
+
+The public site is `website/`, published at `https://beyond10x.github.io/secrets/` by
+`pages.yml` (credential-free build, provenance and route inventory) and `b10x-docs-site.yml`
+(Website's project-site workflow). Pages under `website/docs/reference/` and files under
+`website/data/ess/` are generated; every other page is written by hand. Keep page paths and
+heading IDs stable: the organization Website redirects the former `/docs/secrets/` pages to them.
+
+Do not add a unified Website bundle, `b10x.docs.yaml`, a redirect façade or a second Pages
+workflow. `docs/openapi.json` and `docs/index.html` stay where they are: the service embeds both.
+Publish no internal plans, decisions or work logs.
 
 <!-- b10x-release-operations:start -->
 ## Release completion

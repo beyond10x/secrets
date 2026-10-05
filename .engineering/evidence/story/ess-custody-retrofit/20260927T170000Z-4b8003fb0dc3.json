@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-27T17:00:00Z",
+  "actor": "human:timo",
+  "artifact": "story:ess-custody-retrofit",
+  "kind": "story",
+  "revision": 9,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check with PostgreSQL: conformance 96/96 x3, exit 0 at e4f65dc"
+  }
+}

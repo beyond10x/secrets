@@ -1,5 +1,5 @@
 ---
-format: aep.planning-md/2
+format: aep.planning-md/3
 id: story:resolve-spec-markers
 kind: story
 status: implemented
@@ -7,6 +7,10 @@ title: Every open spec marker has a recorded outcome
 relations:
 - decomposes: epic:encrypted-custody
 revision: 4
+transitions:
+- {from: "draft", to: "proposed", at: "2026-09-27T18:43:44Z", actor: "human:timo", revision: 2, imported: true}
+- {from: "proposed", to: "active", at: "2026-09-27T18:43:49Z", actor: "human:timo", revision: 3, imported: true}
+- {from: "active", to: "implemented", at: "2026-09-27T20:18:46Z", actor: "human:timo", revision: 4, decided_on: {"recorded":{"test_result":1}}, imported: true}
 ---
 ## Acceptance
 

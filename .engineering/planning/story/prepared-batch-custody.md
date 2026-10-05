@@ -1,5 +1,5 @@
 ---
-format: aep.planning-md/2
+format: aep.planning-md/3
 id: story:prepared-batch-custody
 kind: story
 status: implemented
@@ -18,6 +18,10 @@ scope:
 - confidence: cited
   path: spec/domains/custody.yaml
 revision: 9
+transitions:
+- {from: "draft", to: "proposed", at: "2026-09-27T07:41:01Z", actor: "human:timo", revision: 7, imported: true}
+- {from: "proposed", to: "active", at: "2026-09-27T07:41:04Z", actor: "human:timo", revision: 8, imported: true}
+- {from: "active", to: "implemented", at: "2026-09-27T08:47:18Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"test_result":1}}, imported: true}
 ---
 ## Acceptance
 

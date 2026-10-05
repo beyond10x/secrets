@@ -1,6 +1,6 @@
 //! Integrity conformance checks of story:refusal-codes against the contract the unit wrote for
-//! itself: docs/security-model.md ("a person cannot learn whether another owner's secret exists"),
-//! docs/http-api.md (the code table) and the story's acceptance ("Every refusal the service answers
+//! itself: website/docs/security-model.md ("a person cannot learn whether another owner's secret exists"),
+//! website/docs/http-api.md (the code table) and the story's acceptance ("Every refusal the service answers
 //! carries a stable machine-readable code").
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
@@ -160,7 +160,7 @@ const USER_ROUTES: [(&str, &str); 3] = [
     ("DELETE", "/v1/user/secrets"),
 ];
 
-/// docs/security-model.md "Tenant and ownership checks": a user route answers a secret owned by
+/// website/docs/security-model.md "Tenant and ownership": a user route answers a secret owned by
 /// somebody else exactly as it answers no secret at all, byte for byte, so the new codes open no
 /// existence oracle between `not-owned` and `not-found`.
 #[tokio::test]

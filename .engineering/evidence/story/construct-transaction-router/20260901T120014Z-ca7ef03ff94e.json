@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-01T12:00:14Z",
+  "actor": "human:timo",
+  "artifact": "story:construct-transaction-router",
+  "kind": "story",
+  "revision": 4,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check"
+  }
+}
