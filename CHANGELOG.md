@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 - 2026-10-05
 
 - Documentation moves to its own site, <https://beyond10x.github.io/secrets/>, built from
   `website/`. The pages under `docs/` other than `openapi.json` and `index.html` are removed;
