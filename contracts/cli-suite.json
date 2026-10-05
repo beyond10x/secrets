@@ -1659,10 +1659,10 @@
   },
   "provenance": {
     "component": "secrets-library",
-    "contract_digest": "1bff2e6be5082b8e7e5a6d8dc68f0dc2571287e9ed7eebc32f4dd506c49c0e12",
-    "spec_digest": "f42cb38e19d7b7f7825734800b8f329a5b7e3015a526d27b7fded9e9f404a3e4",
+    "contract_digest": "4fb86c240210cc16843496f058bc8ebd5717b7eac5945d61e1c35af230dc9a6b",
+    "spec_digest": "37ba1fe600584f7f0130f6792a2d178ab8e84d6c2af89d257959cd55e9568578",
     "specification_version": "v1",
-    "suite_version": "ess-conformance/23",
+    "suite_version": "ess-conformance/29",
     "system": "secrets"
   },
   "scenarios": {
@@ -10327,6 +10327,28 @@
         {
           "step": "expect_subject_unchanged",
           "view": "secrets.storage.SecretMetadata"
+        },
+        {
+          "response": {
+            "command": "secrets.storage.Read",
+            "declarations": {},
+            "expected": {},
+            "fields": [
+              {
+                "name": "value",
+                "type": "Bytes"
+              },
+              {
+                "name": "version",
+                "type": "Optional<String>"
+              }
+            ],
+            "outcome": {
+              "command": "secrets.storage.Read",
+              "outcome": "read"
+            }
+          },
+          "step": "expect_direct_response"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",

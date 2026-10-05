@@ -15,6 +15,10 @@
   stdout or stderr. It refuses an existing path, a symlink and a directory before any backend is
   asked, writes a temporary file beside the path and links it into place without replacing
   anything. The CLI suite answers its 8 `Read` scenarios: 89 of 89.
+- `secrets.storage` `Read.read` declares `returns: true`. Both conformance runners hand ESS the
+  value and version a read returned, and two authored scenarios assert that a value written to a
+  keychain mount and to a remote mount, and the value that replaces it, read back byte for byte.
+  The library suite is 110 scenarios, all answered.
 
 ## 0.5.0 - 2026-10-05
 

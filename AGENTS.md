@@ -57,10 +57,12 @@ the code.
 - The runner (`checks/conformance/`) sends every custody command through the real router and
   store, and every storage command through the composed storage stack in process, and reads the
   branch from the response and from which backends the call reached; it never decides a branch
-  from the suite. The stack is composed in `checks/conformance/src/storage.rs`: keychain on a
-  mock store, remote against an in-process custody service, recording fakes for read-only and
-  faulting mounts. Every mount of kind `onepassword` is the read-only, binding-required recording
-  fake; no 1Password backend exists.
+  from the suite. `Read.read` declares `returns: true`: both runners hand the value and version
+  `Read` returned to ESS as the typed response, and the authored scenarios under
+  `contracts/storage/scenarios/response` assert the value literally. The stack is composed in
+  `checks/conformance/src/storage.rs`: keychain on a mock store, remote against an in-process
+  custody service, recording fakes for read-only and faulting mounts. Every mount of kind
+  `onepassword` is the read-only, binding-required recording fake; no 1Password backend exists.
 - The CLI suite runs through the built `secretsctl` (`checks/conformance/src/cli.rs`): the runner
   builds it with feature `test-hooks` in a target directory of its own (`secretsctl-conformance`),
   gives each scenario its own `XDG_CONFIG_HOME` under `target/conformance/cli` and a file-backed
@@ -74,7 +76,7 @@ the code.
   fake in a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`,
   `review_invariants.rs`, `review_default_build.rs`).
 - `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
-  `contracts/storage-baseline.json` holds the library's: 108 answered, 0 unsupported.
+  `contracts/storage-baseline.json` holds the library's: 110 answered, 0 unsupported.
   `contracts/cli-baseline.json` holds the CLI's: 89 answered, 0 unsupported.
   Every authored scenario must pass. Raise a floor or lower a ceiling when the suite grows; never
   the reverse to pass.

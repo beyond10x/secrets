@@ -29,6 +29,8 @@ scenarios:
 - storage/scenarios/authorize/a-second-tenant-is-denied-before-any-backend.yaml
 - storage/scenarios/authorize/a-second-user-is-denied-before-any-backend.yaml
 - storage/scenarios/authorize/tenant-and-user-default-may-do-everything-in-any-namespace.yaml
+- storage/scenarios/response/a-value-written-to-a-keychain-mount-reads-back-equal.yaml
+- storage/scenarios/response/a-value-written-to-a-remote-mount-reads-back-equal.yaml
 - storage/scenarios/cli/a-namespace-on-the-remote-backend-round-trips.yaml
 - storage/scenarios/cli/bind-binds-a-name-once.yaml
 - storage/scenarios/cli/delete-removes-a-secret.yaml

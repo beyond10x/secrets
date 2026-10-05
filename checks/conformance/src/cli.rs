@@ -44,8 +44,8 @@
 //!
 //! `Read` is `read --out` into a new path in the scenario's directory. It took `read` only when the
 //! binary printed that outcome, wrote nothing to stderr and left a regular file of mode 0600 there;
-//! a refusal that left anything at the path takes no declared branch. The file is removed once
-//! read.
+//! a refusal that left anything at the path takes no declared branch. Its response is the file's
+//! bytes and the version the binary printed. The file is removed once read.
 //!
 //! # The 1Password kind
 //!
@@ -92,7 +92,7 @@ use serde_json::Value;
 use crate::fixture::Admin;
 use crate::storage::{
     ACTOR, FIXTURE_LOCATOR, FIXTURE_NAME, FIXTURE_VALUE, R, Remote, VALUE_LIMIT, cannot_arrange,
-    declared, event, namespace_key, needs, node, segmented, set, text,
+    declared, event, namespace_key, needs, node, read_response, segmented, set, text,
 };
 use crate::target::{Observed, unavailable};
 
@@ -1010,6 +1010,7 @@ pub fn command(
 
 fn undeclared() -> Observed {
     Observed {
+        response: None,
         outcome: None,
         error: None,
         events: Vec::new(),
@@ -1272,6 +1273,7 @@ fn interpret(
     };
     Ok(match outcome {
         Some(outcome) => Observed {
+            response: None,
             outcome: Some(outcome.to_owned()),
             error: declared(error),
             events: Vec::new(),
@@ -1314,7 +1316,9 @@ fn succeeded(command: &str, input: &Value, output: &Output, out: &Path) -> R<Obs
     };
     if command == "Read" {
         return read_back(output, out).map(|read| match read {
-            Some(_) => Observed {
+            // The value from the file `read` created, and the version it printed.
+            Some((bytes, version)) => Observed {
+                response: Some(read_response(&bytes, version.as_str())),
                 outcome: Some("read".to_owned()),
                 error: None,
                 events: Vec::new(),
@@ -1404,6 +1408,7 @@ fn succeeded(command: &str, input: &Value, output: &Output, out: &Path) -> R<Obs
         _ => return Ok(undeclared()),
     };
     Ok(Observed {
+        response: None,
         outcome: Some(outcome.to_owned()),
         error: None,
         events: vec![event],

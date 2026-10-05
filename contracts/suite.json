@@ -152,7 +152,7 @@
         "scenario": "secrets.storage/authored/a-keychain-fault-is-unavailable"
       },
       "storage/scenarios/keychain/a-keychain-secret-round-trips.yaml": {
-        "digest": "sha256:22fcdf6494615ed899aea25c018d65a905855c51c15dd5c9a71b971d9ea9a390",
+        "digest": "sha256:cb5b6804d7ee2e3ee7d4bc98b4ffea458343a9648130e2dd17cf18e5e8de2fc0",
         "disposition": "accepted",
         "scenario": "secrets.storage/authored/a-keychain-secret-round-trips"
       },
@@ -192,7 +192,7 @@
         "scenario": "secrets.storage/authored/a-custody-failure-is-unavailable"
       },
       "storage/scenarios/remote/a-remote-secret-round-trips.yaml": {
-        "digest": "sha256:849a3dd4f370298c4a9ebb639332f43d3cf5a014c9a4a92039b89ce5f27257a2",
+        "digest": "sha256:ef9261172ffaa1cc3d899a0f8f86a219189c41d554eeae8c7356b5fe033396f8",
         "disposition": "accepted",
         "scenario": "secrets.storage/authored/a-remote-secret-round-trips"
       },
@@ -205,12 +205,22 @@
         "digest": "sha256:68b951c01ceedd96f76786f636bf1bafa621d2bc9d6ef697f7326b8940afa22c",
         "disposition": "accepted",
         "scenario": "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate"
+      },
+      "storage/scenarios/response/a-value-written-to-a-keychain-mount-reads-back-equal.yaml": {
+        "digest": "sha256:800540ed6b900d978386b586a4cb7781427f0b252a37c5ac455d22d99cb0d13b",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-keychain-mount-reads-back-equal"
+      },
+      "storage/scenarios/response/a-value-written-to-a-remote-mount-reads-back-equal.yaml": {
+        "digest": "sha256:a02ae2d5f3e867620cb59be90ccd4ceed6436ef7e95f89f382027ba119e59782",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-remote-mount-reads-back-equal"
       }
     },
     "counts": {
       "authored": 8,
       "generated": 103,
-      "outside": 108,
+      "outside": 110,
       "refused": 0
     },
     "generated": [
@@ -1645,6 +1655,40 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-keychain-mount-reads-back-equal"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Read"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-value-written-to-a-remote-mount-reads-back-equal"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
             "name": "secrets.storage.Bind"
           },
           {
@@ -2143,8 +2187,8 @@
   },
   "provenance": {
     "component": "secrets-service",
-    "contract_digest": "1bff2e6be5082b8e7e5a6d8dc68f0dc2571287e9ed7eebc32f4dd506c49c0e12",
-    "spec_digest": "f42cb38e19d7b7f7825734800b8f329a5b7e3015a526d27b7fded9e9f404a3e4",
+    "contract_digest": "4fb86c240210cc16843496f058bc8ebd5717b7eac5945d61e1c35af230dc9a6b",
+    "spec_digest": "37ba1fe600584f7f0130f6792a2d178ab8e84d6c2af89d257959cd55e9568578",
     "specification_version": "v1",
     "suite_version": "ess-conformance/27",
     "system": "secrets"
