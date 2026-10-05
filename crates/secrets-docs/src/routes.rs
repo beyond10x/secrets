@@ -5,6 +5,10 @@
 //! Docusaurus writes a page at `x.html` (`trailingSlash: false`), a directory index at
 //! `x/index.html`, and a client redirect wherever a page moved or a trailing-slash form exists.
 //! A redirect page is not a route: it carries no content of its own.
+//!
+//! Every route is listed in its `/x/` form, which the Website requires of an independent route
+//! inventory. GitHub Pages answers `/x/` with docs-system's copy of the page at `x/index.html`,
+//! which carries the same content and element IDs as `x.html`.
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
@@ -58,7 +62,7 @@ fn route(relative: &str) -> Option<String> {
     }
     relative
         .strip_suffix(".html")
-        .map(|page| format!("{BASE}{page}"))
+        .map(|page| format!("{BASE}{page}/"))
 }
 
 fn pages(site: &Path, dir: &Path, out: &mut BTreeMap<String, BTreeSet<String>>) -> Result<()> {
@@ -167,9 +171,9 @@ mod tests {
             paths,
             [
                 "/secrets/",
-                "/secrets/docs",
-                "/secrets/docs/operations",
-                "/secrets/docs/status"
+                "/secrets/docs/",
+                "/secrets/docs/operations/",
+                "/secrets/docs/status/"
             ]
         );
         assert_eq!(inventory["routes"][2]["anchors"][0], "probes");
