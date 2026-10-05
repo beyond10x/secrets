@@ -17,7 +17,9 @@ scope:
   path: crates/secrets-client
 - confidence: cited
   path: crates/secrets-remote
-revision: 6
+- confidence: cited
+  path: spec/domains/storage.yaml
+revision: 8
 ---
 ## Context
 
@@ -49,3 +51,21 @@ byte for byte. No network, no credential and no paid call in the default gate.
 - Registration with the conformance runner is `checks/conformance/src/target.rs`, which is
   coordinator-owned and pre-wired with this backend's hook when the wave opens; this story
   writes only its own module.
+
+## Decisions
+
+Decided by the coordinator 2026-10-05, superseding the 2026-09-27 mapping in
+`spec/domains/storage.yaml` (`BackendKind` comment): a remote backend maps an address to the custody
+reference `{tenant, namespace, key = "<user>/<name>"}`, with the scope's user as `owner_subject`.
+
+- Reason: with `key = name`, two users writing the same name in one namespace share one custody row.
+  Custody's put upserts on `(tenant, namespace, secret_key)` and overwrites `owner_subject`
+  (`crates/secrets-postgres/src/lib.rs` `put_tx`), so the second user's write would take over the
+  first user's secret, and the scenario "two users holding the same name stay separate" could not pass.
+- A `ScopeName` holds no `/` (a `SecretName` may), so the first `/` in the key splits user from name
+  unambiguously.
+- The backend also filters reads and lists to keys under its user's prefix. Workload get and list do
+  not check the owner (`crates/secrets-http/src/lib.rs` `workload_get`, `workload_list`).
+- This story updates the `BackendKind` comment in `spec/domains/storage.yaml` to this mapping.
+- Tests reach the custody service without network by serving the conformance fixture's router on
+  `127.0.0.1:0` and pointing `secrets_client::Client` at it, with tokens from the fixture.
