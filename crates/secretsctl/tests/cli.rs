@@ -429,6 +429,29 @@ fn each_storage_refusal_has_its_own_exit_code() {
     assert_eq!(refusal["reason"], "too-long");
 }
 
+/// story:readonly-test-backend: a `test-hooks` build mounts the read-only, binding-required fake
+/// for `[backends.onepassword.<label>]`; writes, deletes, renames and listings on it are
+/// `unsupported` (5).
+#[test]
+fn a_test_hooks_build_mounts_the_read_only_fake_for_the_onepassword_kind() {
+    let sandbox = Sandbox::new();
+    let path = sandbox.config_file();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"[backends.onepassword.vault]\n").unwrap();
+    let added = sandbox.run(&["namespace", "add", "vault", "--mount", "onepassword/vault"]);
+    assert!(added.status.success(), "{}", text(&added.stderr));
+    let written = sandbox.piped(&["put", "openai", "-n", "vault"], MARKER.as_bytes());
+    assert_eq!(code(&written), 5, "{}", text(&written.stderr));
+    assert_clean(&written, "put on a read-only mount");
+    for args in [
+        &["delete", "openai", "-n", "vault"][..],
+        &["rename", "openai", "openai-work", "-n", "vault"][..],
+        &["list", "-n", "vault"][..],
+    ] {
+        assert_eq!(code(&sandbox.run(args)), 5, "{args:?}");
+    }
+}
+
 #[test]
 fn a_remote_origin_must_be_https_unless_its_host_is_loopback() {
     let sandbox = Sandbox::new();

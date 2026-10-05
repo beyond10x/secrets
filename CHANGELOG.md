@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Conformance mounts the read-only, binding-required recording fake for every mount of kind
+  `onepassword`, in process and, through `[backends.onepassword.<label>]`, in a `secretsctl` built
+  with `test-hooks`; a default build refuses that table and cannot mount it. The library suite
+  answers 108 of 108; the CLI suite answers its read-only and 1Password-mount scenarios. No
+  1Password backend exists yet.
+
 ## 0.5.0 - 2026-10-05
 
 - `secrets-core` gains the `secrets.storage` port (`secrets_core::storage`): `SecretStorage`,

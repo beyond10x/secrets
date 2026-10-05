@@ -59,21 +59,22 @@ the code.
   branch from the response and from which backends the call reached; it never decides a branch
   from the suite. The stack is composed in `checks/conformance/src/storage.rs`: keychain on a
   mock store, remote against an in-process custody service, recording fakes for read-only and
-  faulting mounts. A 1Password mount is unsupported.
+  faulting mounts. Every mount of kind `onepassword` is the read-only, binding-required recording
+  fake; no 1Password backend exists.
 - The CLI suite runs through the built `secretsctl` (`checks/conformance/src/cli.rs`): the runner
   builds it with feature `test-hooks` in a target directory of its own (`secretsctl-conformance`),
   gives each scenario its own `XDG_CONFIG_HOME` under `target/conformance/cli` and a file-backed
-  keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`), and reads the branch from the exit status, the JSON
+  keychain (`SECRETSCTL_TEST_KEYCHAIN_FILE`); a `test-hooks` build also mounts the read-only fake
+  for `[backends.onepassword.<label>]`. It reads the branch from the exit status, the JSON
   refusal and the world before the command. What ESS cannot state (no value on stdout or stderr,
-  a value in argv refused, `put`'s sources, the configuration file's mode, an inert test hook in
-  a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`, `review_invariants.rs`,
-  `review_default_build.rs`).
+  a value in argv refused, `put`'s sources, the configuration file's mode, an inert test hook and
+  an unmountable fake in a default build) is guarded by `crates/secretsctl/tests/` (`cli.rs`,
+  `review_invariants.rs`, `review_default_build.rs`).
 - `contracts/baseline.json` holds the custody floor: 111 answered, 0 skipped.
-  `contracts/storage-baseline.json` holds the library's: 107 answered, at most 1 unsupported (the
-  1Password mount). `contracts/cli-baseline.json` holds the CLI's: 61 answered, at most 28
-  unsupported (a scope other than tenant and user `default`, `Read`, a read-only or 1Password
-  mount). Every authored scenario must pass. Raise a floor or lower a ceiling when the
-  suite grows; never the reverse to pass.
+  `contracts/storage-baseline.json` holds the library's: 108 answered, 0 unsupported.
+  `contracts/cli-baseline.json` holds the CLI's: 66 answered, at most 23 unsupported (a scope
+  other than tenant and user `default`, `Read`). Every authored scenario must pass. Raise a floor
+  or lower a ceiling when the suite grows; never the reverse to pass.
 - Every authored scenario under `contracts/*/scenarios/` is listed in `contracts/ess-inputs.yaml`.
 
 ## Plan

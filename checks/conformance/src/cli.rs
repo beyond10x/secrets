@@ -40,9 +40,14 @@
 //!
 //! * a scope other than tenant and user `default`: the CLI acts on the local scope only, so every
 //!   `denied` and `denied-user` scenario;
-//! * `Read`: the CLI has no command that prints a value;
-//! * a read-only mount (kind `onepassword`, and so every forced `unsupported`): no 1Password backend
-//!   exists this round.
+//! * `Read`: the CLI has no command that prints a value.
+//!
+//! # The 1Password kind
+//!
+//! A mount of kind `onepassword` is `[backends.onepassword.<label>]` in the scenario's
+//! `config.toml`, which only a `test-hooks` build reads: each run of the binary mounts the read-only,
+//! binding-required recording fake for it (story:readonly-test-backend). A forced `unsupported`
+//! mounts a new namespace on such a fake under a label of the adapter's own.
 //!
 //! # Views
 //!
@@ -69,7 +74,7 @@ use ess_primitives::node::Node;
 use keyring_core::CredentialStore;
 use secrets_core::storage::{
     Address, BackendKind, BackendRef, NameError, NamespaceKey, Scope, ScopeName, SecretName,
-    SecretStorage, SecretValue, StorageError, Target,
+    SecretStorage, SecretValue, StorageError, Target, testing::RecordingBackend,
 };
 use secrets_federation::{FileConfig, Namespace, NamespaceConfig};
 use secrets_keychain::{DEFAULT_SERVICE, KeychainBackend};
@@ -79,7 +84,7 @@ use serde_json::Value;
 use crate::fixture::Admin;
 use crate::storage::{
     ACTOR, FIXTURE_LOCATOR, FIXTURE_NAME, FIXTURE_VALUE, R, Remote, VALUE_LIMIT, cannot_arrange,
-    declared, event, namespace_key, node, segmented, set, text,
+    declared, event, namespace_key, needs, node, segmented, set, text,
 };
 use crate::target::{Observed, unavailable};
 
@@ -172,6 +177,7 @@ pub struct World {
     configured: BTreeSet<BackendRef>,
     remote: Option<Remote>,
     scopes: BTreeSet<Scope>,
+    fakes: u64,
 }
 
 impl World {
@@ -193,6 +199,7 @@ impl World {
             configured: BTreeSet::from([BackendRef::default_mount()]),
             remote: None,
             scopes: BTreeSet::new(),
+            fakes: 0,
         })
     }
 
@@ -331,7 +338,8 @@ impl World {
                     toml::Value::String(token.to_string_lossy().into_owned()),
                 );
             }
-            BackendKind::Onepassword => return Err(read_only_unsupported()),
+            // The binary built with `test-hooks` mounts the read-only fake for this kind.
+            BackendKind::Onepassword => {}
         }
         self.write_backend(backend, entry)?;
         self.configured.insert(backend.clone());
@@ -378,8 +386,24 @@ impl World {
                         .map_err(cannot_arrange)?;
                 operation(runtime, &RemoteBackend::new(client))
             }
-            BackendKind::Onepassword => Err(read_only_unsupported()),
+            // What each run of the binary mounts for this kind: a fresh read-only fake that holds
+            // nothing, so a fixture can never be stored on it.
+            BackendKind::Onepassword => operation(runtime, &RecordingBackend::read_only_bound()),
         }
+    }
+
+    /// A new read-only fake of kind `onepassword` under a label of the adapter's own, configured
+    /// in the scenario's `config.toml`.
+    fn insert_fake(&mut self) -> R<BackendRef> {
+        self.fakes += 1;
+        let label = ScopeName::parse(&format!("fixture-{}", self.fakes)).map_err(cannot_arrange)?;
+        let backend = BackendRef {
+            kind: BackendKind::Onepassword,
+            label,
+        };
+        self.write_backend(&backend, toml::Table::new())?;
+        self.configured.insert(backend.clone());
+        Ok(backend)
     }
 
     fn flip(&self, runtime: &tokio::runtime::Runtime, admin: &Admin, switch: &Switch) -> R<()> {
@@ -436,13 +460,6 @@ fn write_private(path: &Path, bytes: &[u8]) -> R<()> {
     file.write_all(bytes).map_err(cannot_arrange)
 }
 
-fn read_only_unsupported() -> TargetError {
-    TargetError::unsupported(
-        "a read-only mount",
-        "no 1Password backend exists this round (story:onepassword-backend is archived)",
-    )
-}
-
 fn local_only() -> TargetError {
     TargetError::unsupported(
         "a scope other than tenant and user `default`",
@@ -466,6 +483,21 @@ enum Parsed {
 }
 
 impl Parsed {
+    /// The command, as the specification names it without its domain.
+    fn command(&self) -> &'static str {
+        match self {
+            Self::AddNamespace(..) => "AddNamespace",
+            Self::RemoveNamespace(_) => "RemoveNamespace",
+            Self::SetMount(..) => "SetMount",
+            Self::Bind(_) => "Bind",
+            Self::Unbind(_) => "Unbind",
+            Self::Write(_) => "Write",
+            Self::Delete(_) => "Delete",
+            Self::Rename(..) => "Rename",
+            Self::ListMetadata(_) => "ListMetadata",
+        }
+    }
+
     fn namespace(&self) -> NamespaceKey {
         match self {
             Self::AddNamespace(key, _) | Self::RemoveNamespace(key) | Self::SetMount(key, _) => {
@@ -765,8 +797,29 @@ impl Arranging<'_> {
         Ok(match namespace.effective_mount().kind {
             BackendKind::Keychain => World::corrupt(self.world.keychain_path()),
             BackendKind::Remote => Switch::RemoteDown,
-            BackendKind::Onepassword => return Err(read_only_unsupported()),
+            // The fake lives inside each run of the binary; nothing outside it can switch it off.
+            BackendKind::Onepassword => {
+                return Err(TargetError::unsupported(
+                    "making a 1Password-kind mount fail",
+                    "its fake lives inside each run of secretsctl",
+                ));
+            }
         })
+    }
+
+    /// Adds the namespace on `mount` when absent.
+    fn ensure_namespace_on(&self, key: &NamespaceKey, mount: BackendRef) -> R<Namespace> {
+        if let Some(namespace) = self.namespace(key)? {
+            return Ok(namespace);
+        }
+        let namespace = Namespace {
+            key: key.clone(),
+            mount: Some(mount),
+        };
+        self.runtime
+            .block_on(self.world.config().insert_namespace(namespace.clone()))
+            .map_err(cannot_arrange)?;
+        Ok(namespace)
     }
 
     /// Arranges a secret command, as [`crate::storage`] does for the in-process stack.
@@ -781,7 +834,25 @@ impl Arranging<'_> {
                 }
                 return Ok(Vec::new());
             }
-            Some("unsupported") => return Err(read_only_unsupported()),
+            Some("unsupported") => {
+                let namespace = match self.namespace(&key)? {
+                    Some(namespace) => namespace,
+                    None => {
+                        let fake = self.world.insert_fake()?;
+                        self.ensure_namespace_on(&key, fake)?
+                    }
+                };
+                let offered = namespace.effective_mount().kind.capabilities();
+                if needs(parsed.command())
+                    .iter()
+                    .all(|need| offered.contains(need))
+                {
+                    return Err(cannot_arrange(
+                        "the namespace is mounted on a backend with the capability",
+                    ));
+                }
+                return Ok(Vec::new());
+            }
             Some("unavailable") => {
                 let namespace = self.ensure_namespace(&key)?;
                 return Ok(vec![self.fault(&namespace)?]);
@@ -928,14 +999,6 @@ fn answer(
         || user.is_some_and(|user| text(&input, user).ok() != Some(ScopeName::DEFAULT))
     {
         return Err(local_only());
-    }
-    if input
-        .get("mount")
-        .and_then(|mount| mount.get("kind"))
-        .and_then(Value::as_str)
-        == Some("onepassword")
-    {
-        return Err(read_only_unsupported());
     }
     let forced = context.forced.clone();
     let forced = forced.as_deref();

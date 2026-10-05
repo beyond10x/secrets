@@ -75,11 +75,14 @@
 //! refuse what the arrangement made true, and the command is reported as taking no declared
 //! branch.
 //!
-//! # What stays unsupported
+//! # The 1Password kind
 //!
-//! A mount of kind `onepassword` named by a scenario: no 1Password backend exists this round
-//! (story:onepassword-backend is archived). The read-only fake is mounted under that kind only for
-//! the forced `unsupported` and `unresolved` arrangements, under a label of the adapter's own.
+//! No 1Password backend exists (story:onepassword-backend is archived). Every mount of kind
+//! `onepassword` is played by the read-only, binding-required recording fake
+//! (story:readonly-test-backend): a mount a scenario names, configured as an operator would, and
+//! the mounts the forced `unsupported` and `unresolved` arrangements add under labels of the
+//! adapter's own. The scenarios that reach it check routing's capability and binding rules, which
+//! the fake declares as the kind does; they do not check 1Password itself.
 //!
 //! # Events
 //!
@@ -452,11 +455,10 @@ impl World {
                     Fault::Remote,
                 );
             }
+            // The read-only, binding-required fake plays the kind (story:readonly-test-backend).
             BackendKind::Onepassword => {
-                return Err(TargetError::unsupported(
-                    "mounting a 1Password backend",
-                    "no 1Password backend exists this round (story:onepassword-backend is archived)",
-                ));
+                let fake = Arc::new(RecordingBackend::read_only_bound());
+                self.insert(backend.clone(), fake.clone(), Fault::Fake(fake));
             }
         }
         Ok(())
@@ -862,7 +864,7 @@ pub(crate) fn namespace_key(scope: &Scope) -> NamespaceKey {
 }
 
 /// The capabilities a secret command needs of its backend.
-fn needs(command: &str) -> &'static [Capability] {
+pub(crate) fn needs(command: &str) -> &'static [Capability] {
     match command {
         "Write" => &[Capability::Write],
         "Read" => &[Capability::Read],

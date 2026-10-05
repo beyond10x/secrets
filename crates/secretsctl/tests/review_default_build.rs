@@ -47,3 +47,46 @@ fn the_test_keychain_variable_is_inert_in_a_default_build() {
     }
     assert!(!keychain.exists(), "the test keychain file was created");
 }
+
+/// story:readonly-test-backend: only a `test-hooks` build reads `[backends.onepassword.<label>]`
+/// and mounts the recording fake for it. A default build refuses a `backends` table that names
+/// the kind, so the label is no configured backend and nothing can be mounted on it.
+#[test]
+fn a_default_build_cannot_mount_the_read_only_fake() {
+    let root = PathBuf::from(env!("CARGO_TARGET_TMPDIR"))
+        .join(format!("secretsctl-review-fake-{}", std::process::id()));
+    let _ = fs::remove_dir_all(&root);
+    fs::create_dir_all(root.join("home")).unwrap();
+    let config = root.join("config/b10x-secrets/config.toml");
+    fs::create_dir_all(config.parent().unwrap()).unwrap();
+    fs::write(&config, b"[backends.onepassword.vault]\n").unwrap();
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_secretsctl"))
+            .args(args)
+            .env("XDG_CONFIG_HOME", root.join("config"))
+            .env("HOME", root.join("home"))
+            .stdin(Stdio::null())
+            .output()
+            .unwrap()
+    };
+    for args in [
+        &[
+            "--json",
+            "namespace",
+            "add",
+            "vault",
+            "--mount",
+            "onepassword/vault",
+        ][..],
+        &["--json", "mount", "set", "default", "onepassword/vault"][..],
+    ] {
+        let output = run(args);
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        // 3 is `not-found`: the mount names no configured backend.
+        assert_eq!(output.status.code(), Some(3), "{args:?}: {stderr}");
+        assert!(stderr.contains("\"error\":\"not-found\""), "{stderr}");
+    }
+    let listed = run(&["--json", "namespace", "list"]);
+    let listed = String::from_utf8_lossy(&listed.stdout);
+    assert!(!listed.contains("onepassword"), "{listed}");
+}
