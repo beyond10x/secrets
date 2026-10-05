@@ -10,3 +10,8 @@ scenarios:
 - adversary-w2/scenarios/a-put-with-a-256-byte-key-is-an-invalid-reference.yaml
 - adversary-w2/scenarios/a-put-with-a-key-of-200-two-byte-characters-follows-the-spec.yaml
 - adversary-w2/scenarios/a-put-with-an-empty-key-is-an-invalid-reference.yaml
+- storage/scenarios/port/a-name-of-128-bytes-with-a-64-byte-segment-reaches-the-value-check.yaml
+- storage/scenarios/port/a-name-of-129-bytes-is-too-long.yaml
+- storage/scenarios/port/a-new-name-of-129-bytes-is-too-long.yaml
+- storage/scenarios/port/a-segment-of-65-bytes-is-an-invalid-name.yaml
+- storage/scenarios/port/a-value-above-one-mib-is-too-large.yaml

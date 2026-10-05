@@ -2078,6 +2078,7 @@ dependencies = [
  "async-trait",
  "base64",
  "serde",
+ "serde_json",
  "thiserror",
  "uuid",
  "zeroize",

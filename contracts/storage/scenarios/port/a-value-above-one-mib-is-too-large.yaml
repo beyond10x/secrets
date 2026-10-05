@@ -1,0 +1,19 @@
+# `too-large` is external, so the suite forces it and the runner sends a value one byte past 1 MiB
+# (checks/conformance/src/storage.rs, `arrange`); SecretValue::new refuses it.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-value-above-one-mib-is-too-large
+summary: A value one byte larger than 1 MiB is refused as too large and stores nothing.
+timeline:
+- at: '2026-10-05T12:00:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    value: AA==
+  outcome: too-large
+  error:
+    name: secrets.storage.TooLarge
+  no_events: [secrets.storage.SecretWritten]

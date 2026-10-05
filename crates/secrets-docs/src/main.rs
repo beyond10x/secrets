@@ -252,8 +252,9 @@ fn index_page(domains: &[DomainEntry]) -> String {
          and `task check` fails if they fall behind it.\n\n\
          `custody` is retrofitted from the shipped service and every declaration cites its source; \
          a conformance suite runs it against the real HTTP router and PostgreSQL store. `storage` \
-         is the planned model of named, scoped secrets over several backends, and no code \
-         implements it yet.\n",
+         is the model of named, scoped secrets over several backends; `secrets-core` implements \
+         its storage port, and a second suite runs that in process. No backend implements it \
+         yet.\n",
     );
     for (n, domain) in domains.iter().enumerate() {
         page.push_str(&format!(
