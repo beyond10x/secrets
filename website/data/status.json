@@ -11,7 +11,7 @@
     {"label": "Audit events for every change", "status": "shipped", "area": "Security", "detail": "Written in the same transaction; no API reads them, and some actors are caller-chosen.", "href": "/docs/status#audit-actors-can-be-caller-chosen"},
     {"label": "Rust workload client", "status": "shipped", "area": "Clients", "detail": "secrets-client covers every workload route.", "href": "/docs/rust-client"},
     {"label": "ESS specification and conformance suite", "status": "shipped", "area": "Specification", "detail": "secrets.custody retrofitted from the code; 111 scenarios run against the real router and PostgreSQL on every check.", "href": "/docs/reference/ess"},
-    {"label": "Rewrap of every stored version", "status": "planned", "area": "Security", "detail": "Today rewrap re-encrypts only the current version of each secret.", "href": "/docs/status#rewrap-covers-only-current-versions"},
+    {"label": "Rewrap of every stored version", "status": "shipped", "area": "Security", "detail": "secrets rewrap re-encrypts every stored version under another key, current or older.", "href": "/docs/operations#rotate-the-key-encryption-key"},
     {"label": "Verified principal as every audit actor", "status": "planned", "area": "Security", "href": "/docs/status#audit-actors-can-be-caller-chosen"},
     {"label": "Named, scoped secrets over several backends", "status": "planned", "area": "Library", "detail": "The secrets.storage domain: OS keychain, read-only 1Password and this service behind one interface.", "href": "/docs/status#planned-named-secrets-over-several-backends"},
     {"label": "Local CLI that never prints a secret", "status": "planned", "area": "Library", "href": "/docs/status#planned-named-secrets-over-several-backends"}

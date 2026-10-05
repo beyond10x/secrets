@@ -720,8 +720,8 @@ commands:
         error: secrets.custody.Unavailable
 
   # `secrets rewrap --actor <name>` (crates/secrets-app/src/main.rs:20, 31-37, 68-73;
-  # crates/secrets-postgres/src/lib.rs:32-76). Re-encrypts the current version of every secret whose
-  # key_id differs from the active key, in every tenant and every state; older versions are untouched.
+  # crates/secrets-postgres/src/lib.rs:53-96). Re-encrypts every stored version, current or older, whose
+  # key_id differs from the active key, in every tenant and every state.
   # After that transaction commits, a second one deletes expired prepared batches in every tenant
   # and re-seals every unexpired batch sealed under another key under the active key, keeping its
   # expiry. No transaction locks secrets and then batches.
@@ -732,31 +732,36 @@ commands:
         type: String
     outcomes:
       # ESS-LIMIT: changes many Secrets at once without moving them; an outcome has one subject.
-      # One `rewrap` audit row per re-encrypted current version (crates/secrets-postgres/src/lib.rs:93),
-      # so the event exists only when some current version was under another key; which versions
+      # One `rewrap` audit row per re-encrypted version (crates/secrets-postgres/src/lib.rs:93),
+      # so the event exists only when some stored version was under another key; which versions
       # are is stored state, not input.
+      # ESS-LIMIT: that every stored version, not only the current one, is rewrapped is not
+      # observable here: no view reads a version, and `expect_event` matches an event by name, so
+      # one SecretsRewrapped satisfies any number of expected ones (ESS 0.52.0,
+      # ess-conformance runner.rs `expect_event`). Guarded by
+      # crates/secrets-postgres/tests/lifecycle.rs `rewrap_reencrypts_every_stored_version`.
       - name: rewrapped
-        external: at least one current version is wrapped by a key other than the operator's active key
+        external: at least one stored version is wrapped by a key other than the operator's active key
         emits:
           - secrets.custody.SecretsRewrapped
         payload:
           secrets.custody.SecretsRewrapped:
             actor: input.actor
-        summary: Every current version and every held prepared batch is wrapped by the active key.
+        summary: Every stored version and every held prepared batch is wrapped by the active key.
 
       # The SELECT finds no row (crates/secrets-postgres/src/lib.rs:55-57), so no version is rewritten
       # and no audit row is written; held batches are still resealed (crates/secrets-postgres/src/lib.rs:96).
-      # The only record is the command's own output, `rewrapped 0 secret(s)` (crates/secrets-app/src/main.rs:70-73).
+      # The only record is the command's own output, `rewrapped 0 version(s)` (crates/secrets-app/src/main.rs:70-73).
       - name: nothing-to-rewrap
         emits:
           - secrets.custody.NothingRewrapped
         payload:
           secrets.custody.NothingRewrapped:
             actor: input.actor
-        summary: Every current version was already wrapped by the active key; nothing is re-encrypted and nothing is recorded.
+        summary: Every stored version was already wrapped by the active key; nothing is re-encrypted and nothing is recorded.
 
       - name: failed
-        external: storage is unavailable, or a current version or a held batch does not decrypt with the keyring
+        external: storage is unavailable, or a stored version or a held batch does not decrypt with the keyring
         error: secrets.custody.Unavailable
 
   # POST /v1/workload/secrets:get (crates/secrets-http/src/lib.rs:47, 202-215;
@@ -919,13 +924,13 @@ events:
       - name: transaction
         type: Uuid
 
-  # audit action `rewrap`, one per re-encrypted secret (crates/secrets-postgres/src/lib.rs:93). Not published.
+  # audit action `rewrap`, one per re-encrypted version (crates/secrets-postgres/src/lib.rs:93). Not published.
   - name: secrets.custody.SecretsRewrapped
     fields:
       - name: actor
         type: String
 
-  # `rewrapped 0 secret(s)` on the command's output (crates/secrets-app/src/main.rs:70-73); no audit
+  # `rewrapped 0 version(s)` on the command's output (crates/secrets-app/src/main.rs:70-73); no audit
   # row is written. Not published.
   - name: secrets.custody.NothingRewrapped
     fields:

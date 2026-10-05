@@ -9,6 +9,9 @@
   scenarios, adding one per command sent as an actor that is not granted it. The delete and abort
   outcomes declare `deletes:`, so the suite checks the row is gone.
 - `secrets-docs` generates the site's specification pages; `task check` fails when they drift.
+- `secrets rewrap` re-encrypts every stored version under another key, not only the current one,
+  so an old key can leave the keyring once rewrap reports nothing left. It writes one `rewrap`
+  audit event per version and prints `rewrapped <n> version(s)`.
 
 ## 0.4.0 - 2026-09-27
 
