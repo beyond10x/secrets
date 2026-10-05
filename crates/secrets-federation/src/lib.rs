@@ -39,8 +39,12 @@ use secrets_core::storage::{
 };
 
 pub mod config;
+#[cfg(feature = "file-config")]
+pub mod file;
 
 pub use config::{InMemoryConfig, Namespace, NamespaceConfig};
+#[cfg(feature = "file-config")]
+pub use file::FileConfig;
 
 #[cfg(test)]
 mod tests;

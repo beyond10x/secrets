@@ -66,6 +66,66 @@
         "disposition": "accepted",
         "scenario": "secrets.storage/authored/tenant-and-user-default-may-do-everything-in-any-namespace"
       },
+      "storage/scenarios/cli/a-namespace-on-the-remote-backend-round-trips.yaml": {
+        "digest": "sha256:7e36939a4e86f187eec93dc325f423bb5317303faae2ff6d0baba31a9eed2010",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/a-namespace-on-the-remote-backend-round-trips"
+      },
+      "storage/scenarios/cli/bind-binds-a-name-once.yaml": {
+        "digest": "sha256:56cde2646145b3af2c8bf18f143365a6752531db40e0a2e0bc7717d799dd7e31",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/bind-binds-a-name-once"
+      },
+      "storage/scenarios/cli/delete-removes-a-secret.yaml": {
+        "digest": "sha256:8c770b0be9471741429f1364bbd3e3747aa0dcd9d2945f8b3eefb92aeebcf477",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/delete-removes-a-secret"
+      },
+      "storage/scenarios/cli/describe-shows-the-name-scope-and-version-of-a-secret.yaml": {
+        "digest": "sha256:b6ac90fdb9b73bddfa6452b52d91325071d33f5888d51b7cfad72e765cfbad08",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/describe-shows-the-name-scope-and-version-of-a-secret"
+      },
+      "storage/scenarios/cli/list-reads-the-secrets-of-a-namespace.yaml": {
+        "digest": "sha256:4c7b2956837f04bfd0570d084378669e539b4bb04fa157a939e346b8d58470cd",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/list-reads-the-secrets-of-a-namespace"
+      },
+      "storage/scenarios/cli/mount-set-moves-a-namespace-to-another-backend.yaml": {
+        "digest": "sha256:dee3275e40df067eb5cfa2486888706c7c3666592c25f67265f2f12578eb8461",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/mount-set-moves-a-namespace-to-another-backend"
+      },
+      "storage/scenarios/cli/namespace-add-creates-a-namespace-once.yaml": {
+        "digest": "sha256:5b5e30deed87a278d976cd98ce9b15ecfa42c29153fe3a57c4a15aaec92e9715",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/namespace-add-creates-a-namespace-once"
+      },
+      "storage/scenarios/cli/namespace-list-holds-every-namespace-with-its-mount.yaml": {
+        "digest": "sha256:376e53baf65e571ada7ab4b7e6448df72c8ba820e2d52c5eed50553a8889f490",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/namespace-list-holds-every-namespace-with-its-mount"
+      },
+      "storage/scenarios/cli/namespace-remove-refuses-default-and-a-namespace-in-use.yaml": {
+        "digest": "sha256:f1aeb747d8aff5e4aa2aad7abaeb04a82e0d1c90e9f8659e0ea0b85ed61a9a15",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/namespace-remove-refuses-default-and-a-namespace-in-use"
+      },
+      "storage/scenarios/cli/put-stores-a-secret-in-the-local-scope.yaml": {
+        "digest": "sha256:0e2754a9eab5d8404fdb529f29433983b513b22cb296a1fe558dba90e6d150b3",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/put-stores-a-secret-in-the-local-scope"
+      },
+      "storage/scenarios/cli/rename-moves-a-secret-to-a-new-name.yaml": {
+        "digest": "sha256:754ef70ad969dac2ce3ed90260cb7ef07d039911cbb51ffdee5a1494fd96db24",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/rename-moves-a-secret-to-a-new-name"
+      },
+      "storage/scenarios/cli/unbind-removes-a-binding.yaml": {
+        "digest": "sha256:8ddde0c32f80dbf615dfc96c8b964b0349fb49eac778ff16bb5d6eefbf4150bc",
+        "disposition": "accepted",
+        "scenario": "secrets.storage/authored/unbind-removes-a-binding"
+      },
       "storage/scenarios/federation/a-name-in-a-namespace-that-does-not-exist-is-unresolved.yaml": {
         "digest": "sha256:cec49ce975ea878bc16419ce7f929d0b14112b56b4f523e0cd67a12fe0de53d7",
         "disposition": "accepted",
@@ -150,7 +210,7 @@
     "counts": {
       "authored": 8,
       "generated": 103,
-      "outside": 96,
+      "outside": 108,
       "refused": 0
     },
     "generated": [
@@ -1369,6 +1429,41 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/a-namespace-on-the-remote-backend-round-trips"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
             "name": "secrets.storage.Rename"
           }
         ],
@@ -1550,6 +1645,29 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NameBound"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/bind-binds-a-name-once"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
             "name": "secrets.storage.Delete"
           },
           {
@@ -1620,6 +1738,48 @@
         "needs": [
           {
             "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretDeleted"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/delete-removes-a-secret"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/describe-shows-the-name-scope-and-version-of-a-secret"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
             "name": "secrets.storage.AddNamespace"
           },
           {
@@ -1654,6 +1814,171 @@
         "origin": "authored",
         "reason": "other_component",
         "scenario": "secrets.storage/authored/each-namespace-routes-to-its-own-mount"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.ListMetadata"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.MetadataListed"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/list-reads-the-secrets-of-a-namespace"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.SetMount"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.MountSet"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/mount-set-moves-a-namespace-to-another-backend"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NamespaceAdded"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/namespace-add-creates-a-namespace-once"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/namespace-list-holds-every-namespace-with-its-mount"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.AddNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Delete"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.RemoveNamespace"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NamespaceRemoved"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.Namespaces"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/namespace-remove-refuses-default-and-a-namespace-in-use"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretWritten"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/put-stores-a-secret-in-the-local-scope"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.SecretRenamed"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/rename-moves-a-secret-to-a-new-name"
       },
       {
         "needs": [
@@ -1771,6 +2096,37 @@
         "origin": "authored",
         "reason": "other_component",
         "scenario": "secrets.storage/authored/the-same-name-in-two-remote-namespaces-stays-separate"
+      },
+      {
+        "needs": [
+          {
+            "kind": "command",
+            "name": "secrets.storage.Bind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Rename"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Unbind"
+          },
+          {
+            "kind": "command",
+            "name": "secrets.storage.Write"
+          },
+          {
+            "kind": "event",
+            "name": "secrets.storage.NameUnbound"
+          },
+          {
+            "kind": "view",
+            "name": "secrets.storage.SecretMetadata"
+          }
+        ],
+        "origin": "authored",
+        "reason": "other_component",
+        "scenario": "secrets.storage/authored/unbind-removes-a-binding"
       }
     ],
     "refused": [],

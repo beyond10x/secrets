@@ -24,7 +24,7 @@ cargo build --locked -p secrets-app -p secretsctl
 | Binary | Package | Commands |
 |---|---|---|
 | `secrets` | `secrets-app` | `serve`, `migrate`, `rewrap` |
-| `secretsctl` | `secretsctl` | `generate-keyring`, `health` |
+| `secretsctl` | `secretsctl` | `generate-keyring`, `health`, and the [local commands](#local-cli) |
 
 ## Create a keyring
 
@@ -37,6 +37,43 @@ chmod 600 keyring.json
 
 `--key-id` sets the key's ID (default `v1`). The file holds a raw key: with it and a copy of the
 database, anyone can decrypt every value. Keep it out of version control and shared directories.
+
+## Local CLI
+
+`secretsctl` also manages [named secrets](./status.mdx#named-secrets-over-several-backends) on
+this machine, in tenant `default` and user `default`, in namespace `default` unless `--namespace`
+names another.
+
+```sh
+printf '%s' "$API_KEY" | secretsctl put openai   # or a hidden prompt, or --file
+secretsctl list --all
+secretsctl describe openai
+secretsctl rename openai openai-work
+secretsctl namespace add work --mount remote/prod
+secretsctl bind openai op://Work/OpenAI/credential --namespace work
+```
+
+The commands are `put`, `describe`, `list`, `delete`, `rename`, `namespace add|list|remove`,
+`mount set`, `bind` and `unbind`; `--json` prints results and refusals as JSON.
+
+- **No value is printed.** No command reads a value back; `describe` and `list` show name, scope,
+  backend and version. `put` reads from a hidden prompt, a pipe or `--file`, refuses a value on
+  the command line, and refuses a file its group or others can access.
+- **Configuration.** `$XDG_CONFIG_HOME/b10x-secrets/config.toml` (`~/.config/...` when unset)
+  holds namespaces, mounts, bindings and backends, and no secret. Each change replaces it
+  atomically with mode 0600.
+- **Backends.** `keychain/default` is always configured; the OS keychain needs a build with
+  `--features native-keychain` and answers `unavailable` without it. A remote backend takes its
+  token from an environment variable or a mode-0600 file:
+
+  ```toml
+  [backends.remote.prod]
+  origin = "https://secrets.example"
+  token_env = "B10X_SECRETS_TOKEN"   # or token_file = "/path/to/token"
+  ```
+
+- **Exit codes.** 2 for a refused command line or value; 3 to 9 for `not-found`, `denied`,
+  `unsupported`, `unavailable`, `invalid-name`, `too-large` and `conflict`.
 
 ## Migrate a database
 

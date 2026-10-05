@@ -10,13 +10,22 @@ repository.workspace = true
 [dependencies]
 async-trait.workspace = true
 secrets-core = { path = "../secrets-core" }
+serde = { workspace = true, optional = true }
+toml = { workspace = true, optional = true }
 
 [features]
 testing = []
+# `FileConfig`: namespaces, mounts and bindings in one TOML file, as the local CLI keeps them.
+file-config = ["dep:serde", "dep:toml"]
+
+[[test]]
+name = "file_config"
+required-features = ["file-config"]
 
 [dev-dependencies]
 secrets-core = { path = "../secrets-core", features = ["testing"] }
 tokio.workspace = true
+toml.workspace = true
 
 [lints]
 workspace = true

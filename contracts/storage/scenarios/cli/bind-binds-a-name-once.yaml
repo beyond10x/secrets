@@ -1,0 +1,65 @@
+# story:local-cli, `bind`. `already-bound`, `bound` and `no-namespace` are forced; the runner adds
+# only what each names (forcing `bound` stores the secret the rename addresses). No view holds a
+# binding (a locator can name a vault item), so the binding is seen only through the refusals it
+# causes. Through the CLI target `bound` is told from `taken` by whether a name was bound when the
+# rename began.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: bind-binds-a-name-once
+summary: Bind binds a name to a locator, binding it again is a conflict, a bound name cannot be renamed, and a missing namespace is not-found.
+timeline:
+- at: '2026-10-05T16:09:00Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    locator: op://Work/OpenAI/credential
+  outcome: bound
+  events:
+  - event: secrets.storage.NameBound
+    payload:
+      address:
+        scope: {tenant: default, namespace: default, user: default}
+        name: openai
+- at: '2026-10-05T16:09:01Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    locator: op://Work/OpenAI/other
+  outcome: already-bound
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.NameBound]
+- at: '2026-10-05T16:09:02Z'
+  command: secrets.storage.Rename
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: openai
+    new_name: openai-work
+  outcome: bound
+  error:
+    name: secrets.storage.Conflict
+  no_events: [secrets.storage.SecretRenamed]
+- at: '2026-10-05T16:09:03Z'
+  command: secrets.storage.Bind
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: missing, user: default}
+      name: openai
+    locator: op://Work/OpenAI/credential
+  outcome: no-namespace
+  error:
+    name: secrets.storage.NotFound
+  no_events: [secrets.storage.NameBound]
+assert:
+- view: secrets.storage.Namespaces
+  excludes:
+    namespace: {tenant: default, namespace: missing}

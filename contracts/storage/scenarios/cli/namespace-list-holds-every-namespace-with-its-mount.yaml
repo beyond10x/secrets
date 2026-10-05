@@ -1,0 +1,33 @@
+# story:local-cli, `namespace list`. Through the CLI target every read of the Namespaces view is
+# `secretsctl namespace list --json`; namespace `default` is there from the start.
+type: ess-scenario/1
+domain: secrets.storage
+scenario: namespace-list-holds-every-namespace-with-its-mount
+summary: Namespace list holds namespace default and every added namespace, each with its mount.
+timeline:
+- at: '2026-10-05T16:06:00Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: alpha}
+    mount: {kind: keychain, label: alpha}
+  outcome: added
+- at: '2026-10-05T16:06:01Z'
+  command: secrets.storage.AddNamespace
+  actor: secrets.storage.LocalUser
+  input:
+    namespace: {tenant: default, namespace: beta}
+  outcome: added
+assert:
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: default}
+    state: Present
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: alpha}
+    mount: {kind: keychain, label: alpha}
+- view: secrets.storage.Namespaces
+  contains:
+    namespace: {tenant: default, namespace: beta}
+    state: Present

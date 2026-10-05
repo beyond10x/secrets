@@ -18,13 +18,13 @@ clap.workspace = true
 ess-conformance = { git = "https://github.com/beyond10x/ess.git", tag = "0.52.0" }
 ess-primitives = { git = "https://github.com/beyond10x/ess.git", tag = "0.52.0" }
 http-body-util = "0.1"
-keyring-core.workspace = true
+keyring-core = { workspace = true, features = ["sample"] }
 reqwest.workspace = true
 secrets-auth = { path = "../../crates/secrets-auth" }
 secrets-client = { path = "../../crates/secrets-client" }
 secrets-core = { path = "../../crates/secrets-core", features = ["testing"] }
 secrets-crypto = { path = "../../crates/secrets-crypto" }
-secrets-federation = { path = "../../crates/secrets-federation", features = ["testing"] }
+secrets-federation = { path = "../../crates/secrets-federation", features = ["testing", "file-config"] }
 secrets-http = { path = "../../crates/secrets-http" }
 secrets-keychain = { path = "../../crates/secrets-keychain" }
 secrets-postgres = { path = "../../crates/secrets-postgres" }
@@ -34,6 +34,7 @@ serde_json.workspace = true
 sha2.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
+toml.workspace = true
 tower = { version = "0.5", features = ["util"] }
 url.workspace = true
 uuid.workspace = true

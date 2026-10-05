@@ -2,8 +2,8 @@
 //!
 //! [`NamespaceConfig`] is the seam the specification's `config-unavailable` outcomes stand on: a
 //! store that cannot be reached answers [`StorageError::Unavailable`], and mount routing passes
-//! that on. [`InMemoryConfig`] is the store in this crate; a file-backed one belongs to the local
-//! CLI.
+//! that on. [`InMemoryConfig`] keeps it in memory; [`crate::file::FileConfig`] (feature `file-config`)
+//! keeps it in the TOML file the local CLI reads.
 //!
 //! A store keeps records and refuses only the collisions it can see on its own: a namespace or a
 //! binding that already exists is [`StorageError::Conflict`], one that does not is

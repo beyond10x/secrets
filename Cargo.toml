@@ -45,6 +45,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2"
 uuid = { version = "1", features = ["v7", "serde"] }
 zeroize = { version = "1", features = ["derive"] }
+toml = "0.9"
+rpassword = "7"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

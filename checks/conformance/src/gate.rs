@@ -11,8 +11,9 @@ use std::{
 use crate::target::Component;
 
 /// Every component this runner answers: its suite and the baseline its runs are held to. Each
-/// suite holds only its own component's scenarios; the other's are outside it.
-const SUITES: [(Component, &str, &str); 2] = [
+/// suite holds only its own component's scenarios; the other's are outside it. The CLI suite is
+/// the library's generated scenarios with the authored CLI scenarios, run through `secretsctl`.
+const SUITES: [(Component, &str, &str); 3] = [
     (
         Component::Service,
         "contracts/suite.json",
@@ -22,6 +23,11 @@ const SUITES: [(Component, &str, &str); 2] = [
         Component::Library,
         "contracts/storage-suite.json",
         "contracts/storage-baseline.json",
+    ),
+    (
+        Component::Cli,
+        "contracts/cli-suite.json",
+        "contracts/cli-baseline.json",
     ),
 ];
 
@@ -190,9 +196,9 @@ fn synthesize(component: Component, out: &str) -> Result<(), Box<dyn Error>> {
         "--target",
         "ir",
         "--component",
-        component.name(),
+        component.specified(),
         "--scenarios",
-        "contracts",
+        component.scenarios(),
         "--out",
         out,
     ])

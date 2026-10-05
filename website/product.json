@@ -60,7 +60,7 @@
         },
         {
           "title": "Named secrets over several backends",
-          "description": "An in-process library with named, scoped secrets over the OS keychain and this service, one backend per namespace and no fallback. Read-only 1Password and a CLI that never prints a secret are planned.",
+          "description": "An in-process library with named, scoped secrets over the OS keychain and this service, one backend per namespace and no fallback, and secretsctl, a local CLI that never prints a secret. Read-only 1Password is planned.",
           "status": "shipped",
           "href": "/docs/status#named-secrets-over-several-backends"
         }

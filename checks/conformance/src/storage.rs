@@ -123,10 +123,10 @@ use crate::target::{LibraryContext, LibraryDomain, Observed, unavailable};
 
 pub const DOMAIN: LibraryDomain = LibraryDomain { command, view };
 
-const ACTOR: &str = "secrets.storage.LocalUser";
+pub(crate) const ACTOR: &str = "secrets.storage.LocalUser";
 /// The value bound, restated rather than imported so a change to the port's bound is something
 /// this adapter notices instead of follows.
-const VALUE_LIMIT: usize = 1024 * 1024;
+pub(crate) const VALUE_LIMIT: usize = 1024 * 1024;
 /// The specification's errors, by wire code (`naming: {wire: ...}` in `spec/domains/storage.yaml`).
 const ERRORS: [(&str, &str); 7] = [
     ("not-found", "secrets.storage.NotFound"),
@@ -153,13 +153,13 @@ const REMOTE_ACTIONS: &[&str] = &[
     "secret:abort",
 ];
 /// The value a fixture secret holds, and the locator a fixture binding names.
-const FIXTURE_VALUE: &[u8] = b"fixture";
-const FIXTURE_LOCATOR: &str = "fixture-locator";
-const FIXTURE_NAME: &str = "fixture";
+pub(crate) const FIXTURE_VALUE: &[u8] = b"fixture";
+pub(crate) const FIXTURE_LOCATOR: &str = "fixture-locator";
+pub(crate) const FIXTURE_NAME: &str = "fixture";
 
-type R<T> = Result<T, TargetError>;
+pub(crate) type R<T> = Result<T, TargetError>;
 
-fn cannot_arrange(what: impl std::fmt::Display) -> TargetError {
+pub(crate) fn cannot_arrange(what: impl std::fmt::Display) -> TargetError {
     unavailable("arranging the forced outcome", what)
 }
 
@@ -270,11 +270,51 @@ struct Mounted {
 }
 
 /// The custody service a scenario mounts as the remote backend, on a loopback port.
-struct Remote {
-    scenario: Scenario,
-    server: tokio::task::JoinHandle<()>,
-    origin: String,
-    token: String,
+pub(crate) struct Remote {
+    pub(crate) scenario: Scenario,
+    pub(crate) server: tokio::task::JoinHandle<()>,
+    pub(crate) origin: String,
+    pub(crate) token: String,
+}
+
+impl Remote {
+    /// The shipped router and store over a scenario database, served on `127.0.0.1:0`, and a
+    /// workload token of tenant `default` holding only the actions the remote backend uses.
+    pub(crate) fn start(runtime: &tokio::runtime::Runtime, admin: &Admin) -> R<Self> {
+        runtime
+            .block_on(async {
+                let mut scenario = admin.open().await?;
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+                let origin = format!("http://{}/", listener.local_addr()?);
+                let router = scenario.router.clone();
+                let server = tokio::spawn(async move {
+                    let _ = axum::serve(listener, router).await;
+                });
+                let token = scenario.token(
+                    Audience::Workload,
+                    REMOTE_SUBJECT,
+                    ScopeName::DEFAULT,
+                    REMOTE_ACTIONS,
+                )?;
+                Ok::<_, Box<dyn Error>>(Self {
+                    scenario,
+                    server,
+                    origin,
+                    token,
+                })
+            })
+            .map_err(|error| unavailable("starting the custody service", error))
+    }
+
+    /// Stops the service and drops its database.
+    pub(crate) fn close(
+        self,
+        runtime: &tokio::runtime::Runtime,
+        admin: &Admin,
+    ) -> Result<(), Box<dyn Error>> {
+        self.server.abort();
+        runtime.block_on(admin.close(self.scenario))
+    }
 }
 
 /// A condition flipped on for exactly one command and off after it.
@@ -339,8 +379,7 @@ impl World {
         admin: &Admin,
     ) -> Result<(), Box<dyn Error>> {
         if let Some(remote) = self.remote {
-            remote.server.abort();
-            runtime.block_on(admin.close(remote.scenario))?;
+            remote.close(runtime, admin)?;
         }
         Ok(())
     }
@@ -427,30 +466,7 @@ impl World {
     /// scenario database, served on `127.0.0.1:0`, and a workload token of tenant `default`.
     fn custody(&mut self, runtime: &tokio::runtime::Runtime, admin: &Admin) -> R<(String, String)> {
         if self.remote.is_none() {
-            let remote = runtime
-                .block_on(async {
-                    let mut scenario = admin.open().await?;
-                    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
-                    let origin = format!("http://{}/", listener.local_addr()?);
-                    let router = scenario.router.clone();
-                    let server = tokio::spawn(async move {
-                        let _ = axum::serve(listener, router).await;
-                    });
-                    let token = scenario.token(
-                        Audience::Workload,
-                        REMOTE_SUBJECT,
-                        ScopeName::DEFAULT,
-                        REMOTE_ACTIONS,
-                    )?;
-                    Ok::<_, Box<dyn Error>>(Remote {
-                        scenario,
-                        server,
-                        origin,
-                        token,
-                    })
-                })
-                .map_err(|error| unavailable("starting the custody service", error))?;
-            self.remote = Some(remote);
+            self.remote = Some(Remote::start(runtime, admin)?);
         }
         self.remote
             .as_ref()
@@ -838,7 +854,7 @@ impl Arranging<'_> {
     }
 }
 
-fn namespace_key(scope: &Scope) -> NamespaceKey {
+pub(crate) fn namespace_key(scope: &Scope) -> NamespaceKey {
     NamespaceKey {
         tenant: scope.tenant.clone(),
         namespace: scope.namespace.clone(),
@@ -1088,14 +1104,14 @@ fn on_remote(context: &LibraryContext<'_>, input: &Value) -> R<bool> {
 }
 
 /// A name of `length` bytes whose segments are each within 64 bytes.
-fn segmented(length: usize) -> String {
+pub(crate) fn segmented(length: usize) -> String {
     let first = length.saturating_sub(2).min(64);
     let second = length.saturating_sub(first + 1);
     format!("{}/{}", "a".repeat(first), "a".repeat(second))
 }
 
 /// The declared error whose wire code is exactly the text the port's error displays.
-fn declared(error: StorageError) -> Option<&'static str> {
+pub(crate) fn declared(error: StorageError) -> Option<&'static str> {
     let text = error.to_string();
     ERRORS
         .iter()
@@ -1127,14 +1143,14 @@ fn branch(command: &str, refusal: &Refusal) -> Option<&'static str> {
     }
 }
 
-fn text<'a>(input: &'a Value, path: &[&str]) -> R<&'a str> {
+pub(crate) fn text<'a>(input: &'a Value, path: &[&str]) -> R<&'a str> {
     path.iter()
         .try_fold(input, |value, key| value.get(key))
         .and_then(Value::as_str)
         .ok_or_else(|| unavailable("reading the command input", path.join(".")))
 }
 
-fn set(input: &mut Value, path: &[&str], value: Value) -> R<()> {
+pub(crate) fn set(input: &mut Value, path: &[&str], value: Value) -> R<()> {
     let (last, parents) = path
         .split_last()
         .ok_or_else(|| cannot_arrange("an empty input path"))?;
@@ -1293,13 +1309,16 @@ enum Done {
     Written(Written),
 }
 
-fn node(value: &impl Serialize) -> R<Node> {
+pub(crate) fn node(value: &impl Serialize) -> R<Node> {
     serde_json::to_value(value)
         .and_then(serde_json::from_value)
         .map_err(|error| unavailable("encoding a node", error))
 }
 
-fn event(name: &'static str, fields: Vec<(&str, Node)>) -> (&'static str, BTreeMap<String, Node>) {
+pub(crate) fn event(
+    name: &'static str,
+    fields: Vec<(&str, Node)>,
+) -> (&'static str, BTreeMap<String, Node>) {
     (
         name,
         fields

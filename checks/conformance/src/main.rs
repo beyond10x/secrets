@@ -1,3 +1,4 @@
+mod cli;
 mod custody;
 mod fixture;
 mod gate;
