@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:standalone-site
 kind: story
-status: active
+status: implemented
 title: Secrets publishes its own documentation site at /secrets/
 relations:
 - depends_on: story:ess-current-format
@@ -22,10 +22,11 @@ scope:
   path: crates/secrets-docs
 - confidence: cited
   path: website
-revision: 11
+revision: 12
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-04T23:33:45Z", actor: "human:timo", revision: 3, imported: true}
 - {from: "proposed", to: "active", at: "2026-10-04T23:33:50Z", actor: "human:timo", revision: 4, imported: true}
+- {from: "active", to: "implemented", at: "2026-10-05T08:13:46Z", actor: "human:timo", revision: 12, decided_on: {"recorded":{"test_result":2}}}
 ---
 # Story: standalone-site
 

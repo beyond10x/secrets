@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:ess-current-format
 kind: story
-status: active
+status: implemented
 title: The specification is current ESS and generates the reference pages
 relations:
 - decomposes: epic:encrypted-custody
@@ -15,10 +15,11 @@ scope:
   path: contracts
 - confidence: cited
   path: spec
-revision: 8
+revision: 9
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-04T23:33:37Z", actor: "human:timo", revision: 3, imported: true}
 - {from: "proposed", to: "active", at: "2026-10-04T23:33:41Z", actor: "human:timo", revision: 4, imported: true}
+- {from: "active", to: "implemented", at: "2026-10-05T08:13:46Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"test_result":2}}}
 ---
 # Story: ess-current-format
 
