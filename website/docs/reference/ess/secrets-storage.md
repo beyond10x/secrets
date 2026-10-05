@@ -339,7 +339,7 @@ It has nine outcomes.
 
 **`not-found`** — Decided outside the input: the backend holds no secret at the address. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`deleted`** — The backend no longer holds a secret at the address; any binding stays. The default branch, taken when no other outcome's condition matched. No entity in this specification changes. It emits `secrets.storage.SecretDeleted`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`deleted`** — The backend no longer holds a secret at the address; any binding stays. The default branch, taken when no other outcome's condition matched. It removes the `secrets.storage.Secret` its input names; no view shows it afterwards. The instance is the one named by the input field `address`. It emits `secrets.storage.SecretDeleted`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the resolved backend could not be reached or did not answer. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -409,7 +409,7 @@ It has six outcomes.
 
 **`in-use`** — Decided outside the input: secrets or bindings remain in the namespace. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Conflict`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`removed`** — The namespace no longer exists. The default branch, taken when no other outcome's condition matched. No entity in this specification changes. It emits `secrets.storage.NamespaceRemoved`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`removed`** — The namespace no longer exists. The default branch, taken when no other outcome's condition matched. It removes the `secrets.storage.Namespace` its input names; no view shows it afterwards. The instance is the one named by the input field `namespace`. It emits `secrets.storage.NamespaceRemoved`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the namespace configuration store could not be reached. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -487,7 +487,7 @@ It has five outcomes.
 
 **`not-found`** — Decided outside the input: the address has no binding. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.NotFound`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
-**`unbound`** — The address has no binding; on a read-only backend it now resolves not-found. The default branch, taken when no other outcome's condition matched. No entity in this specification changes. It emits `secrets.storage.NameUnbound`. A test reaches it by constructing an input that satisfies no other outcome's condition.
+**`unbound`** — The address has no binding; on a read-only backend it now resolves not-found. The default branch, taken when no other outcome's condition matched. It removes the `secrets.storage.Binding` its input names; no view shows it afterwards. The instance is the one named by the input field `address`. It emits `secrets.storage.NameUnbound`. A test reaches it by constructing an input that satisfies no other outcome's condition.
 
 **`unavailable`** — Decided outside the input: the namespace configuration store could not be reached. No predicate over the input reaches this branch, and saying `when: false` instead would have claimed it is unreachable, which is a different and false statement. No entity in this specification changes. It reports `secrets.storage.Unavailable`. It emits nothing. A test reaches it by injecting the declared fault, because no input can.
 
@@ -783,4 +783,4 @@ It may invoke [`AddNamespace`](#addnamespace), [`Bind`](#bind), [`Delete`](#dele
 
 ---
 
-Generated from secrets v1 · model digest `dd17f2508caa42bd29317ce40c6fc03bf7285372d2e16efe46064f622dbf90d8` · contract digest `slice-sha256/2:e5f0a879b57354f13002a47cc29906ae2199e89ce5d36f0252f0a10e875f59af`. Do not edit this file; change the specification and regenerate it with `task docs-generate`.
+Generated from secrets v1 · model digest `999d48b0e0ae3363cc118cc3bd9e118e93a914d1f7a8a25e25d219ed23d2252b` · contract digest `slice-sha256/2:2103e1c81426d9aeac88a0bf815c83247272f4e1cdd59422115b28d8bbe6a641`. Do not edit this file; change the specification and regenerate it with `task docs-generate`.
