@@ -127,5 +127,5 @@ seconds after prepare; commit or abort after that, or of an unknown ID, is `404`
 No authentication: `GET /health/live` (`204`), `GET /health/ready` (`204`, or `503` when the
 database does not answer), `GET /metrics` (Prometheus text), `GET /openapi.json`, `GET /docs`.
 
-The OpenAPI document at 0.5.0 does not declare the bodies of `secrets:list`, `secrets:delete` and
+The OpenAPI document at 0.6.0 does not declare the bodies of `secrets:list`, `secrets:delete` and
 prepare, or the `/metrics`, `/openapi.json` and `/docs` routes; this page describes them.
