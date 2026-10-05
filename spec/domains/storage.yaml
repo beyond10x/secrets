@@ -70,10 +70,14 @@ types:
   #   keychain     read, write, delete, list
   #   onepassword  read only (read-only, no list)
   #   remote       read, write, delete, list
-  # remote is the existing custody service. Decided by the coordinator 2026-09-27: a remote backend
-  # maps a secret to secrets.custody.Reference {tenant, namespace, key = name} with the scope's user
-  # as the custody owner_subject. No relation is declared: an Address is not a custody Reference, and
-  # a `via` would need a field of this domain typed as that Reference, which nothing here sets.
+  # remote is the existing custody service. Decided by the coordinator 2026-10-05, superseding
+  # 2026-09-27's `key = name`: a remote backend maps a secret to secrets.custody.Reference
+  # {tenant, namespace, key = "<user>/<name>"} with the scope's user as the custody owner_subject.
+  # Custody's put upserts on (tenant, namespace, key) and overwrites the owner, so the user is part
+  # of the key; a ScopeName holds no `/`, so the first `/` splits user from name. Workload get and
+  # list check no owner, so the backend reads and lists only keys under the user's prefix. No
+  # relation is declared: an Address is not a custody Reference, and a `via` would need a field of
+  # this domain typed as that Reference, which nothing here sets.
   - name: secrets.storage.BackendKind
     kind: enum
     variants: [keychain, onepassword, remote]
