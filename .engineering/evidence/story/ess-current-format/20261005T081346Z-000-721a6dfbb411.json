@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-05T08:13:46Z",
+  "actor": "human:timo",
+  "artifact": "story:ess-current-format",
+  "kind": "story",
+  "revision": 8,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "check run on main 65b6775: success (ESS 0.52.0, conformance baseline 111)",
+    "reference": "https://github.com/beyond10x/secrets/actions/runs/37247290979"
+  }
+}

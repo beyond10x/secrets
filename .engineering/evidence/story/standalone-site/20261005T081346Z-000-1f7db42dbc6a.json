@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-05T08:13:46Z",
+  "actor": "human:timo",
+  "artifact": "story:standalone-site",
+  "kind": "story",
+  "revision": 11,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "Documentation site run on main 65b6775: success; live b10x-site.json commit 65b6775, b10x-routes.json 13 routes; b10x.docs.yaml absent",
+    "reference": "https://github.com/beyond10x/secrets/actions/runs/37247392454"
+  }
+}
