@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-05T08:25:00Z",
+  "actor": "human:timo",
+  "artifact": "story:rewrap-all-versions",
+  "kind": "story",
+  "revision": 9,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check at 0961bb6 with PostgreSQL 16 and ESS 0.52.0: exit 0; lifecycle 8/8 incl. rewrap_reencrypts_every_stored_version; conformance 111/111 in 3 identical runs; falsification: old query fails the test (left 1, right 3), source restored byte for byte",
+    "reference": "crates/secrets-postgres/tests/lifecycle.rs"
+  }
+}

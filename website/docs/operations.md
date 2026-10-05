@@ -48,12 +48,12 @@ no handler and ends the process at once.
 1. `secretsctl generate-keyring --key-id v2` prints a one-key keyring.
 2. Merge its key into the keyring file, set `"active": "v2"`, and keep `v1`.
 3. Update the keyring Secret and restart. New versions are now wrapped by `v2`.
-4. Run `secrets rewrap`. In one transaction it re-encrypts every current version wrapped by another
-   key, writes a `rewrap` audit event for each and prints `rewrapped <n> secret(s)`. A second
+4. Run `secrets rewrap`. In one transaction it re-encrypts every stored version, current or older,
+   wrapped by another key, writes a `rewrap` audit event for each and prints `rewrapped <n> version(s)`. A second
    transaction then deletes expired batches and re-seals held ones under `v2`.
-5. Run it again: it prints `rewrapped 0 secret(s)`.
-6. Keep `v1`. Versions older than the current one still name it, and removing it makes them
-   undecryptable.
+5. Run it again: it prints `rewrapped 0 version(s)`. No stored version names `v1` any more.
+6. Keep `v1` while a backup taken before step 4 may still be restored; that backup's versions
+   still name it.
 
 ## Backups
 

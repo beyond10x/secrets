@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:rewrap-all-versions
 kind: story
-status: draft
+status: implemented
 title: Rewrap re-encrypts every stored version, not only the current one
 relations:
 - decomposes: epic:named-federated-storage
@@ -10,38 +10,50 @@ relations:
 - depends_on: story:ess-custody-retrofit
 scope:
 - confidence: cited
-  path: contracts/custody/scenarios/rewrap
+  path: crates/secrets-app/src/main.rs
 - confidence: cited
   path: crates/secrets-postgres/src/lib.rs
-- confidence: inferred
-  path: docs/architecture.md
-revision: 5
+- confidence: cited
+  path: crates/secrets-postgres/tests/lifecycle.rs
+- confidence: cited
+  path: spec/domains/custody.yaml
+- confidence: cited
+  path: website/docs
+revision: 10
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T08:24:42Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "proposed", to: "active", at: "2026-10-05T08:24:43Z", actor: "human:timo", revision: 9, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "active", to: "implemented", at: "2026-10-05T08:25:00Z", actor: "human:timo", revision: 10, decided_on: {"recorded":{"test_result":1,"review_outcome":1}}}
 ---
 ## Context
 
-`secrets rewrap` re-encrypts only each secret's current version
-(`crates/secrets-postgres/src/lib.rs:34`), while `docs/architecture.md:25` says it re-encrypts
-active versions and the README's rotation removes the old key afterwards. Older versions then
-cannot be decrypted. Found by the `secrets.custody` retrofit, 2026-09-27.
+`secrets rewrap` re-encrypted only each secret's current version
+(`crates/secrets-postgres/src/lib.rs:53-96` before this story), while the operations page told the
+operator to keep the old key afterwards. Older versions then needed every old key forever, and
+removing one made them undecryptable. Found by the `secrets.custody` retrofit, 2026-09-27.
 
 ## Acceptance
 
-The `contracts/custody/scenarios/rewrap` scenario set passes: after a key rotation and
-`secrets rewrap`, every stored version of every secret decrypts under the new key alone.
+After a key rotation and `secrets rewrap`, every stored version of every secret decrypts under the
+new key alone, and a second rewrap reports nothing left.
 
 ## Evidence
 
-`spec/domains/custody.yaml` `RewrapSecrets`; the lines above. Pre-existing defect.
+`spec/domains/custody.yaml` `RewrapSecrets`; `crates/secrets-postgres/src/lib.rs` `rewrap_all`.
+Pre-existing defect.
 
 ## Verification
 
-Each behaviour named in Acceptance is an authored `ess-scenario/1` under the scenario directory
-named in Scope, run by `checks/conformance` against the real library, three runs with identical
-counts, zero failed, error, unsupported or skipped. Every guarded behaviour has a falsification
-record: a deliberate defect in the source fails a named scenario, and the source is restored
-byte for byte. No network, no credential and no paid call in the default gate.
+`crates/secrets-postgres/tests/lifecycle.rs` `rewrap_reencrypts_every_stored_version` stores three
+versions under `v1`, rewraps with `v2` active, and decrypts each stored version with a keyring that
+holds only `v2`; a second rewrap returns 0. It runs in `task check` against PostgreSQL.
+
+Not an authored ESS scenario: no view reads a stored version, and ESS 0.52.0 `expect_event`
+matches an event by name, so one `SecretsRewrapped` satisfies three expected ones. A scenario
+written for this passed against the defective code and was dropped; the limit is recorded as an
+`ESS-LIMIT` marker on `RewrapSecrets`.
 
 ## Scenarios
 
-- a secret with three versions decrypts at every version after rotation and rewrap
-- a falsification record shows the set fails when rewrap skips a non-current version
+- a secret with three versions decrypts at every version under the new key alone after rewrap
+- a falsification record shows the test fails when rewrap selects only the current version

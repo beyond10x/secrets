@@ -48,9 +48,8 @@ authentication, as does any changed byte.
 
 The keyring is configuration, read once at startup. New versions are wrapped by the active key;
 older versions keep the key ID they were written with, so a key stays while any version names it.
-Rotation adds a key, makes it active and runs `secrets rewrap`, which re-encrypts the **current**
-version of each secret and re-seals every held prepared batch. Older versions are not rewrapped
-yet. The procedure is in [Operations](./operations.md#rotate-the-key-encryption-key).
+Rotation adds a key, makes it active and runs `secrets rewrap`, which re-encrypts every stored
+version under another key, current or older, and re-seals every held prepared batch. The procedure is in [Operations](./operations.md#rotate-the-key-encryption-key).
 
 ## Disclosure
 

@@ -52,7 +52,7 @@ impl PostgresStore {
 
     pub async fn rewrap_all(&self, actor: &str) -> Result<u64, StoreError> {
         let mut tx = self.pool.begin().await.map_err(unavailable)?;
-        let rows = sqlx::query("SELECT s.id,s.tenant,s.namespace,s.secret_key,s.disclosure,s.current_version,v.ciphertext,v.value_nonce,v.wrapped_key,v.wrap_nonce,v.key_id FROM secrets s JOIN secret_versions v ON v.secret_id=s.id AND v.version=s.current_version WHERE v.key_id <> $1 FOR UPDATE")
+        let rows = sqlx::query("SELECT s.id,s.tenant,s.namespace,s.secret_key,s.disclosure,v.version,v.ciphertext,v.value_nonce,v.wrapped_key,v.wrap_nonce,v.key_id FROM secrets s JOIN secret_versions v ON v.secret_id=s.id WHERE v.key_id <> $1 FOR UPDATE")
             .bind(self.keyring.active_key_id()).fetch_all(&mut *tx).await.map_err(unavailable)?;
         let count = rows.len() as u64;
         for row in rows {
@@ -70,7 +70,7 @@ impl PostgresStore {
                 "user_revealable" => Disclosure::UserRevealable,
                 _ => return Err(StoreError::Unavailable),
             };
-            let version: i64 = row.try_get("current_version").map_err(unavailable)?;
+            let version: i64 = row.try_get("version").map_err(unavailable)?;
             let old = Envelope {
                 ciphertext: row.try_get("ciphertext").map_err(unavailable)?,
                 value_nonce: array12(row.try_get("value_nonce").map_err(unavailable)?)?,

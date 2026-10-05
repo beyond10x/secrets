@@ -431,3 +431,71 @@ async fn abort_answers_not_found_for_a_batch_under_a_key_the_keyring_lacks() {
     ));
     foreign.abort(&tenant, transaction).await.unwrap();
 }
+
+#[tokio::test]
+async fn rewrap_reencrypts_every_stored_version() {
+    let Some(database_url) = isolated_database().await else {
+        return;
+    };
+    let old = PostgresStore::connect(&database_url, Arc::new(Keyring::from_json(RING).unwrap()))
+        .await
+        .unwrap();
+    let rotated = PostgresStore::connect(
+        &database_url,
+        Arc::new(
+            Keyring::from_json(
+                br#"{"active":"v2","keys":{"v1":"BwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwcHBwc=","v2":"CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg="}}"#,
+            )
+            .unwrap(),
+        ),
+    )
+    .await
+    .unwrap();
+    let only_new = Keyring::from_json(
+        br#"{"active":"v2","keys":{"v2":"CAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAg="}}"#,
+    )
+    .unwrap();
+    let reference = SecretRef {
+        tenant: format!("test-{}", Uuid::now_v7()),
+        namespace: "connectors".into(),
+        key: "versioned".into(),
+    };
+    let values: [&[u8]; 3] = [b"first", b"second", b"third"];
+    for value in values {
+        old.put(PutSecret {
+            reference: reference.clone(),
+            owner_subject: "user:one".into(),
+            value: SecretBytes(value.to_vec()),
+            disclosure: Disclosure::WorkloadOnly,
+            labels: BTreeMap::new(),
+        })
+        .await
+        .unwrap();
+    }
+
+    assert_eq!(rotated.rewrap_all("operator:test").await.unwrap(), 3);
+
+    let pool = sqlx::PgPool::connect(&database_url).await.unwrap();
+    let rows = sqlx::query("SELECT v.version,v.ciphertext,v.value_nonce,v.wrapped_key,v.wrap_nonce,v.key_id FROM secrets s JOIN secret_versions v ON v.secret_id=s.id WHERE s.tenant=$1 ORDER BY v.version")
+        .bind(&reference.tenant)
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+    assert_eq!(rows.len(), 3);
+    for (row, expected) in rows.iter().zip(values) {
+        let version: i64 = row.get("version");
+        let envelope = Envelope {
+            ciphertext: row.get("ciphertext"),
+            value_nonce: row.get::<Vec<u8>, _>("value_nonce").try_into().unwrap(),
+            wrapped_key: row.get("wrapped_key"),
+            wrap_nonce: row.get::<Vec<u8>, _>("wrap_nonce").try_into().unwrap(),
+            key_id: row.get("key_id"),
+        };
+        assert_eq!(envelope.key_id, "v2", "version {version}");
+        let value = only_new
+            .decrypt(&reference, version, Disclosure::WorkloadOnly, &envelope)
+            .unwrap();
+        assert_eq!(value.0, expected, "version {version}");
+    }
+    assert_eq!(rotated.rewrap_all("operator:test").await.unwrap(), 0);
+}

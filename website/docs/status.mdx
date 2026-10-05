@@ -19,12 +19,6 @@ means specified and on the plan only.
 
 These describe 0.4.0 as it is.
 
-### Rewrap covers only current versions
-
-`secrets rewrap` re-encrypts the current version of each secret. Older versions stay wrapped by
-the key they were written with, so every old key must stay in the keyring. No route reads an older
-version. A fix is planned.
-
 ### Audit actors can be caller-chosen
 
 - `POST /v1/workload/secrets:delete` records the body's `actor` when one is given.

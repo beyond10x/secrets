@@ -1049,7 +1049,7 @@ fn abort(context: &mut Context<'_>, input: &Value) -> R<Observed> {
 fn rewrap(context: &mut Context<'_>, input: &Value) -> R<Observed> {
     let actor: String = field(input, "actor")?;
     let forced = context.forced.clone();
-    // `rewrapped` and `failed` are about stored state: a current version under the service's
+    // `rewrapped` and `failed` are about stored state: a version under the service's
     // active key, which the rotated ring no longer makes active and the foreign ring cannot open.
     if matches!(forced.as_deref(), Some("rewrapped" | "failed")) {
         arrange_secret(context, &in_tenant("fixture-rewrap", "rewrap"))?;
@@ -1081,7 +1081,7 @@ fn rewrap(context: &mut Context<'_>, input: &Value) -> R<Observed> {
         .filter(|row| row.action == "rewrap")
         .collect();
     if count == 0 {
-        // `rewrapped 0 secret(s)`: the printed count is the only record (spec NothingRewrapped).
+        // `rewrapped 0 version(s)`: the printed count is the only record (spec NothingRewrapped).
         let events = if rewraps.is_empty() {
             vec![(
                 "secrets.custody.NothingRewrapped",
