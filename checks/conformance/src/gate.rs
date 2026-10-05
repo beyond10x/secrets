@@ -134,6 +134,12 @@ pub fn check() -> Result<(), Box<dyn Error>> {
     every_authored_scenario_is_declared()?;
     // A unique projection directory keeps stale generated files from masking drift.
     let projection = format!("target/conformance/projection-{}", std::process::id());
+    // A process id repeats across CI runs, and a restored `target/` cache can hold that run's
+    // directory with its ESS ownership state pruned, which ESS refuses to write into.
+    match fs::remove_dir_all(&projection) {
+        Err(error) if error.kind() != std::io::ErrorKind::NotFound => return Err(error.into()),
+        _ => {}
+    }
     fs::create_dir_all(&projection)?;
     for (component, committed, _) in SUITES {
         let suite = format!("{projection}/{}.json", component.name());
