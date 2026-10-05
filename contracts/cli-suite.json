@@ -1659,10 +1659,11 @@
   },
   "provenance": {
     "component": "secrets-library",
-    "contract_digest": "4fb86c240210cc16843496f058bc8ebd5717b7eac5945d61e1c35af230dc9a6b",
-    "spec_digest": "37ba1fe600584f7f0130f6792a2d178ab8e84d6c2af89d257959cd55e9568578",
+    "contract_digest": "344f6b6f0f6962de850814bc29912109be0979cc9c7f2b588b685298ace353e5",
+    "scenario_initial_state": "empty",
+    "spec_digest": "a400890747eb193dcba0b845cca169bfb1ded00af40933596fb0f3cfe7dd593b",
     "specification_version": "v1",
-    "suite_version": "ess-conformance/29",
+    "suite_version": "ess-conformance/35",
     "system": "secrets"
   },
   "scenarios": {
@@ -1937,6 +1938,10 @@
               "state": {
                 "kind": "literal",
                 "value": "Present"
+              },
+              "tenant": {
+                "kind": "literal",
+                "value": "default"
               }
             }
           },
@@ -5564,6 +5569,12 @@
         },
         {
           "event": "secrets.storage.SecretDeleted",
+          "payload": {
+            "address": {
+              "instance": "secret",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "address.name": {
               "holds": "primitive",
@@ -5582,7 +5593,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -10442,6 +10453,13 @@
                 "instance": "secret",
                 "kind": "instance"
               },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "address.scope.namespace",
+                  "tenant": "default"
+                }
+              },
               "state": {
                 "kind": "literal",
                 "value": "Stored"
@@ -12001,6 +12019,12 @@
         },
         {
           "event": "secrets.storage.NamespaceRemoved",
+          "payload": {
+            "namespace": {
+              "instance": "namespace",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "namespace.namespace": {
               "holds": "primitive",
@@ -12011,7 +12035,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -16472,8 +16496,15 @@
           "event": "secrets.storage.MountSet",
           "payload": {
             "mount": {
-              "kind": "onepassword",
-              "label": "mount.label-1"
+              "kind": "literal",
+              "value": {
+                "kind": "onepassword",
+                "label": "mount.label-1"
+              }
+            },
+            "namespace": {
+              "instance": "namespace",
+              "kind": "instance"
             }
           },
           "shape": {
@@ -16498,7 +16529,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -16598,6 +16629,10 @@
               "state": {
                 "kind": "literal",
                 "value": "Present"
+              },
+              "tenant": {
+                "kind": "literal",
+                "value": "default"
               }
             }
           },
@@ -17972,6 +18007,12 @@
         },
         {
           "event": "secrets.storage.NameUnbound",
+          "payload": {
+            "address": {
+              "instance": "binding",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "address.name": {
               "holds": "primitive",
@@ -17990,7 +18031,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -18350,6 +18391,13 @@
                 "event": "secrets.storage.SecretWritten",
                 "field": "address",
                 "kind": "observed"
+              },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "address.scope.namespace",
+                  "tenant": "default"
+                }
               },
               "state": {
                 "kind": "literal",
@@ -19507,6 +19555,12 @@
         },
         {
           "event": "secrets.storage.SecretWritten",
+          "payload": {
+            "address": {
+              "instance": "secret",
+              "kind": "instance"
+            }
+          },
           "shape": {
             "address.name": {
               "holds": "primitive",
@@ -19525,7 +19579,7 @@
               "kind": "string"
             }
           },
-          "step": "expect_event"
+          "step": "expect_event_values"
         },
         {
           "event": "secrets.custody.NamespaceSecretsListed",
@@ -19614,6 +19668,13 @@
               "address": {
                 "instance": "secret",
                 "kind": "instance"
+              },
+              "namespace": {
+                "kind": "literal",
+                "value": {
+                  "namespace": "address.scope.namespace",
+                  "tenant": "default"
+                }
               },
               "state": {
                 "kind": "literal",
@@ -21374,6 +21435,10 @@
         {
           "kind": "type",
           "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
         },
         {
           "kind": "type",
@@ -23368,6 +23433,10 @@
         },
         {
           "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
+        },
+        {
+          "kind": "type",
           "name": "secrets.storage.Scope"
         },
         {
@@ -23615,6 +23684,10 @@
         {
           "kind": "type",
           "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
         },
         {
           "kind": "type",
@@ -23909,6 +23982,10 @@
         {
           "kind": "type",
           "name": "secrets.storage.Address"
+        },
+        {
+          "kind": "type",
+          "name": "secrets.storage.NamespaceKey"
         },
         {
           "kind": "type",

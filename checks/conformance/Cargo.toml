@@ -15,8 +15,8 @@ async-trait.workspace = true
 axum.workspace = true
 base64.workspace = true
 clap.workspace = true
-ess-conformance = { git = "https://github.com/beyond10x/ess.git", tag = "0.52.0" }
-ess-primitives = { git = "https://github.com/beyond10x/ess.git", tag = "0.52.0" }
+ess-conformance = { git = "https://github.com/beyond10x/ess.git", tag = "0.53.0" }
+ess-primitives = { git = "https://github.com/beyond10x/ess.git", tag = "0.53.0" }
 http-body-util = "0.1"
 keyring-core = { workspace = true, features = ["sample"] }
 reqwest.workspace = true

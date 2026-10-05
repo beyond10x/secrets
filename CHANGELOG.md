@@ -19,6 +19,17 @@
   value and version a read returned, and two authored scenarios assert that a value written to a
   keychain mount and to a remote mount, and the value that replaces it, read back byte for byte.
   The library suite is 110 scenarios, all answered.
+- ESS 0.53.0: CI installs it from the release tarball checked against `SHA256SUMS`, the runner
+  links `ess-conformance` and `ess-primitives` at tag `0.53.0`, and the specification is `ess/22`.
+  The suites are `ess-conformance/35`, start from an empty namespace and compare event identity
+  fields with the instance they name. Counts are unchanged: 111, 110 and 89, all answered.
+- `secrets.storage` declares the relations ESS 0.53.0's dotted input paths make writable: a Tenant
+  owns its Namespaces (`Namespace.tenant`), a Namespace owns its Bindings (`Binding.namespace`) and
+  a Secret references its Namespace (`Secret.namespace`). `SecretMetadata` rows carry `namespace`
+  and `Namespaces` rows carry `tenant`, and the suites assert both.
+- The `unsupported` refusals of the storage secret commands stay external: a guard reading the
+  namespace's mount does not synthesize in ESS 0.53.0 (beyond10x/ess#462, beyond10x/ess#463).
+  Every remaining `ESS-LIMIT` marker names ESS 0.53.0 or the open issue it waits for.
 
 ## 0.5.0 - 2026-10-05
 

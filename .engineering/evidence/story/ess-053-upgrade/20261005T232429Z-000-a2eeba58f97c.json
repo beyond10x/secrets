@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-05T23:24:29Z",
+  "actor": "human:timo",
+  "artifact": "story:ess-053-upgrade",
+  "kind": "story",
+  "revision": 4,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check exit 0 (2026-10-06, 72b9c4b, ESS 0.53.0, spec ess/22, suites ess-conformance/35): secrets-service 111/111, secrets-library 110/110, secretsctl CLI suite 89/89, 0 unsupported, 0 failed, 0 error, 0 skipped, each x3 with identical counts; 198 Rust tests passed; no runner API change. Lifted: Tenant owns Namespace, Namespace owns Binding, Secret references Namespace (input.<path>, beyond10x/ess#233). Falsified: library runner swapping tenant and namespace in SecretMetadata.namespace fails Read/outcome/read, Write/outcome/created, Write/outcome/replaced; library runner reading Namespaces.tenant from the namespace name fails AddNamespace/outcome/added, SetMount/outcome/set; the CLI runner with both defects fails those 5; files restored byte for byte (sha256). Binding.namespace is unobserved: no view holds a Binding. Not lifted: #29 (beyond10x/ess#462, beyond10x/ess#463), #27, #1"
+  }
+}

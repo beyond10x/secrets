@@ -172,7 +172,7 @@ entities:
         type: String
     # Mutations name secrets by reference inside the sealed batch, with no foreign key, so deleting
     # a secret leaves a prepared batch in place (a `references` reading).
-    # ESS-LIMIT: a relation's `via` names one field; ESS 0.52.0 has no relation form over the
+    # ESS-LIMIT: a relation's `via` names one field; ESS 0.53.0 has no relation form over the
     # references inside a List of union payloads (Mutation.put.secret.reference,
     # Mutation.delete.reference).
     # No route reads a prepared transaction (crates/secrets-http/src/lib.rs:38-62), so no view is
@@ -626,8 +626,11 @@ commands:
       # One Postgres transaction: delete the prepared row, apply each Put (as PutSecret) and Delete
       # (as DeleteSecret) under the stored actor, audit commit_batch.
       # ESS-LIMIT: the outcome also changes the Secrets the batch names. `affects:` selects records
-      # by a filter over stored fields, and these are named only inside the sealed mutation list,
-      # which no filter reaches (ESS 0.52.0).
+      # by a filter over their own stored fields, and these are named only inside the sealed
+      # mutation list of the PreparedTransaction, which no filter reaches. ESS 0.53.0 lets an
+      # `affects` entry move what it selects (beyond10x/ess#229) and a guard read the rows a
+      # selector selects (beyond10x/ess#228, beyond10x/ess#299), but neither reads the references
+      # inside another row's List of union payloads.
       - name: committed
         deletes: secrets.custody.PreparedTransaction
         instance: transaction
@@ -736,13 +739,13 @@ commands:
     outcomes:
       # ESS-LIMIT: changes many Secrets at once without moving them. `instances: {where: ...}` selects
       # by stored fields, and which versions are under another key is `secret_versions.key_id`,
-      # storage behind Secret.value rather than a field (ESS 0.52.0).
+      # storage behind Secret.value rather than a field (ESS 0.53.0).
       # One `rewrap` audit row per re-encrypted version (crates/secrets-postgres/src/lib.rs:93),
       # so the event exists only when some stored version was under another key; which versions
       # are is stored state, not input.
       # ESS-LIMIT: that every stored version, not only the current one, is rewrapped is not
       # observable here: no view reads a version, and `expect_event` matches an event by name, so
-      # one SecretsRewrapped satisfies any number of expected ones (ESS 0.52.0,
+      # one SecretsRewrapped satisfies any number of expected ones (ESS 0.53.0,
       # ess-conformance runner.rs `expect_event`). Guarded by
       # crates/secrets-postgres/tests/lifecycle.rs `rewrap_reencrypts_every_stored_version`.
       - name: rewrapped
@@ -1095,7 +1098,7 @@ views:
   # reference.namespace == param.namespace]` validates, but synthesis binds a param only to a
   # stored field of the same name, never to a member of the struct identity (ESS-SYNTH-005 on
   # PutSecret, RevokeOwnedSecret and both Secret transitions; ESS 0.52.0, 2026-10-05;
-  # beyond10x/ess#428), so the filter is left undeclared.
+  # beyond10x/ess#428, open under ESS 0.53.0), so the filter is left undeclared.
   - name: secrets.custody.NamespaceSecrets
     source: secrets.custody.Secret
     consistency: read_your_writes
