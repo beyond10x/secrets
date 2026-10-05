@@ -8,7 +8,15 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+async-trait.workspace = true
 secrets-core = { path = "../secrets-core" }
+
+[features]
+testing = []
+
+[dev-dependencies]
+secrets-core = { path = "../secrets-core", features = ["testing"] }
+tokio.workspace = true
 
 [lints]
 workspace = true
