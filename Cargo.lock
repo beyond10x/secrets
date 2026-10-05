@@ -2478,7 +2478,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-app"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "axum",
  "clap",
@@ -2494,7 +2494,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-auth"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "reqwest",
@@ -2506,7 +2506,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-client"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "reqwest",
  "secrets-core",
@@ -2518,7 +2518,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-conformance"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -2551,7 +2551,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-core"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -2564,7 +2564,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-crypto"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "aes-gcm",
  "base64",
@@ -2578,7 +2578,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-docs"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -2587,7 +2587,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-federation"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "secrets-core",
@@ -2596,7 +2596,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-http"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "axum",
  "http",
@@ -2610,7 +2610,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-keychain"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "apple-native-keyring-store",
  "async-trait",
@@ -2625,7 +2625,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-postgres"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "secrets-core",
@@ -2638,7 +2638,7 @@ dependencies = [
 
 [[package]]
 name = "secrets-remote"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "async-trait",
  "axum",
@@ -2657,7 +2657,7 @@ dependencies = [
 
 [[package]]
 name = "secretsctl"
-version = "0.4.1"
+version = "0.5.0"
 dependencies = [
  "base64",
  "clap",

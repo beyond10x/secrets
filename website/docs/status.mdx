@@ -1,7 +1,7 @@
 ---
 title: Status
 sidebar_position: 3
-description: What Secrets 0.4.1 ships, what it does not do, and what is planned.
+description: What Secrets 0.5.0 ships, what it does not do, and what is planned.
 lede: Every capability below carries its status; the landing page's status strip reads the same file, so the two cannot disagree.
 source: website/data/status.json, a b10x-status/1 document
 source_url: https://github.com/beyond10x/secrets/blob/main/website/data/status.json
@@ -9,15 +9,15 @@ source_url: https://github.com/beyond10x/secrets/blob/main/website/data/status.j
 
 import status from '@site/data/status.json';
 
-Secrets 0.4.1 is in development: the service and its workload client ship, and the named-storage
-library is built over the OS keychain and this service. **Shipped** means built on `main` and held
-by `task check`, **planned** means specified and on the plan only.
+Secrets 0.5.0 ships the service, its workload client, and the named-storage library over the OS
+keychain and this service. **Shipped** means in a release and held by `task check`; **planned**
+means specified and on the plan only.
 
 <StatusTable data={status} />
 
 ## Known limitations
 
-These describe 0.4.1 as it is.
+These describe 0.5.0 as it is.
 
 ### Audit actors can be caller-chosen
 

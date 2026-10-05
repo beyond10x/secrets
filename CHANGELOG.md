@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.5.0 - 2026-10-05
+
+- `secrets-core` gains the `secrets.storage` port (`secrets_core::storage`): `SecretStorage`,
+  `SecretName`, scopes, addresses, `Action` and the closed `StorageError` codes. Names are refused
+  above 128 bytes in total or 64 per segment, values above 1 MiB, and secret bytes have no Debug,
+  Display or Serialize. A recording fake backend, `storage::testing::RecordingBackend`, sits behind
+  the `testing` feature.
+- `secrets_core::authorize`: `LocalAuthorizer` allows tenant and user `default` and denies every
+  other scope before any backend is reached; `Authorized` wraps any `SecretStorage`.
+- New crates: `secrets-federation` routes each namespace to exactly one mounted backend with no
+  fallback, over a namespace, mount and binding store; `secrets-keychain` is the OS keychain over
+  an injected `keyring_core` store, with the native stores behind the `native-keychain` feature;
+  `secrets-remote` is this service as a backend through `secrets-client`, storing a secret at
+  custody key `<user>/<name>` with the user as owner.
+- `secrets-client` gains `Client::with_http` to supply the HTTP client.
+- The `secrets.storage` conformance suite runs on every check against the composed stack: 96
+  scenarios, 95 answered; the one unsupported mounts a 1Password backend, which is deferred.
+- The specification declares `deletes:` where ESS 0.52.0 allows it (commit's prepared batch, and
+  the storage namespace, binding and secret removals), and every remaining `ESS-LIMIT` marker names
+  the ESS version or issue it was checked against. A value the resolved backend cannot carry is
+  `too-large`; the remote backend's limit is about 768 KiB, the service's 1 MiB request body after
+  base64.
+- The documentation site re-pins docs-system at `9d35e63`, so family links reach
+  `/engineering-protocols/`.
+
 ## 0.4.1 - 2026-10-05
 
 - Documentation moves to its own site, <https://beyond10x.github.io/secrets/>, built from

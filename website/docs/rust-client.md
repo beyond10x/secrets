@@ -11,8 +11,8 @@ description: Call Secrets from a Rust workload with the secrets-client crate.
 
 ```toml
 [dependencies]
-secrets-client = { git = "https://github.com/beyond10x/secrets", tag = "v0.4.1" }
-secrets-core = { git = "https://github.com/beyond10x/secrets", tag = "v0.4.1" }
+secrets-client = { git = "https://github.com/beyond10x/secrets", tag = "v0.5.0" }
+secrets-core = { git = "https://github.com/beyond10x/secrets", tag = "v0.5.0" }
 ```
 
 ```rust
