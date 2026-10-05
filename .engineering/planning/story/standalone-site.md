@@ -1,5 +1,5 @@
 ---
-format: aep.planning-md/2
+format: aep.planning-md/3
 id: story:standalone-site
 kind: story
 status: active
@@ -23,6 +23,9 @@ scope:
 - confidence: cited
   path: website
 revision: 11
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-04T23:33:45Z", actor: "human:timo", revision: 3, imported: true}
+- {from: "proposed", to: "active", at: "2026-10-04T23:33:50Z", actor: "human:timo", revision: 4, imported: true}
 ---
 # Story: standalone-site
 

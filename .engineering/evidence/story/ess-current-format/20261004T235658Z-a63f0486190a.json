@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-04T23:56:58Z",
+  "actor": "human:timo",
+  "artifact": "story:ess-current-format",
+  "kind": "story",
+  "revision": 8,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check at 9f44c67 with PostgreSQL 16 and ESS 0.52.0: exit 0, conformance 111/111 in 3 identical runs, 0 skipped"
+  }
+}

@@ -1,5 +1,5 @@
 ---
-format: aep.planning-md/2
+format: aep.planning-md/3
 id: story:ess-current-format
 kind: story
 status: active
@@ -16,6 +16,9 @@ scope:
 - confidence: cited
   path: spec
 revision: 8
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-04T23:33:37Z", actor: "human:timo", revision: 3, imported: true}
+- {from: "proposed", to: "active", at: "2026-10-04T23:33:41Z", actor: "human:timo", revision: 4, imported: true}
 ---
 # Story: ess-current-format
 

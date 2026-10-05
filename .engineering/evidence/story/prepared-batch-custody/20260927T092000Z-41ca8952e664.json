@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-27T09:20:00Z",
+  "actor": "human:timo",
+  "artifact": "story:prepared-batch-custody",
+  "kind": "story",
+  "revision": 8,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check (31 tests, 0 failed, EXIT=0) at 056819e"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-04T23:57:03Z",
+  "actor": "human:timo",
+  "artifact": "story:standalone-site",
+  "kind": "story",
+  "revision": 11,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check at 9f44c67: exit 0, docs-check current (4 pages, 2 graphs); npm run build in website/ succeeded with onBrokenLinks and onBrokenAnchors throw; route inventory lists 13 routes"
+  }
+}

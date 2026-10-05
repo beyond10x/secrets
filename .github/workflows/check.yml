@@ -32,19 +32,21 @@ jobs:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       - uses: arduino/setup-task@b91d5d2c96a56797b48ac1e0e89220bf64044611 # v2
-      - name: Restore pinned gate tools
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: |
-            ~/.cargo/bin/aep
-            ~/.cargo/bin/protocol
-          key: ${{ runner.os }}-${{ runner.arch }}-gate-tools-aep-0.61.1-v2
       - name: Install pinned AEP planning CLI
+        env:
+          AEP_VERSION: "0.68.0"
+          AEP_SHA256: 02bf6a2c4bc9a3ffd717edfb365f665491005004f159774a8847d3cbd18c5e91
         run: |
-          if [ "$(aep --version 2>/dev/null || true)" != "aep 0.61.1" ] || \
-             [ "$(protocol --version 2>/dev/null || true)" != "aep 0.61.1" ]; then
-            cargo install --force --git https://github.com/beyond10x/aep --tag 0.61.1 --locked aep-cli
-          fi
+          set -euo pipefail
+          asset="aep-$AEP_VERSION-x86_64-unknown-linux-gnu.tar.gz"
+          release="https://github.com/beyond10x/aep/releases/download/$AEP_VERSION"
+          cd "$RUNNER_TEMP"
+          curl --fail --silent --show-error --location --output "$asset" "$release/$asset"
+          curl --fail --silent --show-error --location --output AEP_SHA256SUMS "$release/SHA256SUMS"
+          grep -Fx "$AEP_SHA256  $asset" AEP_SHA256SUMS
+          echo "$AEP_SHA256  $asset" | sha256sum --check --strict
+          tar -xzf "$asset"
+          echo "$RUNNER_TEMP/aep-$AEP_VERSION-x86_64-unknown-linux-gnu" >> "$GITHUB_PATH"
       - name: Install pinned ESS specification CLI
         env:
           ESS_VERSION: "0.52.0"

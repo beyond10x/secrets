@@ -38,7 +38,7 @@ it must know. The cross-repository decision is Atlas ADR 0023 (Secrets is the sh
 
 `task check` and `task conformance` need `SECRETS_TEST_DATABASE_URL` pointing at a disposable
 PostgreSQL database; conformance refuses to run without it. CI provides one. Tool versions:
-`ess` 0.52.0 (`contracts/ess-inputs.yaml` `requires`), `aep` 0.61.1, Rust 1.97.
+`ess` 0.52.0 (`contracts/ess-inputs.yaml` `requires`), `aep` 0.68.0, Rust 1.97.
 
 ## Specification
 
@@ -56,7 +56,7 @@ model, which no code implements. Change the specification first, then the code.
 
 ## Plan
 
-The AEP store under `.engineering/planning` is the plan, written only through `aep`. A new noun gets
+The AEP store under `.engineering/planning` (`aep.project/5`, Git-native) is the plan, written only through `aep`. A new noun gets
 its ESS declaration before a story is written around it, and each story's acceptance names its
 conformance scenarios.
 
