@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:local-cli
 kind: story
-status: draft
+status: active
 title: The local CLI manages names, namespaces, mounts and bindings without printing a secret
 relations:
 - decomposes: epic:named-federated-storage
@@ -15,7 +15,10 @@ scope:
   path: contracts/storage/scenarios/cli
 - confidence: cited
   path: crates/secretsctl
-revision: 6
+revision: 8
+transitions:
+- {from: "draft", to: "proposed", at: "2026-10-05T11:50:40Z", actor: "human:timo", revision: 7, decided_on: {"recorded":{"review_outcome":1}}}
+- {from: "proposed", to: "active", at: "2026-10-05T11:50:40Z", actor: "human:timo", revision: 8, decided_on: {"recorded":{"review_outcome":1}}}
 ---
 ## Context
 
