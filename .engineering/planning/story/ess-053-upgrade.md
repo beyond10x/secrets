@@ -2,7 +2,7 @@
 format: aep.planning-md/3
 id: story:ess-053-upgrade
 kind: story
-status: active
+status: implemented
 title: Secrets runs on ESS 0.53.0 and declares what it lifts
 relations:
 - decomposes: epic:encrypted-custody
@@ -19,10 +19,11 @@ scope:
   path: website/data/ess
 - confidence: cited
   path: website/docs/reference/ess
-revision: 4
+revision: 5
 transitions:
 - {from: "draft", to: "proposed", at: "2026-10-05T18:52:18Z", actor: "human:timo", revision: 2}
 - {from: "proposed", to: "active", at: "2026-10-05T18:52:18Z", actor: "human:timo", revision: 3}
+- {from: "active", to: "implemented", at: "2026-10-05T23:24:29Z", actor: "human:timo", revision: 5, decided_on: {"recorded":{"test_result":1}}}
 ---
 ## Outcome
 
