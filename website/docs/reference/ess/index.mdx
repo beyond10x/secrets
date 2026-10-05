@@ -13,7 +13,7 @@ import domainGraph1 from '@site/data/ess/secrets-storage.domain-graph.json';
 
 Secrets is specified in ESS. This page and the domain pages below are generated from the repository's `spec/` directory by `secrets-docs`: the graphs from `ess specify compile`, the pages from `ess generate --kind docs`. They change when the specification changes, and `task check` fails if they fall behind it.
 
-`custody` is retrofitted from the shipped service and every declaration cites its source; a conformance suite runs it against the real HTTP router and PostgreSQL store. `storage` is the planned model of named, scoped secrets over several backends, and no code implements it yet.
+`custody` is retrofitted from the shipped service and every declaration cites its source; a conformance suite runs it against the real HTTP router and PostgreSQL store. `storage` is the model of named, scoped secrets over several backends; `secrets-core` implements its storage port, and a second suite runs that in process. No backend implements it yet.
 
 ## custody
 

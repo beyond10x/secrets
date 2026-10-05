@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-05T09:46:34Z",
+  "actor": "human:timo",
+  "artifact": "story:storage-port",
+  "kind": "story",
+  "revision": 8,
+  "change": {
+    "change": "evidence",
+    "kind": "test_result",
+    "source": "task check exit 0 (2026-10-05): secrets-service conformance 111/111 passed x3; secrets-library conformance 82 total, 19 passed, 63 unsupported, 0 failed x3 against contracts/storage-baseline.json; secrets-core storage unit tests 16 passed; SecretValue compile_fail doctests 3 passed"
+  }
+}

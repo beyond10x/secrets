@@ -1,0 +1,19 @@
+# Two 64-byte segments and a slash: every segment is within its bound, so only the 128-byte total
+# refuses it (SecretName::check_length, crates/secrets-core/src/storage.rs).
+type: ess-scenario/1
+domain: secrets.storage
+scenario: a-name-of-129-bytes-is-too-long
+summary: A name of 129 bytes whose segments are each 64 bytes is refused as too long and stores nothing.
+timeline:
+- at: '2026-10-05T12:00:00Z'
+  command: secrets.storage.Write
+  actor: secrets.storage.LocalUser
+  input:
+    address:
+      scope: {tenant: default, namespace: default, user: default}
+      name: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+    value: AA==
+  outcome: name-too-long
+  error:
+    name: secrets.storage.InvalidName
+  no_events: [secrets.storage.SecretWritten]

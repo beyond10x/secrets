@@ -4,9 +4,11 @@ tasks:
   fmt:
     cmds: [cargo fmt --all -- --check]
   test:
-    cmds: [cargo test --workspace --all-targets]
+    cmds:
+      - cargo test --workspace --all-targets --all-features
+      - cargo test --workspace --doc --all-features
   clippy:
-    cmds: [cargo clippy --workspace --all-targets -- -D warnings]
+    cmds: [cargo clippy --workspace --all-targets --all-features -- -D warnings]
   docs:
     cmds:
       - cargo doc --workspace --no-deps

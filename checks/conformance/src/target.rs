@@ -1,7 +1,11 @@
 //! The shared conformance target. It owns scenario isolation, the forced-outcome control, the
 //! consistency token and event attribution, and it dispatches every command and view to the one
-//! domain module that answers it — so a later domain is a new module and one entry in [`DOMAINS`],
-//! not an edit to a shared function.
+//! domain module that answers it — so a later domain is a new module and one entry in [`DOMAINS`]
+//! or [`LIBRARY_DOMAINS`], not an edit to a shared function.
+//!
+//! Two components are answered. `secrets-service` runs each scenario in its own PostgreSQL
+//! database behind the shipped router; `secrets-library` runs in this process against
+//! `secrets-core` and needs no database.
 //!
 //! Only returned production facts are retained. This target never reads the suite, its expected
 //! assertions, or a scenario name to determine an answer.
@@ -24,6 +28,26 @@ use ess_primitives::{consistency::ConsistencyToken, node::Node};
 
 use crate::fixture::{Admin, Scenario};
 
+/// The component a suite is synthesized for, and the implementation that answers it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, clap::ValueEnum)]
+pub enum Component {
+    /// The shipped custody service (`secrets.custody`), over PostgreSQL.
+    #[value(name = "secrets-service")]
+    Service,
+    /// The in-process storage library (`secrets.storage`).
+    #[value(name = "secrets-library")]
+    Library,
+}
+
+impl Component {
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Service => "secrets-service",
+            Self::Library => "secrets-library",
+        }
+    }
+}
+
 /// What a domain module observed of one command: the declared branch the real service took, the
 /// declared error it carries, and the events its durable records show it produced.
 pub struct Observed {
@@ -44,7 +68,7 @@ pub enum Caller {
     Holding(crate::fixture::Audience),
 }
 
-/// What a domain module is handed for one command or read.
+/// What a service domain module is handed for one command or read.
 pub struct Context<'a> {
     pub runtime: &'a tokio::runtime::Runtime,
     pub admin: &'a Admin,
@@ -57,19 +81,42 @@ pub struct Context<'a> {
     pub caller: Caller,
 }
 
+/// What a library domain module is handed for one command or read. The library runs in this
+/// process, so there is no database and no credential.
+pub struct LibraryContext {
+    /// The outcome the scenario forced for this invocation, when it forced one.
+    pub forced: Option<String>,
+    /// The actor the scenario sends this command as, when it names one.
+    pub actor: Option<String>,
+}
+
 /// A domain's answer to a command: `None` when the domain does not own it.
 pub type CommandAnswer =
     fn(&mut Context<'_>, &str, &BTreeMap<String, Node>) -> Option<Result<Observed, TargetError>>;
 /// A domain's answer to a read: `None` when the domain does not own the view.
 pub type ViewAnswer = fn(&mut Context<'_>, &str) -> Option<Result<Vec<ViewRow>, TargetError>>;
 
-/// One domain's answers.
+/// One service domain's answers.
 pub struct Domain {
     pub command: CommandAnswer,
     pub view: ViewAnswer,
 }
 
+/// A library domain's answer to a command: `None` when the domain does not own it.
+pub type LibraryCommandAnswer =
+    fn(&mut LibraryContext, &str, &BTreeMap<String, Node>) -> Option<Result<Observed, TargetError>>;
+/// A library domain's answer to a read: `None` when the domain does not own the view.
+pub type LibraryViewAnswer =
+    fn(&mut LibraryContext, &str) -> Option<Result<Vec<ViewRow>, TargetError>>;
+
+/// One library domain's answers.
+pub struct LibraryDomain {
+    pub command: LibraryCommandAnswer,
+    pub view: LibraryViewAnswer,
+}
+
 const DOMAINS: &[Domain] = &[crate::custody::DOMAIN];
+const LIBRARY_DOMAINS: &[LibraryDomain] = &[crate::storage::DOMAIN];
 
 pub fn unavailable(operation: &str, error: impl std::fmt::Display) -> TargetError {
     TargetError::unavailable(operation, error.to_string())
@@ -78,11 +125,18 @@ fn unsupported(what: &str) -> TargetError {
     TargetError::unsupported(what, "no domain module of this target answers it")
 }
 
-pub struct SecretsTarget {
-    version: String,
-    runtime: tokio::runtime::Runtime,
+/// The service's database server and the scenario database currently open on it.
+struct Service {
     admin: Admin,
     scenario: RefCell<Option<Scenario>>,
+}
+
+pub struct SecretsTarget {
+    component: Component,
+    version: String,
+    runtime: tokio::runtime::Runtime,
+    /// Present for `secrets-service` only.
+    service: Option<Service>,
     forced: RefCell<Option<OutcomeRef>>,
     token: RefCell<Option<ConsistencyToken>>,
     sequence: Cell<u64>,
@@ -91,17 +145,32 @@ pub struct SecretsTarget {
 }
 
 impl SecretsTarget {
-    pub fn new(version: String, database_url: &str) -> Result<Self, Box<dyn Error>> {
+    /// A target for `component`. `database_url` is required for `secrets-service` and unused for
+    /// `secrets-library`.
+    pub fn new(
+        component: Component,
+        version: String,
+        database_url: Option<&str>,
+    ) -> Result<Self, Box<dyn Error>> {
         let runtime = tokio::runtime::Builder::new_multi_thread()
             .worker_threads(2)
             .enable_all()
             .build()?;
-        let admin = runtime.block_on(Admin::connect(database_url))?;
+        let service = match component {
+            Component::Service => {
+                let url = database_url.ok_or("the service component needs a database")?;
+                Some(Service {
+                    admin: runtime.block_on(Admin::connect(url))?,
+                    scenario: RefCell::new(None),
+                })
+            }
+            Component::Library => None,
+        };
         Ok(Self {
+            component,
             version,
             runtime,
-            admin,
-            scenario: RefCell::new(None),
+            service,
             forced: RefCell::new(None),
             token: RefCell::new(None),
             sequence: Cell::new(0),
@@ -113,29 +182,104 @@ impl SecretsTarget {
         self.forced.replace(None);
         self.token.replace(None);
         self.events.replace(Vec::new());
-        if let Some(scenario) = self.scenario.replace(None) {
+        if let Some(service) = &self.service
+            && let Some(scenario) = service.scenario.replace(None)
+        {
             self.runtime
-                .block_on(self.admin.close(scenario))
+                .block_on(service.admin.close(scenario))
                 .map_err(|error| unavailable("dropping the scenario database", error))?;
         }
         Ok(())
+    }
+
+    /// The command's answer from the domain module that owns it.
+    fn answer(
+        &self,
+        command: &str,
+        forced: Option<String>,
+        actor: Option<String>,
+        input: &BTreeMap<String, Node>,
+    ) -> Result<Observed, TargetError> {
+        match &self.service {
+            Some(service) => {
+                let mut scenario = service.scenario.borrow_mut();
+                let scenario = scenario
+                    .as_mut()
+                    .ok_or_else(|| unavailable("executing a command", "no scenario is open"))?;
+                let mut context = Context {
+                    runtime: &self.runtime,
+                    admin: &service.admin,
+                    scenario,
+                    forced,
+                    actor,
+                    caller: Caller::Granted,
+                };
+                DOMAINS
+                    .iter()
+                    .find_map(|domain| (domain.command)(&mut context, command, input))
+                    .ok_or_else(|| unsupported(command))?
+            }
+            None => {
+                let mut context = LibraryContext { forced, actor };
+                LIBRARY_DOMAINS
+                    .iter()
+                    .find_map(|domain| (domain.command)(&mut context, command, input))
+                    .ok_or_else(|| unsupported(command))?
+            }
+        }
+    }
+
+    /// The view's rows from the domain module that owns it.
+    fn rows(&self, view: &str) -> Result<Vec<ViewRow>, TargetError> {
+        match &self.service {
+            Some(service) => {
+                let mut scenario = service.scenario.borrow_mut();
+                let scenario = scenario
+                    .as_mut()
+                    .ok_or_else(|| unavailable("reading a view", "no scenario is open"))?;
+                let mut context = Context {
+                    runtime: &self.runtime,
+                    admin: &service.admin,
+                    scenario,
+                    forced: None,
+                    actor: None,
+                    caller: Caller::Granted,
+                };
+                DOMAINS
+                    .iter()
+                    .find_map(|domain| (domain.view)(&mut context, view))
+                    .ok_or_else(|| unsupported(view))?
+            }
+            None => {
+                let mut context = LibraryContext {
+                    forced: None,
+                    actor: None,
+                };
+                LIBRARY_DOMAINS
+                    .iter()
+                    .find_map(|domain| (domain.view)(&mut context, view))
+                    .ok_or_else(|| unsupported(view))?
+            }
+        }
     }
 }
 
 impl ConformanceTarget for SecretsTarget {
     fn identity(&self) -> Result<ImplementationIdentity, TargetError> {
         Ok(ImplementationIdentity::new(
-            "secrets-service",
+            self.component.name(),
             &self.version,
         ))
     }
     fn begin_scenario(&self, _: &ScenarioContext) -> Result<(), TargetError> {
         self.close()?;
-        let scenario = self
-            .runtime
-            .block_on(self.admin.open())
-            .map_err(|error| unavailable("creating the scenario database", error))?;
-        self.scenario.replace(Some(scenario));
+        if let Some(service) = &self.service {
+            let scenario = self
+                .runtime
+                .block_on(service.admin.open())
+                .map_err(|error| unavailable("creating the scenario database", error))?;
+            service.scenario.replace(Some(scenario));
+        }
         Ok(())
     }
     fn end_scenario(&self, _: &ScenarioContext) -> Result<(), TargetError> {
@@ -157,22 +301,12 @@ impl ConformanceTarget for SecretsTarget {
                 None
             }
         };
-        let mut scenario = self.scenario.borrow_mut();
-        let scenario = scenario
-            .as_mut()
-            .ok_or_else(|| unavailable("executing a command", "no scenario is open"))?;
-        let mut context = Context {
-            runtime: &self.runtime,
-            admin: &self.admin,
-            scenario,
+        let observed = self.answer(
+            &command,
             forced,
-            actor: request.actor.as_ref().map(ToString::to_string),
-            caller: Caller::Granted,
-        };
-        let observed = DOMAINS
-            .iter()
-            .find_map(|domain| (domain.command)(&mut context, &command, &request.input))
-            .ok_or_else(|| unsupported(&command))??;
+            request.actor.as_ref().map(ToString::to_string),
+            &request.input,
+        )?;
         let mut result = match observed.outcome {
             Some(outcome) => SemanticCommandResult::took(OutcomeRef::new(
                 request.command.clone(),
@@ -228,27 +362,11 @@ impl ConformanceTarget for SecretsTarget {
                 "the requested consistency token was not issued in this scenario",
             ));
         }
-        let mut scenario = self.scenario.borrow_mut();
-        let scenario = scenario
-            .as_mut()
-            .ok_or_else(|| unavailable("reading a view", "no scenario is open"))?;
-        let mut context = Context {
-            runtime: &self.runtime,
-            admin: &self.admin,
-            scenario,
-            forced: None,
-            actor: None,
-            caller: Caller::Granted,
-        };
-        let rows = DOMAINS
-            .iter()
-            .find_map(|domain| (domain.view)(&mut context, &view))
-            .ok_or_else(|| unsupported(&view))??;
-        Ok(SemanticViewResult::of(rows))
+        Ok(SemanticViewResult::of(self.rows(&view)?))
     }
-    /// The service publishes nothing, so every occurrence is one a command of this scenario
-    /// produced, read from its durable record when the command returned. There is nothing to wait
-    /// for: a command that wrote no record produced no occurrence.
+    /// Neither component publishes anything, so every occurrence is one a command of this
+    /// scenario produced, read from its durable record when the command returned. There is
+    /// nothing to wait for: a command that wrote no record produced no occurrence.
     fn observe_events(
         &self,
         request: EventObservationRequest,
