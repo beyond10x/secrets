@@ -12,7 +12,7 @@ tasks:
   docs:
     cmds:
       - cargo doc --workspace --no-deps
-      - jq -e '.openapi == "3.1.0" and .info.version == "0.4.1"' docs/openapi.json >/dev/null
+      - jq -e '.openapi == "3.1.0" and .info.version == "0.5.0"' docs/openapi.json >/dev/null
   plan:
     cmds: [aep plan artifact validate]
   spec:
